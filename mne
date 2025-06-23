@@ -615,7 +615,7 @@
                     </div>
                     <div class="section-content" id="mainEditorContent">
                         <textarea id="mainEditor" class="main-textarea" placeholder="XML形式でネームを記述してください。例：
-<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページを記述してください</ページ説明><セリフ>セリフA</セリフ></ページ></シーン></root>">
+<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明><セリフ>セリフA</セリフ></ページ></シーン></root>">
 </textarea>
                     </div>
                 </div>
@@ -785,7 +785,7 @@
 *環境・生い立ち`;
 
                 // 新規作成時のXML初期値に、空のセリフ要素も含むように変更
-                mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページを記述してください</ページ説明></ページ></シーン></root>`; 
+                mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明></ページ></シーン></root>`; 
                 currentFileName = '新規ネーム.txt';
                 currentFileHandle = null;
                 history = [mainEditor.value];
@@ -841,7 +841,7 @@
 *環境・生い立ち`;
 
                     // 初期XML値もセリフが空でもタグがあるように変更
-mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページを記述してください</ページ説明></ページ></シーン></root>`; 
+mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明></ページ></シーン></root>`; 
                     history = [mainEditor.value];
                     historyIndex = 0;
 
@@ -1679,7 +1679,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     
                     const newPageElement = currentXmlDoc.createElement('ページ');
                     const newPageDescElement = currentXmlDoc.createElement('ページ説明');
-                    newPageDescElement.textContent = '新しいページを記述してください';
+                    newPageDescElement.textContent = '新しいページ';
                     newPageElement.appendChild(newPageDescElement);
                     newSceneElement.appendChild(newPageElement);
 
@@ -1698,7 +1698,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 if (sceneElement) {
                     const newPageElement = currentXmlDoc.createElement('ページ');
                     const newPageDescElement = currentXmlDoc.createElement('ページ説明');
-                    newPageDescElement.textContent = '新しいページを記述してください';
+                    newPageDescElement.textContent = '新しいページ';
                     newPageElement.appendChild(newPageDescElement);
 
                     sceneElement.appendChild(newPageElement); 
