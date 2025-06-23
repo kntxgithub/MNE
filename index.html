@@ -722,7 +722,8 @@
             const columns = document.querySelectorAll('.column');
             let touchStartX = 0;
             let touchEndX = 0;
-            let currentTranslateX = 0;
+            // currentTranslateX を touchstart イベント外で宣言し、値が保持されるようにする
+            let currentTranslateX = 0; 
             let isSwiping = false; // スワイプ中かどうかのフラグ
 
             function showColumn(index) {
@@ -730,13 +731,15 @@
                 currentColumnIndex = index;
 
                 if (window.innerWidth <= 768) {
+                    // PC表示ではtranslateXをリセットし、transitionを無効化
                     columnsWrapper.style.transform = `translateX(-${index * 100}vw)`;
                     columnsWrapper.style.transition = 'transform 0.3s ease-out'; // スナップ時のアニメーション
-                    columnsWrapper.style.scrollBehavior = 'auto'; 
+                    // columnsWrapper.style.scrollBehavior = 'auto'; // translateXで制御するため不要
                 } else {
-                    columnsWrapper.style.transform = `translateX(0)`; 
+                    columnsWrapper.style.transform = `translateX(0)`; // PCではtranslateXを0に戻す
                     columnsWrapper.style.transition = 'none'; // PCではスライドアニメーションなし
                     columnsWrapper.style.scrollBehavior = 'smooth'; 
+                    // PC版ではcolumnsWrapperのoverflow-x: autoを活かすためscrollLeftでスクロール
                     columnsWrapper.scrollLeft = columns[index].offsetLeft;
                 }
             }
@@ -1605,38 +1608,39 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     // ドラッグ中はCSSトランジションを一時的に無効にする
                     columnsWrapper.style.transition = 'none'; 
                     // 現在のtranslateX値を正確に取得
-                    currentTranslateX = parseFloat(getComputedStyle(columnsWrapper).transform.replace(/[^0-9\-.,]/g, '') || '0');
-                    if (!isNaN(currentTranslateX)) {
-                        currentTranslateX /= window.innerWidth; // pxからvwに変換して保持
-                    } else {
-                        currentTranslateX = 0;
-                    }
+                    const style = window.getComputedStyle(columnsWrapper);
+                    const matrix = new DOMMatrixReadOnly(style.transform);
+                    currentTranslateX = matrix.m41; // translateXのピクセル値を取得
                 }
             }, { passive: false }); 
 
             columnsWrapper.addEventListener('touchmove', (e) => {
                 // isSwiping が true の場合にのみ transform を更新
                 if (window.innerWidth <= 768 && isSwiping) { 
+                    e.preventDefault(); // デフォルトのスクロール動作を抑制
                     touchEndX = e.touches[0].clientX;
                     const diffPx = touchEndX - touchStartX;
-                    const diffVw = (diffPx / window.innerWidth) * 100; // pxからvwに変換
                     
-                    // ドラッグ量に応じて一時的にtransformを更新
-                    const newTransformVw = currentTranslateX + diffVw; 
+                    // ドラッグ量に応じて一時的にtransformを更新 (ピクセル値で加算)
+                    // columnsWrapper.style.transform = `translateX(${currentTranslateX + diffPx}px)`;
+                    // カラムの幅に合わせてvwで計算し直す
+                    const newTransformVw = ((currentTranslateX + diffPx) / window.innerWidth) * 100;
                     columnsWrapper.style.transform = `translateX(${newTransformVw}vw)`;
                 }
             }, { passive: false });
 
             columnsWrapper.addEventListener('touchend', (e) => { 
                 if (window.innerWidth <= 768 && isSwiping) { // isSwiping が true の場合のみ処理
+                    e.preventDefault(); // デフォルトのスクロール動作を抑制
                     isSwiping = false; // スワイプ終了
-                    const diff = touchEndX - touchStartX;
-                    const swipeThreshold = window.innerWidth * 0.2; // 画面幅の20%をスワイプの閾値とする
+                    const diffPx = touchEndX - touchStartX; // ピクセル単位での差分
+
+                    const swipeThresholdPx = window.innerWidth * 0.2; // 画面幅の20%をスワイプの閾値とする（ピクセル単位）
 
                     let newColumnIndex = currentColumnIndex;
-                    if (diff < -swipeThreshold) { // 左スワイプ（次のカラムへ）
+                    if (diffPx < -swipeThresholdPx) { // 左スワイプ（次のカラムへ）
                         newColumnIndex = Math.min(columns.length - 1, currentColumnIndex + 1);
-                    } else if (diff > swipeThreshold) { // 右スワイプ（前のカラムへ）
+                    } else if (diffPx > swipeThresholdPx) { // 右スワイプ（前のカラムへ）
                         newColumnIndex = Math.max(0, currentColumnIndex - 1);
                     } else {
                         // 閾値に満たない場合、現在のカラムに戻る
