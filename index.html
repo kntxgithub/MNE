@@ -723,6 +723,7 @@
             let touchStartX = 0;
             let touchEndX = 0;
             let currentTranslateX = 0;
+            let isSwiping = false; // スワイプ中かどうかのフラグ
 
             function showColumn(index) {
                 if (index < 0 || index >= columns.length) return;
@@ -1113,7 +1114,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         dialogueContentDiv.innerHTML = errorMessage;
                         return;
                     }
-                } catch (e) {
+                }
+                catch (e) {
                     console.error('Failed to parse XML:', e);
                     const errorMessage = '<p style="color: red;">XMLパースに失敗しました。</p>';
                     sceneContentDiv.innerHTML = errorMessage;
@@ -1594,7 +1596,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             autoResizeAllTextareas(); 
 
             // スワイプ関連の変数 (再宣言と初期化)
-            let isSwiping = false; // スワイプ中かどうかのフラグ
+            // let isSwiping = false; // 上で定義済みなので不要
 
             columnsWrapper.addEventListener('touchstart', (e) => {
                 if (window.innerWidth <= 768) {
@@ -1613,7 +1615,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             }, { passive: false }); 
 
             columnsWrapper.addEventListener('touchmove', (e) => {
-                if (window.innerWidth <= 768 && isSwiping) {
+                // isSwiping が true の場合にのみ transform を更新
+                if (window.innerWidth <= 768 && isSwiping) { 
                     touchEndX = e.touches[0].clientX;
                     const diffPx = touchEndX - touchStartX;
                     const diffVw = (diffPx / window.innerWidth) * 100; // pxからvwに変換
@@ -1625,7 +1628,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             }, { passive: false });
 
             columnsWrapper.addEventListener('touchend', (e) => { 
-                if (window.innerWidth <= 768 && isSwiping) {
+                if (window.innerWidth <= 768 && isSwiping) { // isSwiping が true の場合のみ処理
                     isSwiping = false; // スワイプ終了
                     const diff = touchEndX - touchStartX;
                     const swipeThreshold = window.innerWidth * 0.2; // 画面幅の20%をスワイプの閾値とする
@@ -1644,7 +1647,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     columnsWrapper.style.transition = 'transform 0.3s ease-out';
                     showColumn(newColumnIndex); 
                 }
-            });
+            }, { passive: false }); // touchendにもpassive: false を追加
 
             window.addEventListener('resize', () => {
                 showColumn(currentColumnIndex); 
