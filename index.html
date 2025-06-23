@@ -1794,17 +1794,22 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             columnsWrapper.addEventListener('touchend', (e) => { 
                 if (window.innerWidth <= 768) {
                     const diff = touchEndX - touchStartX;
-                    const swipeThreshold = window.innerWidth * 0.2; 
+                    // スワイプの閾値を画面幅の20%から、よりスムーズな停止のために調整
+                    const swipeThreshold = window.innerWidth * 0.15; // 例: 15%に調整
 
                     let newColumnIndex = currentColumnIndex;
-                    if (diff < -swipeThreshold) { 
+                    if (diff < -swipeThreshold) { // 左方向へのスワイプ
                         newColumnIndex = Math.min(columns.length - 1, currentColumnIndex + 1);
-                    } else if (diff > swipeThreshold) { 
+                    } else if (diff > swipeThreshold) { // 右方向へのスワイプ
                         newColumnIndex = Math.max(0, currentColumnIndex - 1);
+                    } else {
+                        // 閾値以下のスワイプの場合、現在表示中のカラムに留まる
+                        newColumnIndex = currentColumnIndex;
                     }
                     
-                    columnsWrapper.style.transition = 'transform 0.3s ease-out';
-                    showColumn(newColumnIndex); 
+                    // トランジションを適用して、スムーズに新しいカラムに移動
+                    columnsWrapper.style.transition = 'transform 0.3s ease-out'; // ここは既存でも問題ないです
+                    showColumn(newColumnIndex); // 修正後のnewColumnIndexを渡す
                 }
             }, { passive: false }); 
 
