@@ -198,7 +198,7 @@
         }
         
         /* ページとセリフのtextarea */
-        .page-item-container textarea {/*,}.dialogue-content textarea { */
+        .page-item-container textarea{ /*,}.dialogue-content textarea { */
             width: 100%;
             border: 1px solid #ddd;
             padding: 5px;
@@ -303,7 +303,7 @@
         /* シーンの背景色ローテーション用クラス */
         .scene-color-0 { background-color: #e0f7fa; }
         .scene-color-1 { background-color: #f0f4c3; }
-        .scene-color-2 { background-color: #ffe0b2; }
+        .scene-color-2 { background-color: #ffe0b2; } 
         .scene-color-3 { background-color: #e1bee7; }
         .scene-color-4 { background-color: #b3e5fc; }
 
@@ -313,7 +313,7 @@
             border-radius: 5px;
             margin-bottom: 15px;
             padding: 10px;
-            background-color: #FFEDD5;
+            background-color: #fffbf0; /* 薄いオレンジ色 #fffbf0 に変更 */
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             box-sizing: border-box;
             cursor: pointer;
@@ -334,23 +334,17 @@
             word-wrap: break-word;
             font-size: 0.95em;
             line-height: 1.6;
-            border-left: 3px solid #f9ab00;
-            padding: 10px;
-            font-style: italic;
+            font-style:normal; /* 親のitalicを打ち消す */
             color: #333;
-            background-color: #fffbf0;
-            border-radius: 0px;
+            background-color: white; /* 各セリフdivの背景は白に */
+            border-radius: 3px;
             width: 100%;
+            border: 1px solid #ddd;
+            border-left: 3px solid #f9ab00; /* セリフのdivに左ボーダーを適用 */
+            padding: 5px; /* ボーダー分の調整と内容のパディング */
         }
-        /* 個別のセリフtextareaのスタイル調整 */
-        /*.dialogue-content textarea {*/
-            /*padding: 5px;*/
-            /*border: 1px solid #ddd;*/
-            /*border-radius: 3px;*/
-            /*font-style:normal;*/ /* 親のitalicを打ち消す */
-            /*background-color: white;*/
-            /*min-height: 30px;*/ /* セリフtextareaの最小の高さ */
-        /*}*/
+        /* セリフのdiv内のテキストは直接表示されるので、textareaのスタイルは不要 */
+        /* .dialogue-content textarea { ... } は削除 */
 
 
         .scene-item-header, .page-item-header {
@@ -510,7 +504,6 @@
 
             .column {
                 width: 100vw; /* 各カラムの幅をビューポートの幅に */
-                flex-shrink: 0; /* カラムが縮まないように */
                 border-right: none; /* スマホではカラム間の境界線は不要 */
             }
 
@@ -692,8 +685,7 @@
             const exportDialogueBtn = document.getElementById('exportDialogueBtn');
 
             const columnsWrapper = document.getElementById('columnsWrapper');
-            const columns = document.querySelectorAll('.column'); // 各カラム要素を取得
-
+            
             let currentFileName = '新規ネーム.txt';
             let history = [''];
             let historyIndex = 0;
@@ -704,7 +696,7 @@
             let currentFileHandle = null;
 
             const xmlParser = new DOMParser();
-            const xmlSerializer = new XMLSerializer();
+            // const xmlSerializer = new XMLSerializer(); // XMLSerializerは使用しない
 
             let nodeIdCounter = 0; 
 
@@ -720,13 +712,10 @@
 
             // --- カラム表示制御用の変数 ---            
             let currentColumnIndex = 0; // 0:メイン, 1:シーン, 2:ページ, 3:セリフ
-            
-            let initialTouchX = 0;
-            let initialTouchY = 0;
-            let currentTranslateX = 0; 
-            let isSwiping = false; // 横方向スワイプ中かどうかのフラグ
-            let isVerticalScrolling = false; // 縦方向スクロール中かどうかのフラグ
-            const swipeDetectionThreshold = 10; // スワイプと認識する最小移動ピクセル数
+            const columns = document.querySelectorAll('.column');
+            let startX = 0;
+            let currentTranslateX = 0;
+            let isDragging = false;
 
             function showColumn(index) {
                 if (index < 0 || index >= columns.length) return;
@@ -734,15 +723,29 @@
 
                 if (window.innerWidth <= 768) {
                     columnsWrapper.style.transform = `translateX(-${index * 100}vw)`;
-                    columnsWrapper.style.transition = 'transform 0.3s ease-out'; 
+                    columnsWrapper.style.scrollBehavior = 'auto'; 
                 } else {
                     columnsWrapper.style.transform = `translateX(0)`; 
-                    columnsWrapper.style.transition = 'none'; 
                     columnsWrapper.style.scrollBehavior = 'smooth'; 
                     columnsWrapper.scrollLeft = columns[index].offsetLeft;
                 }
             }
 
+            function undo() {
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    mainEditor.value = history[historyIndex];
+                    updateUIImmediate(); // UIを即座に更新
+                }
+            }
+
+            function redo() {
+                if (historyIndex < history.length - 1) {
+                    historyIndex++;
+                    mainEditor.value = history[historyIndex];
+                    updateUIImmediate(); // UIを即座に更新
+                }
+            }
 
             function saveState() {
                 const state = {
@@ -782,7 +785,7 @@
 *環境・生い立ち`;
 
                 // 新規作成時のXML初期値に、空のセリフ要素も含むように変更
-                mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明><セリフ></セリフ></ページ></シーン></root>`;
+                mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明></ページ></シーン></root>`; 
                 currentFileName = '新規ネーム.txt';
                 currentFileHandle = null;
                 history = [mainEditor.value];
@@ -838,7 +841,7 @@
 *環境・生い立ち`;
 
                     // 初期XML値もセリフが空でもタグがあるように変更
-mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明><セリフ></セリフ></ページ></シーン></root>`;
+mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明></ページ></シーン></root>`; 
                     history = [mainEditor.value];
                     historyIndex = 0;
 
@@ -849,7 +852,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
                 showColumn(currentColumnIndex); 
                 updateUIImmediate();
-                autoResizeAllTextareas();
+                // autoResizeAllTextareas(); // これはupdateUIImmediate内でsetTimeoutで呼び出す
             }
 
             function setSectionVisibility(contentDiv, isHidden) {
@@ -874,6 +877,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 updateTimeout = setTimeout(() => {
                     updateUndoRedoButtons();
                     syncColumnsFromMainEditor();
+                    setTimeout(autoResizeAllTextareas, 50); // Small delay
                     saveState();
                     console.log('UI updated and State saved (debounced).');
                 }, DEBOUNCE_DELAY);
@@ -882,6 +886,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             function updateUIImmediate() {
                 updateUndoRedoButtons();
                 syncColumnsFromMainEditor();
+                setTimeout(autoResizeAllTextareas, 50); // Small delay to ensure DOM is rendered before resizing
                 saveState();
                 console.log('UI updated and State saved (immediate).');
             }
@@ -905,22 +910,6 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     historyIndex++;
                 }
                 updateUndoRedoButtons();
-            }
-
-            function undo() {
-                if (historyIndex > 0) {
-                    historyIndex--;
-                    mainEditor.value = history[historyIndex];
-                    updateUIImmediate();
-                }
-            }
-
-            function redo() {
-                if (historyIndex < history.length - 1) {
-                    historyIndex++;
-                    mainEditor.value = history[historyIndex];
-                    updateUIImmediate();
-                }
             }
 
             openBtn.addEventListener('click', async () => {
@@ -959,7 +948,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
             });
 
-            async function saveContentToDisk(handle) {
+            async function saveContentToDisk(handle = null, silent = false) { // silent引数を追加
                 const xmlContent = mainEditor.value;
                 const fullContentToSave = `[アウトライン:]\n${outlineEditor.value}\n\n` +
                                           `[キャラクター:]\n${characterEditor.value}\n\n` +
@@ -967,50 +956,25 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                           `[セリフ一覧(今後廃止):]\n`;
 
                 try {
-                    const writable = await handle.createWritable();
-                    await writable.write(fullContentToSave);
-                    await writable.close();
-                    alert(`ファイルを保存しました: ${currentFileName}`);
-                } catch (err) {
-                    console.error('Error writing to file:', err);
-                    alert('ファイルの書き込み中にエラーが発生しました。');
-                }
-            }
-
-            saveBtn.addEventListener('click', async () => {
-                let handle = currentFileHandle;
-                if (!handle) {
-                    try {
-                        handle = await window.showSaveFilePicker({
-                            types: [{
-                                    description: 'Text Files',
-                                    accept: {
-                                        'text/plain': ['.txt'],
-                                    },
-                                },],
-                            suggestedName: currentFileName
-                        });
-                        currentFileHandle = handle;
-                        currentFileName = handle.name;
-                    } catch (err) {
-                        if (err.name === 'AbortError') {
-                            console.log('Save operation was cancelled.');
-                            return; // Exit if cancelled
-                        } else {
-                            console.error('Error opening file picker for save:', err);
-                            alert('ファイルの保存中にエラーが発生しました。');
-                            return; // Exit on error
+                    if (handle) { // fileHandleが渡された場合（簡易保存）
+                        try {
+                            const writable = await handle.createWritable();
+                            await writable.write(fullContentToSave);
+                            await writable.close();
+                            if (!silent) { // silentがtrueの場合はアラートを出さない
+                                alert(`ファイルを保存しました: ${handle.name}`);
+                            }
+                            currentFileHandle = handle; // 成功したハンドルを現在のハンドルとして保持
+                            currentFileName = handle.name;
+                            return true; // 成功したらtrueを返す
+                        } catch (writeError) {
+                            console.warn('簡易保存に失敗しました。別名保存を試みます:', writeError);
+                            // ファイルが移動されたなどで上書き保存できない場合は、フォールバックで別名保存
                         }
                     }
-                }
-                if (handle) { // Only proceed if a handle is obtained
-                    await saveContentToDisk(handle);
-                }
-            });
 
-            saveAsBtn.addEventListener('click', async () => {
-                try {
-                    const handle = await window.showSaveFilePicker({
+                    // handleがnullの場合、または簡易保存に失敗した場合
+                    const newHandle = await window.showSaveFilePicker({
                         types: [{
                                 description: 'Text Files',
                                 accept: {
@@ -1019,17 +983,52 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             },],
                         suggestedName: currentFileName
                     });
-                    currentFileHandle = handle;
-                    currentFileName = handle.name;
-                    await saveContentToDisk(handle);
+                    const writable = await newHandle.createWritable();
+                    await writable.write(fullContentToSave);
+                    await writable.close();
+                    if (!silent) { // silentがtrueの場合はアラートを出さない
+                        alert(`ファイルを保存しました: ${newHandle.name}`);
+                    }
+                    currentFileHandle = newHandle; // 新しいファイルハンドルを保存
+                    currentFileName = newHandle.name; // 新しいファイル名を保存
+                    return true; // 成功したらtrueを返す
+
                 } catch (err) {
                     if (err.name === 'AbortError') {
-                        console.log('Save As operation was cancelled.');
+                        console.log('Save operation was cancelled.');
                     } else {
-                        console.error('Error opening file picker for save as:', err);
-                        alert('ファイルの別名保存中にエラーが発生しました。');
+                        console.error('Error saving file:', err);
+                        alert('ファイルの保存中にエラーが発生しました。');
                     }
+                    return false; // 失敗したらfalseを返す
                 }
+            }
+
+            saveBtn.addEventListener('click', async () => {
+                if (currentFileHandle) {
+                    // 既にファイルハンドルが存在する場合
+                    const overwriteConfirmed = confirm(`「${currentFileName}」に上書き保存しますか？\n\nキャンセルを選ぶと、名前を変えて保存するか選択できます。`);
+                    if (overwriteConfirmed) {
+                        // はい（上書き）
+                        await saveContentToDisk(currentFileHandle, false); // silentをfalseにしてアラートを出す
+                    } else {
+                        // いいえ（キャンセル） -> 名前を変えて保存するか尋ねる
+                        const saveAsConfirmed = confirm('名前を変えて保存しますか？');
+                        if (saveAsConfirmed) {
+                            // はい（名前を変えて保存）
+                            await saveContentToDisk(null, false); // silentをfalseにしてアラートを出す
+                        }
+                        // いいえ（キャンセル） -> 何もしない
+                    }
+                } else {
+                    // ファイルハンドルがまだ存在しない場合（初回保存）
+                    await saveContentToDisk(null, false); // silentをfalseにしてアラートを出す
+                }
+            });
+
+            saveAsBtn.addEventListener('click', async () => {
+                // 常に別名保存ダイアログを開く
+                await saveContentToDisk(null, false); // silentをfalseにしてアラートを出す
             });
 
             const mainColumn = document.querySelector('.column.main-column');
@@ -1059,7 +1058,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     reader.onload = (event) => {
                         extractAndSetSeparateContents(event.target.result);
                         currentFileName = file.name;
-                        currentFileHandle = null;
+                        currentFileHandle = null; // ドラッグ＆ドロップで開いた場合はハンドルをリセット
                         history = [mainEditor.value];
                         historyIndex = 0;
                         updateUIImmediate();
@@ -1076,16 +1075,55 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                 const outlineMatch = fullText.match(/\[アウトライン:\]\n([\s\S]*?)(?=\n*\[キャラクター:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
                 if (outlineMatch) extracted.outline = outlineMatch[1].trim();
+                else if (fullText.includes('[アウトライン:]')) extracted.outline = ''; // タグはあるが内容がない場合
 
                 const characterMatch = fullText.match(/\[キャラクター:\]\n([\s\S]*?)(?=\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
                 if (characterMatch) extracted.character = characterMatch[1].trim();
+                else if (fullText.includes('[キャラクター:]')) extracted.character = ''; // タグはあるが内容がない場合
 
                 const mainXmlMatch = fullText.match(/\[ネーム本体\(XML\):\]\n([\s\S]*?)(?=\n*\[セリフ一覧\(今後廃止\):\]|$)/);
                 if (mainXmlMatch) extracted.main = mainXmlMatch[1].trim();
+                else if (fullText.includes('[ネーム本体(XML):]')) extracted.main = ''; // タグはあるが内容がない場合
+                
+                // どのセクションタグも見つからなかった場合は、mainEditorに全て入れる
+                if (!outlineMatch && !characterMatch && !mainXmlMatch) {
+                    extracted.main = fullText;
+                }
 
                 outlineEditor.value = extracted.outline;
                 characterEditor.value = extracted.character;
                 mainEditor.value = extracted.main;
+            }
+
+            // カスタムXMLシリアライズ関数
+            function serializeXmlToCompactString(node) {
+                let result = '';
+
+                if (!node) {
+                    return result;
+                }
+
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    result += `<${node.tagName}>`;
+                    for (let child of node.childNodes) {
+                        result += serializeXmlToCompactString(child);
+                    }
+                    result += `</${node.tagName}>`;
+                } else if (node.nodeType === Node.TEXT_NODE) {
+                    // XMLエンティティをエスケープ
+                    result += node.textContent
+                                .replace(/&/g, '&amp;')
+                                .replace(/</g, '&lt;')
+                                .replace(/>/g, '&gt;')
+                                .replace(/"/g, '&quot;')
+                                .replace(/'/g, '&apos;');
+                } else if (node.nodeType === Node.CDATA_SECTION_NODE) {
+                    result += `<![CDATA[${node.textContent}]]>`;
+                } else if (node.nodeType === Node.COMMENT_NODE) {
+                    result += ``;
+                }
+                // 他のノードタイプは無視
+                return result;
             }
 
 
@@ -1114,16 +1152,15 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         sceneContentDiv.innerHTML = errorMessage;
                         pageContentDiv.innerHTML = errorMessage;
                         dialogueContentDiv.innerHTML = errorMessage;
-                        return;
+                        return; // <--- IMPORTANT: Returns here on parse error.
                     }
-                }
-                catch (e) {
+                } catch (e) {
                     console.error('Failed to parse XML:', e);
                     const errorMessage = '<p style="color: red;">XMLパースに失敗しました。</p>';
                     sceneContentDiv.innerHTML = errorMessage;
                     pageContentDiv.innerHTML = errorMessage;
                     dialogueContentDiv.innerHTML = errorMessage;
-                    return;
+                    return; // <--- IMPORTANT: Returns here on parse error.
                 }
 
                 const scenes = currentXmlDoc.querySelectorAll('シーン');
@@ -1165,7 +1202,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageContentDiv.appendChild(p);
                         } 
                         
-                        pagesInScene.forEach((pageElement) => {
+                        pagesInScene.forEach((pageElement, pageIndexInScene) => { // pageIndexInSceneを追加
                             const nodeId = `node-${nodeIdCounter++}`;
                             
                             const pageItemContainer = document.createElement('div');
@@ -1173,6 +1210,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageItemContainer.setAttribute('data-node-id', nodeId); 
                             pageItemContainer.xmlNode = pageElement; // XMLノードをDOM要素に紐付け
                             pageItemContainer.setAttribute('data-parent-scene-id', sceneNodeIdForDom); // 親シーンのDOM IDを保持
+                            pageItemContainer.setAttribute('data-scene-index', sceneIndex); // シーンのインデックス
+                            pageItemContainer.setAttribute('data-page-index-in-scene', pageIndexInScene); // シーン内のページインデックス
                             pageItemContainer.classList.add(sceneColorClass); 
                             pageItemContainer.addEventListener('click', (event) => {
                                 setActiveElement(pageItemContainer, 'page');
@@ -1200,12 +1239,32 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageItemContainer.appendChild(pageHeader);
 
                             const itemTextArea = document.createElement('textarea');
-                            itemTextArea.value = pageElement.querySelector('ページ説明')?.textContent || '';
+                            // <ページ説明>と<セリフ>の内容を結合してtextareaに表示
+                            let combinedText = '';
+                            pageElement.childNodes.forEach(child => {
+                                if (child.nodeType === Node.ELEMENT_NODE) {
+                                    if (child.tagName === 'ページ説明') {
+                                        combinedText += child.textContent;
+                                    } else if (child.tagName === 'セリフ') {
+                                        combinedText += `「${child.textContent}」`;
+                                    }
+                                } else if (child.nodeType === Node.TEXT_NODE && child.textContent.trim().length > 0) {
+                                    // 要素間のテキストノードも考慮（ただし、今回のXML構造ではあまり発生しないはず）
+                                    combinedText += child.textContent;
+                                }
+                            });
+                            itemTextArea.value = combinedText;
+
                             itemTextArea.classList.add('page-text'); 
                             itemTextArea.placeholder = 'ページ内の説明やセリフ';
                             itemTextArea.addEventListener('input', (e) => {
                                 autoResizeTextArea(e.target);
-                                updatePageContentInXml(pageItemContainer.xmlNode, e.target.value);
+                                // updatePageContentInXmlに、DOM要素の参照とテキスト、そしてシーンとページインデックスを渡す
+                                updatePageContentInXml(
+                                    pageItemContainer.getAttribute('data-scene-index'),
+                                    pageItemContainer.getAttribute('data-page-index-in-scene'),
+                                    e.target.value // 入力されたテキスト全体を渡す
+                                );
                             });
                             itemTextArea.addEventListener('change', () => { 
                                 updateUIImmediate(); 
@@ -1242,23 +1301,45 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     p.textContent = `メインエディタの内容からセリフを抽出します。`;
                     dialogueContentDiv.appendChild(p);
                 } else {
-                    scenes.forEach((sceneElement) => { 
+                    scenes.forEach((sceneElement, sceneIndex) => { 
                         const pagesInScene = sceneElement.querySelectorAll('ページ');
                         
-                        pagesInScene.forEach((pageElement) => { 
+                        pagesInScene.forEach((pageElement, pageIndexInScene) => { 
                             const dialoguesInPage = pageElement.querySelectorAll('セリフ');
                             // XMLノードとDOM要素の関連付けのために、pageElementのnodeIdを取得
                             const pageNodeIdForDom = [...pageNodeIdToDomElementMap.keys()].find(key => pageNodeIdToDomElementMap.get(key).xmlNode === pageElement);
 
                             if (dialoguesInPage.length > 0) {
+                                // ページごとのセリフをまとめるためのコンテナ
+                                const serifPageGroupContainer = document.createElement('div');
+                                serifPageGroupContainer.classList.add('serif-page-group-container');
+                                // ページ番号を表示するヘッダーは削除
+                                /*
+                                const pageHeader = document.createElement('p');
+                                pageHeader.style.fontWeight = 'bold';
+                                pageHeader.style.marginBottom = '5px';
+                                pageHeader.style.paddingBottom = '5px';
+                                pageHeader.style.borderBottom = '1px dashed #ccc';
+                                pageHeader.textContent = `シーン${sceneIndex + 1} - ページ${pageIndexInScene + 1}`;
+                                serifPageGroupContainer.appendChild(pageHeader);
+                                */
 
-                                dialoguesInPage.forEach((dialogueElement) => {
+                                dialoguesInPage.forEach((dialogueElement, dialogueIndexInPage) => { 
                                     const nodeId = `node-${nodeIdCounter++}`;
                                     const dialogueContentDivItem = document.createElement('div');
                                     dialogueContentDivItem.classList.add('dialogue-content');
                                     dialogueContentDivItem.setAttribute('data-node-id', nodeId); 
                                     dialogueContentDivItem.xmlNode = dialogueElement; 
                                     dialogueContentDivItem.setAttribute('data-parent-page-id', pageNodeIdForDom); 
+                                    dialogueContentDivItem.setAttribute('data-scene-index', sceneIndex); 
+                                    dialogueContentDivItem.setAttribute('data-page-index-in-scene', pageIndexInScene); 
+                                    dialogueContentDivItem.setAttribute('data-dialogue-index-in-page', dialogueIndexInPage); 
+
+                                    dialogueContentDivItem.textContent = dialogueElement.textContent; // divのtextContentに設定
+                                    dialogueContentDivItem.style.minHeight = '1.6em'; // 最小の高さを確保
+                                    dialogueContentDivItem.style.whiteSpace = 'pre-wrap'; // 改行を反映
+                                    dialogueContentDivItem.style.wordWrap = 'break-word'; // 長い単語の折り返し
+
                                     dialogueContentDivItem.addEventListener('click', (event) => {
                                         setActiveElement(dialogueContentDivItem, 'dialogue');
                                         showColumn(3); 
@@ -1266,30 +1347,16 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                             dialogueContentDivItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                         }
                                     });
-
-                                    const itemTextArea = document.createElement('textarea');
-                                    itemTextArea.value = dialogueElement.textContent; 
-                                    itemTextArea.classList.add('serif-text'); 
-                                    itemTextArea.placeholder = 'セリフを入力';
-                                    itemTextArea.addEventListener('input', (e) => {
-                                        autoResizeTextArea(e.target);
-                                        updateDialogueContentInXml(dialogueContentDivItem.xmlNode, e.target.value);
-                                    });
-                                    itemTextArea.addEventListener('change', () => { 
-                                        updateUIImmediate(); 
-                                    });
-                                    dialogueContentDivItem.appendChild(itemTextArea);
-                                    autoResizeTextArea(itemTextArea); 
                                     
-                                    dialogueContentDiv.appendChild(dialogueContentDivItem); 
+                                    serifPageGroupContainer.appendChild(dialogueContentDivItem); // ページグループに追加
                                     dialogueNodeIdToDomElementMap.set(nodeId, dialogueContentDivItem);
                                 });
+                                dialogueContentDiv.appendChild(serifPageGroupContainer); // セリフカラム全体に追加
                             }
                         });
                     });
                 }
                 highlightActiveElements();
-                autoResizeAllTextareas(); 
             }
 
             function renderSceneColumnContent(container, sceneItems) {
@@ -1307,6 +1374,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     sceneItemContainer.classList.add(`scene-color-${item.sceneIndex % 5}`); 
                     sceneItemContainer.setAttribute('data-node-id', item.nodeId); 
                     sceneItemContainer.xmlNode = item.rawNode; 
+                    sceneItemContainer.setAttribute('data-scene-index', item.sceneIndex); // シーンのインデックスをDOMに保持
                     
                     const header = document.createElement('div');
                     header.classList.add('scene-item-header');
@@ -1332,7 +1400,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     itemTextArea.placeholder = 'シーンの説明';
                     itemTextArea.addEventListener('input', (e) => {
                         autoResizeTextArea(e.target);
-                        updateSceneContentInXml(sceneItemContainer.xmlNode, e.target.value); 
+                        // updateSceneContentInXmlにシーンのインデックスとテキストを渡す
+                        updateSceneContentInXml(sceneItemContainer.getAttribute('data-scene-index'), e.target.value); 
                     });
                     itemTextArea.addEventListener('change', () => { 
                         updateUIImmediate(); 
@@ -1361,7 +1430,36 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 });
             }
 
-            function updateSceneContentInXml(sceneElement, newText) {
+            // XMLツリーを探索して対象のシーン要素を特定するヘルパー関数
+            function getSceneElementByIndex(sceneIndex) {
+                const scenes = currentXmlDoc.querySelectorAll('シーン');
+                return scenes[sceneIndex] || null;
+            }
+
+            // XMLツリーを探索して対象のページ要素を特定するヘルパー関数
+            function getPageElementByIndex(sceneIndex, pageIndexInScene) {
+                const sceneElement = getSceneElementByIndex(sceneIndex);
+                if (sceneElement) {
+                    const pages = sceneElement.querySelectorAll('ページ');
+                    return pages[pageIndexInScene] || null;
+                }
+                return null;
+            }
+
+            // XMLツリーを探索して対象のセリフ要素を特定するヘルパー関数
+            function getDialogueElementByIndex(sceneIndex, pageIndexInScene, dialogueIndexInPage) {
+                const pageElement = getPageElementByIndex(sceneIndex, pageIndexInScene);
+                if (pageElement) {
+                    const dialogues = pageElement.querySelectorAll('セリフ');
+                    return dialogues[dialogueIndexInPage] || null;
+                }
+                return null;
+            }
+
+
+            // シーンの更新関数を修正
+            function updateSceneContentInXml(sceneIndex, newText) {
+                const sceneElement = getSceneElementByIndex(sceneIndex);
                 if (sceneElement) {
                     let sceneDescElement = sceneElement.querySelector('シーン説明');
                     if (!sceneDescElement) {
@@ -1369,39 +1467,75 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         sceneElement.insertBefore(sceneDescElement, sceneElement.firstChild);
                     }
                     sceneDescElement.textContent = newText;
-                    mainEditor.value = xmlSerializer.serializeToString(currentXmlDoc);
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
                     addToHistory(mainEditor.value);
                 }
             }
 
-            function updatePageContentInXml(pageElement, newText) {
+            // ページの更新関数を修正
+            function updatePageContentInXml(sceneIndex, pageIndexInScene, fullPageText) { 
+                const pageElement = getPageElementByIndex(sceneIndex, pageIndexInScene);
                 if (pageElement) {
-                    let pageDescElement = pageElement.querySelector('ページ説明');
-                    if (!pageDescElement) {
-                        pageDescElement = currentXmlDoc.createElement('ページ説明');
-                        // ページの最初のセリフまたは子の直前に挿入
-                        const firstChild = pageElement.firstChild;
-                        if (firstChild) {
-                            pageElement.insertBefore(pageDescElement, firstChild);
-                        } else {
-                            pageElement.appendChild(pageDescElement);
+                    // 既存の<ページ説明>と<セリフ>要素をすべて削除
+                    // これにより、新しい内容で完全に再構築される
+                    pageElement.querySelectorAll('ページ説明, セリフ').forEach(el => pageElement.removeChild(el));
+
+                    // 正規表現で「」で囲まれたセリフを抽出
+                    // 変更点: 改行を含む任意のアウトラインテキストを考慮できるよう「[^」]*」を「([\s\S]*?)」に変更
+                    const dialogueRegex = /「([\s\S]*?)」/g;
+                    let lastIndex = 0;
+                    let contentParts = []; // ページ説明とセリフの順序を保持する配列
+
+                    let match;
+                    while ((match = dialogueRegex.exec(fullPageText)) !== null) {
+                        // セリフの前のテキスト（ページ説明の一部）
+                        if (match.index > lastIndex) {
+                            contentParts.push({ type: 'desc', text: fullPageText.substring(lastIndex, match.index) });
                         }
+
+                        // セリフ本体（「」の中身）
+                        const dialogueText = match[1]; 
+                        contentParts.push({ type: 'dialogue', text: dialogueText });
+
+                        lastIndex = dialogueRegex.lastIndex;
                     }
-                    pageDescElement.textContent = newText;
+
+                    // 残りのテキスト（最後のセリフの後、またはセリフがない場合）
+                    if (lastIndex < fullPageText.length) {
+                        contentParts.push({ type: 'desc', text: fullPageText.substring(lastIndex) });
+                    }
                     
-                    mainEditor.value = xmlSerializer.serializeToString(currentXmlDoc);
+                    // contentPartsに基づいて新しい要素を作成し、pageElementに追加
+                    contentParts.forEach(part => {
+                        if (part.type === 'desc') {
+                            // 空行だけのページ説明は追加しない (trim()後の長さで判断)
+                            // ただし、改行自体は維持するためにtextContentにはそのままセット
+                            if (part.text.trim().length > 0 || part.text.includes('\n')) { 
+                                const newPageDescElement = currentXmlDoc.createElement('ページ説明');
+                                newPageDescElement.textContent = part.text; 
+                                pageElement.appendChild(newPageDescElement); 
+                            }
+                        } else if (part.type === 'dialogue') {
+                            const newDialogueElement = currentXmlDoc.createElement('セリフ');
+                            newDialogueElement.textContent = part.text;
+                            pageElement.appendChild(newDialogueElement);
+                        }
+                    });
+
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
                     addToHistory(mainEditor.value);
                 }
             }
 
-            function updateDialogueContentInXml(dialogueElement, newText) {
-                if (dialogueElement) {
-                    // セリフ要素のテキストコンテンツを更新
-                    dialogueElement.textContent = newText; 
-                    mainEditor.value = xmlSerializer.serializeToString(currentXmlDoc);
-                    addToHistory(mainEditor.value);
-                }
+
+            // セリフの更新関数はdivになったので、メインエディタ側からは変更しない
+            // よって、この関数は削除するか、空にする
+            function updateDialogueContentInXml(sceneIndex, pageIndexInScene, dialogueIndexInPage, newText) {
+                // セリフカラムは編集不可なので、この関数は呼び出されません
+                // もし将来的に編集可能にする場合は、ここでXMLを更新する処理を記述します
+                console.log("Dialogue content updated (セリフカラムは編集不可です):", newText);
             }
+
 
             function deleteScene(sceneElement) { 
                 if (!confirm('このシーンを削除してもよろしいですか？（このシーン内のページとセリフも全て削除されます）')) {
@@ -1409,7 +1543,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
                 if (sceneElement && sceneElement.parentNode) {
                     sceneElement.parentNode.removeChild(sceneElement);
-                    mainEditor.value = xmlSerializer.serializeToString(currentXmlDoc);
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
                     addToHistory(mainEditor.value);
                     updateUIImmediate(); 
                 }
@@ -1421,7 +1555,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
                 if (pageElement && pageElement.parentNode) {
                     pageElement.parentNode.removeChild(pageElement);
-                    mainEditor.value = xmlSerializer.serializeToString(currentXmlDoc);
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
                     addToHistory(mainEditor.value);
                     updateUIImmediate();
                 }
@@ -1494,6 +1628,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             }
 
             function autoResizeAllTextareas() {
+                // セリフはtextareaではないので、textareaのみを対象とする
                 document.querySelectorAll('textarea').forEach(autoResizeTextArea);
             }
 
@@ -1546,15 +1681,11 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     const newPageDescElement = currentXmlDoc.createElement('ページ説明');
                     newPageDescElement.textContent = '新しいページ';
                     newPageElement.appendChild(newPageDescElement);
-
-                    const newDialogueElement = currentXmlDoc.createElement('セリフ');
-                    newDialogueElement.textContent = ''; // 新規セリフは空で開始
-                    newPageElement.appendChild(newDialogueElement);
                     newSceneElement.appendChild(newPageElement);
 
                     rootElement.appendChild(newSceneElement);
                     
-                    mainEditor.value = xmlSerializer.serializeToString(currentXmlDoc);
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
                     addToHistory(mainEditor.value);
                     updateUIImmediate(); 
                     mainEditor.focus();
@@ -1570,13 +1701,9 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     newPageDescElement.textContent = '新しいページ';
                     newPageElement.appendChild(newPageDescElement);
 
-                    const newDialogueElement = currentXmlDoc.createElement('セリフ');
-                    newDialogueElement.textContent = ''; // 新規セリフは空で開始
-                    newPageElement.appendChild(newDialogueElement);
-
                     sceneElement.appendChild(newPageElement); 
 
-                    mainEditor.value = xmlSerializer.serializeToString(currentXmlDoc);
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
                     addToHistory(mainEditor.value);
                     updateUIImmediate(); 
                     mainEditor.focus();
@@ -1594,98 +1721,99 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 });
             });
 
-            loadState();
-            autoResizeAllTextareas(); 
+            // セリフのエクスポート機能
+            exportDialogueBtn.addEventListener('click', async () => {
+                let allDialogues = '';
+                // dialogueContentDiv内の全ての.dialogue-content要素からテキストを収集
+                const dialogueElements = dialogueContentDiv.querySelectorAll('.dialogue-content');
+                if (dialogueElements.length === 0) {
+                    alert('エクスポートするセリフがありません。');
+                    return;
+                }
 
-            // 各カラムにタッチイベントリスナーを設定
-            columns.forEach((column, index) => {
-                const columnContent = column.querySelector('.column-content');
+                dialogueElements.forEach(dialogueEl => {
+                    allDialogues += dialogueEl.textContent + '\n\n'; // セリフの後に改行を2つ追加
+                });
+                // 最後のセリフの後の不要な空白行を削除（もしあれば）
+                allDialogues = allDialogues.trimEnd();
 
-                column.addEventListener('touchstart', (e) => {
-                    if (window.innerWidth <= 768) {
-                        initialTouchX = e.touches[0].clientX;
-                        initialTouchY = e.touches[0].clientY;
-                        isSwiping = false; // 横スワイプのフラグをリセット
-                        isVerticalScrolling = false; // 縦スクロールのフラグをリセット
+                // ファイル名に日付を含める
+                const date = new Date();
+                const dateString = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}_${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}${date.getSeconds().toString().padStart(2, '0')}`;
+                const suggestedFileName = `セリフ_${dateString}.txt`;
 
-                        // ドラッグ中はCSSトランジションを一時的に無効にする
-                        columnsWrapper.style.transition = 'none'; 
-                        // 現在のtranslateX値を正確に取得
-                        const style = window.getComputedStyle(columnsWrapper);
-                        const matrix = new DOMMatrixReadOnly(style.transform);
-                        currentTranslateX = matrix.m41; // translateXのピクセル値を取得
+                try {
+                    const fileHandle = await window.showSaveFilePicker({
+                        types: [{
+                                description: 'Text Files',
+                                accept: {
+                                    'text/plain': ['.txt'],
+                                },
+                            },],
+                        suggestedName: suggestedFileName
+                    });
+
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(allDialogues);
+                    await writable.close();
+                    alert(`セリフをエクスポートしました: ${suggestedFileName}`);
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        console.log('Dialogue export was cancelled.');
+                    } else {
+                        console.error('Error exporting dialogues:', err);
+                        alert('セリフのエクスポート中にエラーが発生しました。');
                     }
-                }, { passive: false }); 
-
-                column.addEventListener('touchmove', (e) => {
-                    if (window.innerWidth <= 768) {
-                        const touchCurrentX = e.touches[0].clientX;
-                        const touchCurrentY = e.touches[0].clientY;
-                        const diffX = touchCurrentX - initialTouchX;
-                        const diffY = touchCurrentY - initialTouchY;
-
-                        if (!isSwiping && !isVerticalScrolling) {
-                            // どちらの方向の動きかまだ確定していない場合
-                            if (Math.abs(diffX) > swipeDetectionThreshold || Math.abs(diffY) > swipeDetectionThreshold) {
-                                if (Math.abs(diffX) > Math.abs(diffY)) {
-                                    // 横方向の動きが閾値を超えたら横スワイプと判定
-                                    isSwiping = true;
-                                    isVerticalScrolling = false;
-                                } else {
-                                    // 縦方向の動きが閾値を超えたら縦スクロールと判定
-                                    isVerticalScrolling = true;
-                                    isSwiping = false;
-                                }
-                            }
-                        }
-
-                        if (isSwiping) {
-                            e.preventDefault(); // 横スワイプの場合はデフォルトのスクロール動作を抑制
-                            const newTransformPx = currentTranslateX + diffX;
-                            const newTransformVw = (newTransformPx / window.innerWidth) * 100;
-                            columnsWrapper.style.transform = `translateX(${newTransformVw}vw)`;
-                        } else if (isVerticalScrolling) {
-                            // 縦スクロールの場合はpreventDefault()を呼ばず、ブラウザのスクロールに任せる
-                        }
-                    }
-                }, { passive: false });
-
-                column.addEventListener('touchend', (e) => { 
-                    if (window.innerWidth <= 768 && isSwiping) { // 横スワイプの場合のみ処理
-                        e.preventDefault(); // デフォルトのスクロール動作を抑制
-                        
-                        const touchFinalX = e.changedTouches[0].clientX; // 最後の指の位置
-                        const diffPx = touchFinalX - initialTouchX; 
-                        const swipeThresholdPx = window.innerWidth * 0.2; 
-
-                        let newColumnIndex = currentColumnIndex;
-                        if (diffPx < -swipeThresholdPx) { // 左スワイプ（次のカラムへ）
-                            newColumnIndex = Math.min(columns.length - 1, currentColumnIndex + 1);
-                        } else if (diffPx > swipeThresholdPx) { // 右スワイプ（前のカラムへ）
-                            newColumnIndex = Math.max(0, currentColumnIndex - 1);
-                        } else {
-                            // 閾値に満たない場合、現在のカラムに戻る
-                            newColumnIndex = currentColumnIndex;
-                        }
-                        
-                        // 決定されたカラムに「カチッと」スナップさせるためにtransitionを再有効化し、showColumnを呼び出す
-                        columnsWrapper.style.transition = 'transform 0.3s ease-out';
-                        showColumn(newColumnIndex); 
-
-                    }
-                    // touchendでは必ずフラグをリセット
-                    isSwiping = false; 
-                    isVerticalScrolling = false;
-                }, { passive: false }); 
+                }
             });
 
+
+            loadState();
+            // autoResizeAllTextareas(); // これはupdateUIImmediate内でsetTimeoutで呼び出す
+
+            let touchStartX = 0;
+            let touchEndX = 0;
+
+            columnsWrapper.addEventListener('touchstart', (e) => {
+                if (window.innerWidth <= 768) {
+                    touchStartX = e.touches[0].clientX;
+                    columnsWrapper.style.transition = 'none'; 
+                    currentTranslateX = parseFloat(columnsWrapper.style.transform.replace('translateX(', '').replace('vw)', '') || '0');
+                }
+            }, { passive: false }); 
+
+            columnsWrapper.addEventListener('touchmove', (e) => {
+                if (window.innerWidth <= 768) {
+                    touchEndX = e.touches[0].clientX;
+                    const diff = touchEndX - touchStartX;
+                    const newTransform = currentTranslateX + (diff / window.innerWidth) * 100; 
+                    columnsWrapper.style.transform = `translateX(${newTransform}vw)`;
+                }
+            }, { passive: false });
+
+            columnsWrapper.addEventListener('touchend', (e) => { 
+                if (window.innerWidth <= 768) {
+                    const diff = touchEndX - touchStartX;
+                    const swipeThreshold = window.innerWidth * 0.2; 
+
+                    let newColumnIndex = currentColumnIndex;
+                    if (diff < -swipeThreshold) { 
+                        newColumnIndex = Math.min(columns.length - 1, currentColumnIndex + 1);
+                    } else if (diff > swipeThreshold) { 
+                        newColumnIndex = Math.max(0, currentColumnIndex - 1);
+                    }
+                    
+                    columnsWrapper.style.transition = 'transform 0.3s ease-out';
+                    showColumn(newColumnIndex); 
+                }
+            }, { passive: false }); 
 
             window.addEventListener('resize', () => {
                 showColumn(currentColumnIndex); 
                 autoResizeAllTextareas(); 
             });
 
-            showColumn(currentColumnIndex); // 初期表示
+            showColumn(currentColumnIndex);
         });
     </script>
 </body>
