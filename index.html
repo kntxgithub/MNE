@@ -495,7 +495,7 @@
             .columns-wrapper {
                 width: 400vw; /* 4カラム分の幅 */
                 transform: translateX(0vw); /* 初期表示はJSで設定 */
-                transition: transform 0.3s ease-in-out; /* スライドアニメーション */
+                transition: none; /* ここを none に変更 */
                 padding-top: 0; /* グローバルヘッダーを削除したので0 */
                 padding-bottom: 0; /* フッターナビを削除したので0 */
                 box-sizing: border-box;
@@ -726,6 +726,8 @@
                 if (window.innerWidth <= 768) {
                     columnsWrapper.style.transform = `translateX(-${index * 100}vw)`;
                     columnsWrapper.style.scrollBehavior = 'auto'; 
+                    // ここでの transition 設定は不要になります。
+                    // columnsWrapper.style.transition = 'none'; // 即時切り替え
                 } else {
                     columnsWrapper.style.transform = `translateX(0)`; 
                     columnsWrapper.style.scrollBehavior = 'smooth'; 
@@ -1779,34 +1781,15 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             columnsWrapper.addEventListener('touchstart', (e) => {
                 if (window.innerWidth <= 768) {
                     touchStartX = e.touches[0].clientX; // スワイプ判定用に初期X座標を記録
-                    // `currentTranslateX` を vw ではなく px で取得。
-                    // `transform: translateX(-${index * 100}vw)` の現在のpx値を正確に取得するため。
-                    currentTranslateX = columnsWrapper.getBoundingClientRect().left - columnsWrapper.parentNode.getBoundingClientRect().left;
                     isDragging = true;
-                    columnsWrapper.style.transition = 'none'; // ドラッグ中はトランジションを無効にする
+                    columnsWrapper.style.transition = 'none'; // ドラッグ中はトランジションを無効にする (念のため)
                 }
             }, { passive: false }); // passive: false を指定して preventDefault を許可
 
             columnsWrapper.addEventListener('touchmove', (e) => {
                 if (window.innerWidth <= 768 && isDragging) {
-                    const currentX = e.touches[0].clientX;
-                    const diffX = currentX - touchStartX; // touchStartXからの相対的な移動量
-                    
-                    let newTransformPx = currentTranslateX + diffX;
-                    
-                    // 境界線チェック (引きずり効果はそのまま維持)
-                    const columnWidthPx = columns[0].offsetWidth; // 100vwに相当するpx値
-                    const minTransformPx = -(columns.length - 1) * columnWidthPx;
-                    const maxTransformPx = 0;
-
-                    if (newTransformPx > maxTransformPx) {
-                        newTransformPx = maxTransformPx + (newTransformPx - maxTransformPx) * 0.2; 
-                    } else if (newTransformPx < minTransformPx) {
-                        newTransformPx = minTransformPx + (newTransformPx - minTransformPx) * 0.2; 
-                    }
-                    
-                    columnsWrapper.style.transform = `translateX(${newTransformPx}px)`;
-                    e.preventDefault(); // スクロールを防ぐ
+                    // ここでカラムを動かす処理を削除 (すぐに切り替えるため)
+                    // e.preventDefault(); // スクロールを防ぐ (必要な場合のみ)
                 }
             }, { passive: false });
 
@@ -1829,8 +1812,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         newColumnIndex = currentColumnIndex;
                     }
                     
-                    // トランジションを適用して、スムーズに新しいカラムに移動
-                    columnsWrapper.style.transition = 'transform 0.3s ease-out'; 
+                    columnsWrapper.style.transition = 'none'; // アニメーションを完全に無効化
                     showColumn(newColumnIndex); // showColumn関数はvwで設定するので、ここでスナップ先を決定する
                 }
             }, { passive: false });
