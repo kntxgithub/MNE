@@ -968,19 +968,20 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             currentFileName = handle.name;
                             return true; // 成功したらtrueを返す
                         } catch (writeError) {
-                            console.warn('簡易保存に失敗しました。別名保存を試みます:', writeError);
-                            // ファイルが移動されたなどで上書き保存できない場合は、フォールバックで別名保存
+                            console.warn('簡易保存に失敗しました。別名保存を試みます:', writeError); // ファイルが移動されたなどで上書き保存できない場合は、フォールバックで別名保存
                         }
                     }
 
                     // handleがnullの場合、または簡易保存に失敗した場合
                     const newHandle = await window.showSaveFilePicker({
-                        types: [{
+                        types: [
+                            {
                                 description: 'Text Files',
                                 accept: {
                                     'text/plain': ['.txt'],
                                 },
-                            },],
+                            },
+                        ],
                         suggestedName: currentFileName
                     });
                     const writable = await newHandle.createWritable();
@@ -992,7 +993,6 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     currentFileHandle = newHandle; // 新しいファイルハンドルを保存
                     currentFileName = newHandle.name; // 新しいファイル名を保存
                     return true; // 成功したらtrueを返す
-
                 } catch (err) {
                     if (err.name === 'AbortError') {
                         console.log('Save operation was cancelled.');
@@ -1005,23 +1005,18 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             }
 
             saveBtn.addEventListener('click', async () => {
-                if (currentFileHandle) {
-                    // 既にファイルハンドルが存在する場合
+                if (currentFileHandle) { // 既にファイルハンドルが存在する場合
                     const overwriteConfirmed = confirm(`「${currentFileName}」に上書き保存しますか？\n\nキャンセルを選ぶと、名前を変えて保存するか選択できます。`);
-                    if (overwriteConfirmed) {
-                        // はい（上書き）
+                    if (overwriteConfirmed) { // はい（上書き）
                         await saveContentToDisk(currentFileHandle, false); // silentをfalseにしてアラートを出す
-                    } else {
-                        // いいえ（キャンセル） -> 名前を変えて保存するか尋ねる
+                    } else { // いいえ（キャンセル） -> 名前を変えて保存するか尋ねる
                         const saveAsConfirmed = confirm('名前を変えて保存しますか？');
-                        if (saveAsConfirmed) {
-                            // はい（名前を変えて保存）
+                        if (saveAsConfirmed) { // はい（名前を変えて保存）
                             await saveContentToDisk(null, false); // silentをfalseにしてアラートを出す
                         }
                         // いいえ（キャンセル） -> 何もしない
                     }
-                } else {
-                    // ファイルハンドルがまだ存在しない場合（初回保存）
+                } else { // ファイルハンドルがまだ存在しない場合（初回保存）
                     await saveContentToDisk(null, false); // silentをfalseにしてアラートを出す
                 }
             });
@@ -1204,7 +1199,6 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         
                         pagesInScene.forEach((pageElement, pageIndexInScene) => { // pageIndexInSceneを追加
                             const nodeId = `node-${nodeIdCounter++}`;
-                            
                             const pageItemContainer = document.createElement('div');
                             pageItemContainer.classList.add('page-item-container');
                             pageItemContainer.setAttribute('data-node-id', nodeId); 
@@ -1213,11 +1207,21 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageItemContainer.setAttribute('data-scene-index', sceneIndex); // シーンのインデックス
                             pageItemContainer.setAttribute('data-page-index-in-scene', pageIndexInScene); // シーン内のページインデックス
                             pageItemContainer.classList.add(sceneColorClass); 
-                            pageItemContainer.addEventListener('click', (event) => {
-                                setActiveElement(pageItemContainer, 'page');
-                                showColumn(2); 
-                                if (window.innerWidth > 768) { 
-                                    pageItemContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            
+                            // ページアイテムをクリックしたときの処理
+                            pageItemContainer.addEventListener('click', (e) => {
+                                const clickedPageItem = e.target.closest('.page-item');
+                                if (clickedPageItem) {
+                                    const pageIndex = parseInt(clickedPageItem.dataset.pageIndex);
+                                    const sceneIndex = parseInt(clickedPageItem.dataset.sceneIndex);
+
+                                    highlightScene(sceneIndex);
+
+                                    // スマートフォン画面の場合のみ、シーンカラムへの自動移動を抑制
+                                    if (window.innerWidth > 768) { // PC画面の場合
+                                        showColumn(1); // シーンカラムはインデックス1
+                                    }
+                                    // else (スマートフォン画面の場合): showColumn(1) を呼び出さない
                                 }
                             });
 
