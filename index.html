@@ -1208,11 +1208,20 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageItemContainer.setAttribute('data-page-index-in-scene', pageIndexInScene); // シーン内のページインデックス
                             pageItemContainer.classList.add(sceneColorClass); 
                             
-                            pageItemContainer.addEventListener('click', (event) => {
-                                setActiveElement(pageItemContainer, 'page');
-                                showColumn(2); 
-                                if (window.innerWidth > 768) { 
-                                    pageItemContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            // ページアイテムをクリックしたときの処理
+                            pageItemContainer.addEventListener('click', (e) => {
+                                const clickedPageItem = e.target.closest('.page-item');
+                                if (clickedPageItem) {
+                                    const pageIndex = parseInt(clickedPageItem.dataset.pageIndex);
+                                    const sceneIndex = parseInt(clickedPageItem.dataset.sceneIndex);
+
+                                    highlightScene(sceneIndex);
+
+                                    // スマートフォン画面の場合のみ、シーンカラムへの自動移動を抑制
+                                    if (window.innerWidth > 768) { // PC画面の場合
+                                        showColumn(1); // シーンカラムはインデックス1
+                                    }
+                                    // else (スマートフォン画面の場合): showColumn(1) を呼び出さない
                                 }
                             });
 
@@ -1406,17 +1415,24 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                     sceneItemContainer.addEventListener('click', () => {
                         setActiveElement(sceneItemContainer, 'scene');
-                        const firstPageElement = sceneNodeIdToFirstPageDomElementMap.get(item.nodeId); 
-                        if (firstPageElement) {
-                            setActiveElement(firstPageElement, 'page');
-                            showColumn(2); 
-                            if (window.innerWidth > 768) { 
-                                setTimeout(() => {
-                                    firstPageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                }, 300); 
+                        // showColumn(1); // シーンカラムへの自動移動を削除
+
+                        // 対応するXMLノードをメインエディタで強調表示
+                        const mainEditorText = mainEditor.value;
+                        const startIndex = mainEditorText.indexOf(`<シーン><シーン説明>${sceneData.text}</シーン説明>`);
+                        if (startIndex !== -1) {
+                            // mainEditor.focus();
+                            // mainEditor.setSelectionRange(startIndex, startIndex + `<シーン><シーン説明>${sceneData.text}</シーン説明>`.length);
+                            // TODO: XML全体から該当シーンの範囲を特定し、スクロール・選択する
+                        }
+
+                        // 対応する最初のページアイテムにスクロール
+                        const firstPageInScene = sceneData.rawNode.querySelector('ページ');
+                        if (firstPageInScene) {
+                            const firstPageDomElement = sceneNodeIdToFirstPageDomElementMap.get(sceneData.nodeId);
+                            if (firstPageDomElement && window.innerWidth > 768) {
+                                firstPageDomElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                             }
-                        } else {
-                            showColumn(2);
                         }
                     });
                     
