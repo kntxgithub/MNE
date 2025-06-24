@@ -714,7 +714,7 @@
             let currentColumnIndex = 0; // 0:メイン, 1:シーン, 2:ページ, 3:セリフ
             const columns = document.querySelectorAll('.column');
             let startX = 0; // touchstart時のX座標
-            let currentTranslateX = 0; // columnsWrapperの現在のtranslateX値
+            let currentTranslateX = 0; // columnsWrapperの現在のtranslateX値 (px値)
             let isDragging = false;
             let touchStartX = 0; // スワイプ判定用
             let touchEndX = 0;   // スワイプ判定用
@@ -1215,7 +1215,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageItemContainer.addEventListener('click', (event) => {
                                 setActiveElement(pageItemContainer, 'page');
                                 // showColumn(2); // ページカラムはインデックス2 - ページクリック時に移動しないように修正済み
-
+                                
                                 // PC画面の場合のみ、シーンカラムへ移動
                                 if (window.innerWidth > 768) {
                                     const clickedPageItem = event.target.closest('.page-item-container');
@@ -1779,6 +1779,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             columnsWrapper.addEventListener('touchstart', (e) => {
                 if (window.innerWidth <= 768) {
                     touchStartX = e.touches[0].clientX; // スワイプ判定用に初期X座標を記録
+                    // `currentTranslateX` を vw ではなく px で取得。
+                    // `transform: translateX(-${index * 100}vw)` の現在のpx値を正確に取得するため。
                     currentTranslateX = columnsWrapper.getBoundingClientRect().left - columnsWrapper.parentNode.getBoundingClientRect().left;
                     isDragging = true;
                     columnsWrapper.style.transition = 'none'; // ドラッグ中はトランジションを無効にする
@@ -1790,21 +1792,20 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     const currentX = e.touches[0].clientX;
                     const diffX = currentX - touchStartX; // touchStartXからの相対的な移動量
                     
-                    // 新しいtransform値を計算
-                    let newTransform = currentTranslateX + diffX;
+                    let newTransformPx = currentTranslateX + diffX;
                     
                     // 境界線チェック (引きずり効果はそのまま維持)
-                    const columnWidth = columns[0].offsetWidth; // 100vwに相当
-                    const minTransform = -(columns.length - 1) * columnWidth;
-                    const maxTransform = 0;
+                    const columnWidthPx = columns[0].offsetWidth; // 100vwに相当するpx値
+                    const minTransformPx = -(columns.length - 1) * columnWidthPx;
+                    const maxTransformPx = 0;
 
-                    if (newTransform > maxTransform) {
-                        newTransform = maxTransform + (newTransform - maxTransform) * 0.2; 
-                    } else if (newTransform < minTransform) {
-                        newTransform = minTransform + (newTransform - minTransform) * 0.2; 
+                    if (newTransformPx > maxTransformPx) {
+                        newTransformPx = maxTransformPx + (newTransformPx - maxTransformPx) * 0.2; 
+                    } else if (newTransformPx < minTransformPx) {
+                        newTransformPx = minTransformPx + (newTransformPx - minTransformPx) * 0.2; 
                     }
-
-                    columnsWrapper.style.transform = `translateX(${newTransform}px)`;
+                    
+                    columnsWrapper.style.transform = `translateX(${newTransformPx}px)`;
                     e.preventDefault(); // スクロールを防ぐ
                 }
             }, { passive: false });
@@ -1813,15 +1814,15 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 if (window.innerWidth <= 768) {
                     isDragging = false;
                     touchEndX = e.changedTouches[0].clientX; // touchend時のX座標を記録
-                    const diff = touchEndX - touchStartX; // スワイプ距離
+                    const diff = touchEndX - touchStartX; // スワイプ距離 (px)
 
-                    // スワイプの閾値を画面幅の約15%に設定 (Tree Script Editor.htmlの感覚を参考に調整)
-                    const swipeThreshold = window.innerWidth * 0.15; 
+                    // スワイプの閾値を画面幅の約15%に設定
+                    const swipeThresholdPx = window.innerWidth * 0.15; 
 
                     let newColumnIndex = currentColumnIndex;
-                    if (diff < -swipeThreshold) { // 左方向へのスワイプ (次のカラムへ)
+                    if (diff < -swipeThresholdPx) { // 左方向へのスワイプ (次のカラムへ)
                         newColumnIndex = Math.min(columns.length - 1, currentColumnIndex + 1);
-                    } else if (diff > swipeThreshold) { // 右方向へのスワイプ (前のカラムへ)
+                    } else if (diff > swipeThresholdPx) { // 右方向へのスワイプ (前のカラムへ)
                         newColumnIndex = Math.max(0, currentColumnIndex - 1);
                     } else {
                         // 閾値以下のスワイプの場合、現在表示中のカラムに留まる
@@ -1830,7 +1831,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     
                     // トランジションを適用して、スムーズに新しいカラムに移動
                     columnsWrapper.style.transition = 'transform 0.3s ease-out'; 
-                    showColumn(newColumnIndex); // 修正後のnewColumnIndexを渡す
+                    showColumn(newColumnIndex); // showColumn関数はvwで設定するので、ここでスナップ先を決定する
                 }
             }, { passive: false });
 
