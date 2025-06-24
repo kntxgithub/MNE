@@ -1,4 +1,1452 @@
-function loadState() {
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>漫画ネームエディタ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh; /* ビューポートの高さに合わせる */
+            display: flex;
+            flex-direction: column;
+            background-color: #e0e0e0;
+            overflow: hidden; /* 全体スクロールは禁止 (カラムスライドのため) */
+        }
+
+        /* PC版のデフォルトスタイル（4カラム表示） */
+        .columns-wrapper { /* カラム全体を包むラッパー */
+            flex-grow: 1;
+            display: flex;
+            width: 100%; /* PCでは100%幅 */
+            padding-top: 0;
+            padding-bottom: 0;
+            box-sizing: border-box;
+            overflow-x: auto; /* PCでは横スクロールを許可 */
+            transition: none; /* PCではスライドアニメーションなし */
+        }
+
+        .column {
+            flex-shrink: 0; /* カラムが縮まないように */
+            width: 25%; /* PCでは4分割 */
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .column:last-child {
+            border-right: none;
+        }
+
+        .column-header {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0; /* ヘッダーが縮まないように */
+        }
+
+        .column-header .controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .column-header button, .section-header button {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+            cursor: pointer;
+            font-size: 0.8em;
+            white-space: nowrap; /* ボタン内のテキストを折り返さない */
+        }
+
+        .column-header button:hover, .section-header button:hover {
+            background-color: #e0e0e0;
+        }
+
+        .column-content {
+            flex-grow: 1;
+            overflow-y: auto; /* カラム内部のスクロール */
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            width: calc(100% - 20px); /* 左右のpadding分を引く */
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical; /* 縦方向のみリサイズ可能 */
+            min-height: 50px;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap; /* 改行とスペースを維持 */
+            word-wrap: break-word; /* 長い単語を折り返す */
+            line-height: 1.5;
+            box-sizing: border-box; /* paddingとborderをwidthに含める */
+            background-color: #fff;
+        }
+
+        /* Section Container Styles */
+        .section-container {
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            overflow: hidden; /* toggleで隠れた部分を隠すため */
+        }
+
+        .section-header {
+            background-color: #f9f9f9;
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer; /* ヘッダー全体をカーソルで示唆 */
+        }
+
+        .section-header .title {
+            flex-grow: 1;
+        }
+
+        .section-content {
+            padding: 10px;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            max-height: 500px; /* 初期表示の最大高さ */
+            opacity: 1;
+            box-sizing: border-box;
+        }
+
+        .section-content.hidden {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+        }
+
+        /* File input hidden */
+        #fileInput {
+            display: none;
+        }
+
+        /* Scene Item Styles */
+        .scene-item-container, .page-item-container {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            position: relative; /* バッジの位置決めのため */
+        }
+
+        .scene-item-container.active, .page-item-container.active, .dialogue-content.active {
+            border-color: #007bff;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.4);
+        }
+
+        .scene-item-container .scene-header, .page-item-container .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .scene-item-container .scene-header .title-badge,
+        .page-item-container .page-header .title-badge {
+            background-color: #6c757d;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+
+        .scene-item-container .delete-btn, .page-item-container .delete-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 0;
+            margin-left: 10px;
+        }
+
+        .scene-item-container textarea, .page-item-container textarea {
+            width: 100%; /* 親要素のpaddingを考慮して調整 */
+            margin-bottom: 0; /* 親要素のパディングに任せる */
+            resize: none; /* 自動リサイズのため手動リサイズは禁止 */
+        }
+
+        /* シーンアイテムの背景色 */
+        .scene-item-container.scene-color-0 { background-color: #e6f7ff; } /* Light Blue */
+        .scene-item-container.scene-color-1 { background-color: #fff2e6; } /* Light Orange */
+        .scene-item-container.scene-color-2 { background-color: #e9ffe6; } /* Light Green */
+        .scene-item-container.scene-color-3 { background-color: #f7e6ff; } /* Light Purple */
+        .scene-item-container.scene-color-4 { background-color: #fffbe6; } /* Light Yellow */
+
+        /* ページアイテムの追加ボタン */
+        .add-page-to-scene-btn-wrapper {
+            text-align: center;
+            margin-top: -5px; /* 上のページアイテムとの間隔を詰める */
+            margin-bottom: 10px; /* 次の要素との間隔 */
+        }
+
+        .add-page-to-scene-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s;
+        }
+
+        .add-page-to-scene-btn:hover {
+            background-color: #218838;
+        }
+
+        /* Dialogue Column Specific Styles */
+        .serif-page-group-container {
+            background-color: #f0f0f0;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+
+        .serif-page-group-container .page-title-in-serif {
+            font-weight: bold;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        .dialogue-content {
+            background-color: #fff;
+            padding: 8px;
+            margin-bottom: 5px;
+            border: 1px solid #eee;
+            border-radius: 3px;
+            font-size: 0.9em;
+            line-height: 1.4;
+            white-space: pre-wrap; /* 改行とスペースを維持 */
+            word-wrap: break-word; /* 長い単語を折り返す */
+            cursor: pointer; /* クリックでハイライトするため */
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .dialogue-content:last-child {
+            margin-bottom: 0;
+        }
+
+
+        /* ===================================================================== */
+        /* スマートフォン用スタイル */
+        /* ===================================================================== */
+        @media (max-width: 768px) {
+            body {
+                /* フッターナビの高さに合わせてbodyのpaddingを調整 */
+                padding-bottom: 60px; /* フッターの高さ + 余白 */
+            }
+
+            .columns-wrapper {
+                width: 400vw; /* 4カラムが横に並ぶように */
+                overflow-x: hidden; /* スワイプはJSで制御するため、ブラウザのスクロールバーは非表示 */
+                scroll-behavior: smooth; /* スムーズなスクロール（JSで制御されるが念のため） */
+                transition: transform 0.3s ease-out; /* スライドアニメーション */
+            }
+
+            .column {
+                width: 100vw; /* 各カラムが画面幅いっぱいに */
+                border-right: none; /* スマホではカラム間の境界線を非表示 */
+            }
+
+            .column-header {
+                flex-direction: column; /* ヘッダー要素を縦に並べる */
+                align-items: flex-start; /* 左寄せ */
+                padding: 8px;
+            }
+
+            .column-header h2 {
+                margin-bottom: 5px; /* タイトルとボタンの間に少しスペース */
+            }
+
+            .column-header .controls {
+                width: 100%; /* ボタン群を横幅いっぱいに広げる */
+                justify-content: space-around; /* ボタンを均等に配置 */
+                flex-wrap: wrap; /* ボタンが多い場合は折り返す */
+                gap: 8px; /* ボタン間の隙間 */
+            }
+
+            .column-header button {
+                flex-grow: 1; /* ボタンの幅を均等に広げる */
+                min-width: 80px; /* ボタンの最小幅 */
+                font-size: 0.9em;
+                padding: 8px 5px; /* パディングを調整 */
+            }
+
+            .column-content {
+                padding: 8px; /* カラム内容のパディングを調整 */
+            }
+
+            .section-header {
+                padding: 6px 8px;
+            }
+
+            .section-content {
+                padding: 8px;
+            }
+
+            textarea {
+                width: calc(100% - 16px); /* 左右のpadding分を引く */
+                padding: 6px;
+                font-size: 0.9em;
+            }
+
+            /* スマホ用フッターナビゲーション */
+            #footer-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 55px; /* ナビゲーションの高さ */
+                background-color: #333;
+                justify-content: space-around;
+                align-items: center;
+                box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+                z-index: 1000; /* 他の要素の上に表示 */
+            }
+
+            #footer-nav button {
+                background-color: transparent;
+                border: none;
+                color: #f4f4f4;
+                font-size: 0.8em;
+                padding: 5px 0;
+                flex-grow: 1;
+                text-align: center;
+                cursor: pointer;
+                outline: none;
+                transition: background-color 0.2s, color 0.2s;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #footer-nav button:hover {
+                background-color: #555;
+            }
+
+            #footer-nav button.active {
+                color: #007bff; /* アクティブなボタンの色 */
+                font-weight: bold;
+            }
+            
+            #footer-nav button.active .nav-icon {
+                color: #007bff;
+            }
+
+            .nav-icon {
+                font-size: 1.5em; /* アイコンのサイズ */
+                margin-bottom: 2px;
+                /* 例としてFont Awesomeのアイコンを想定していますが、
+                   ここではテキストで表現します */
+            }
+            
+            /* 行番号付きテキストエリアのスマホ調整 */
+            .numbered-textarea-wrapper {
+                display: flex;
+                position: relative;
+                width: 100%;
+            }
+
+            .line-numbers {
+                background-color: #f0f0f0;
+                color: #888;
+                padding: 8px 5px; /* スマホ向けに調整 */
+                font-size: 0.8em; /* スマホ向けに調整 */
+                text-align: right;
+                border-right: 1px solid #ccc;
+                user-select: none;
+                flex-shrink: 0; /* 縮まないように */
+                line-height: 1.5; /* textareaと合わせる */
+                min-width: 30px; /* 最小幅を設定 */
+            }
+
+            .main-textarea {
+                flex-grow: 1;
+                width: calc(100% - 40px); /* line-numbersの幅を考慮 */
+                padding-left: 8px; /* 行番号との隙間 */
+            }
+
+            @media (max-width: 480px) {
+                textarea {
+                    font-size: 0.85em; /* さらに小さい画面向けに調整 */
+                }
+                .line-numbers {
+                    font-size: 0.75em;
+                    min-width: 25px;
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="columns-wrapper">
+        <div class="column" id="main-column">
+            <div class="column-header">
+                <h2>メイン</h2>
+                <div class="controls">
+                    <button id="newBtn">新規</button>
+                    <input type="file" id="fileInput" accept=".txt">
+                    <button id="openBtn">開く</button>
+                    <button id="saveBtn">保存</button>
+                    <button id="saveAsBtn">別名保存</button>
+                    <button id="undoBtn">戻る</button>
+                    <button id="redoBtn">進む</button>
+                </div>
+            </div>
+            <div class="column-content" id="main-column-content">
+                <div class="section-container" id="outline-section">
+                    <div class="section-header">
+                        <span class="title">アウトライン</span>
+                        <button class="toggle-btn">▲</button>
+                    </div>
+                    <div class="section-content">
+                        <textarea id="outlineEditor" placeholder="ここにアウトラインを記述してください。"></textarea>
+                    </div>
+                </div>
+
+                <div class="section-container" id="character-section">
+                    <div class="section-header">
+                        <span class="title">キャラクター</span>
+                        <div class="controls">
+                            <button id="addCharBtn">追加</button>
+                            <button class="toggle-btn">▲</button>
+                        </div>
+                    </div>
+                    <div class="section-content">
+                        <textarea id="characterEditor" placeholder="ここにキャラクター設定を記述してください。"></textarea>
+                    </div>
+                </div>
+
+                <div class="section-container" id="main-xml-section">
+                    <div class="section-header">
+                        <span class="title">ネーム本体 (XML)</span>
+                        <button class="toggle-btn">▲</button>
+                    </div>
+                    <div class="section-content">
+                        <div class="numbered-textarea-wrapper">
+                            <div class="line-numbers" id="lineNumbers"></div>
+                            <textarea id="mainEditor" class="main-textarea" placeholder="ここにネームをXML形式で記述してください。
+例:
+<root>
+    <シーン シーン名='学校生活'>
+        <シーン説明>主人公が学校で日常を過ごす様子</シーン説明>
+        <ページ ページ番号='1'>
+            <ページ説明>朝、登校中の主人公</ページ説明>
+            <セリフ キャラ='主人公'>「今日もいい天気だな！」</セリフ>
+            <セリフ キャラ='ナレーション'>（新しい一日の始まりだ）</セリフ>
+        </ページ>
+        <ページ ページ番号='2'>
+            <ページ説明>授業中の様子</ページ説明>
+            <セリフ キャラ='先生'>「次の問題、わかる人？」</セリフ>
+            <セリフ キャラ='主人公'>「はいっ！」</セリフ>
+        </ページ>
+    </シーン>
+    <シーン シーン名='放課後の出会い'>
+        <シーン説明>偶然の出会いから物語が始まる</シーン説明>
+        <ページ ページ番号='3'>
+            <ページ説明>下校中に謎の少女と遭遇</ページ説明>
+            <セリフ キャラ='謎の少女'>「ねぇ、あなた...」</セリフ>
+            <セリフ キャラ='主人公'>「え、誰？」</セリフ>
+        </ページ>
+    </シーン>
+</root>"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="column" id="scene-column">
+            <div class="column-header">
+                <h2>シーン</h2>
+                <div class="controls">
+                    <button id="addSceneBtn">シーン追加</button>
+                </div>
+            </div>
+            <div class="column-content" id="scene-list">
+                </div>
+        </div>
+
+        <div class="column" id="page-column">
+            <div class="column-header">
+                <h2>ページ</h2>
+                <div class="controls">
+                    </div>
+            </div>
+            <div class="column-content" id="page-list">
+                </div>
+        </div>
+
+        <div class="column" id="serif-column">
+            <div class="column-header">
+                <h2>セリフ</h2>
+                <div class="controls">
+                    <button id="exportDialogueBtn">エクスポート</button>
+                </div>
+            </div>
+            <div class="column-content" id="dialogue-list">
+                </div>
+        </div>
+    </div>
+
+    <footer id="footer-nav">
+        <button id="nav-main">
+            <span class="nav-icon">📖</span>
+            <span>メイン</span>
+        </button>
+        <button id="nav-scene">
+            <span class="nav-icon">🎞️</span>
+            <span>シーン</span>
+        </button>
+        <button id="nav-page">
+            <span class="nav-icon">📄</span>
+            <span>ページ</span>
+        </button>
+        <button id="nav-serif">
+            <span class="nav-icon">💬</span>
+            <span>セリフ</span>
+        </button>
+    </footer>
+
+
+    <script>
+        const columnsWrapper = document.querySelector('.columns-wrapper');
+        const columns = document.querySelectorAll('.column');
+        const mainEditor = document.getElementById('mainEditor');
+        const outlineEditor = document.getElementById('outlineEditor');
+        const characterEditor = document.getElementById('characterEditor');
+        const lineNumbers = document.getElementById('lineNumbers');
+        const sceneList = document.getElementById('scene-list');
+        const pageList = document.getElementById('page-list');
+        const dialogueList = document.getElementById('dialogue-list');
+
+        const newBtn = document.getElementById('newBtn');
+        const openBtn = document.getElementById('openBtn');
+        const fileInput = document.getElementById('fileInput');
+        const saveBtn = document.getElementById('saveBtn');
+        const saveAsBtn = document.getElementById('saveAsBtn');
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
+        const addSceneBtn = document.getElementById('addSceneBtn');
+        const exportDialogueBtn = document.getElementById('exportDialogueBtn');
+
+        // セクションのトグルボタン
+        document.querySelectorAll('.section-header .toggle-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation(); // 親要素のクリックイベントが発火しないように
+                const sectionContent = e.target.closest('.section-container').querySelector('.section-content');
+                sectionContent.classList.toggle('hidden');
+                e.target.textContent = sectionContent.classList.contains('hidden') ? '▼' : '▲';
+            });
+        });
+
+        // ==========================================================
+        // グローバル変数
+        // ==========================================================
+        let currentColumnIndex = 0; // 現在表示中のカラムのインデックス
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let fileHandle = null; // File System Access APIで開いたファイルのハンドルを保持
+        let undoRedoHistory = [];
+        let historyPointer = -1;
+        const HISTORY_LIMIT = 50; // 履歴の最大数
+
+        // ==========================================================
+        // 初期化処理
+        // ==========================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            updateLineNumbers();
+            autoResizeAllTextareas();
+            syncColumnsFromMainEditor(); // 初期ロード時にUIを同期
+
+            // モバイルの場合はフッターナビボタンを初期状態に設定
+            if (window.innerWidth <= 768) {
+                updateFooterNavActiveButton(currentColumnIndex);
+            }
+        });
+
+        // ==========================================================
+        // カラム表示制御
+        // ==========================================================
+        function showColumn(index) {
+            if (index < 0 || index >= columns.length) return;
+
+            currentColumnIndex = index;
+            // PCの場合は通常の表示、スマホの場合はスライド
+            if (window.innerWidth > 768) {
+                columnsWrapper.style.transform = `translateX(0)`; // PCではスライドさせない
+                columns.forEach((col, i) => {
+                    col.style.display = 'flex'; // 全てのカラムを表示
+                });
+            } else {
+                columnsWrapper.style.transform = `translateX(-${index * 100}vw)`;
+                // スワイプによるスムーズな移動のため、transitionはCSSで管理
+                // columnsWrapper.style.transition = 'transform 0.3s ease-out';
+            }
+            updateFooterNavActiveButton(index); // フッターナビのアクティブ状態を更新
+            saveState(); // カラムの表示状態を保存
+        }
+
+        // ==========================================================
+        // テキストエリア関連
+        // ==========================================================
+        function updateLineNumbers() {
+            const lines = mainEditor.value.split('\n');
+            lineNumbers.innerHTML = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
+
+            // 行番号の高さとテキストエリアの高さを同期
+            // textareaのscrollHeightに基づいてlineNumbersの高さを調整
+            lineNumbers.style.height = `${mainEditor.scrollHeight}px`;
+        }
+
+        function autoResizeTextarea(textarea) {
+            textarea.style.height = 'auto'; // 一度高さをリセット
+            textarea.style.height = textarea.scrollHeight + 'px'; // スクロール領域に合わせて高さを設定
+        }
+
+        function autoResizeAllTextareas() {
+            document.querySelectorAll('textarea').forEach(textarea => {
+                autoResizeTextarea(textarea);
+            });
+        }
+
+        mainEditor.addEventListener('input', () => {
+            updateLineNumbers();
+            debouncedUpdateUI(); // デバウンスされたUI更新
+            addHistory(); // 履歴に追加
+        });
+
+        // アウトライン、キャラクターエディタの変更もデバウンス更新に含める
+        outlineEditor.addEventListener('input', () => {
+            autoResizeTextarea(outlineEditor);
+            debouncedUpdateUI();
+            addHistory(); // 履歴に追加
+        });
+        characterEditor.addEventListener('input', () => {
+            autoResizeTextarea(characterEditor);
+            debouncedUpdateUI();
+            addHistory(); // 履歴に追加
+        });
+
+
+        // ==========================================================
+        // XML解析とUI同期
+        // ==========================================================
+        function parseXml(xmlString) {
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+
+                if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
+                    console.error("XML Parse Error:", xmlDoc.getElementsByTagName("parsererror")[0].textContent);
+                    // エラーメッセージをユーザーに表示するなどの処理を追加
+                    return null;
+                }
+                return xmlDoc;
+            } catch (e) {
+                console.error("XML Parsing failed:", e);
+                return null;
+            }
+        }
+
+        let updateUITimer;
+        function debouncedUpdateUI() {
+            clearTimeout(updateUITimer);
+            updateUITimer = setTimeout(() => {
+                syncColumnsFromMainEditor();
+                autoResizeAllTextareas();
+            }, 500); // 500msのデバウンス
+        }
+
+        function syncColumnsFromMainEditor() {
+            const xmlString = mainEditor.value.trim(); // 空白をトリム
+            if (!xmlString) { // XML文字列が空の場合
+                console.warn("Main editor is empty. Clearing columns.");
+                sceneList.innerHTML = '';
+                pageList.innerHTML = '';
+                dialogueList.innerHTML = '';
+                return; // 処理を中断
+            }
+
+            const xmlDoc = parseXml(xmlString);
+
+            if (!xmlDoc) {
+                // エラー時はクリア
+                sceneList.innerHTML = '';
+                pageList.innerHTML = '';
+                dialogueList.innerHTML = '';
+                return;
+            }
+
+            // シーンの更新
+            updateSceneColumn(xmlDoc);
+
+            // ページの更新
+            updatePageColumn(xmlDoc);
+
+            // セリフの更新
+            updateDialogueColumn(xmlDoc);
+
+            // 全てのテキストエリアのサイズを調整
+            autoResizeAllTextareas();
+        }
+
+        function updateSceneColumn(xmlDoc) {
+            sceneList.innerHTML = '';
+            const scenes = xmlDoc.querySelectorAll('シーン');
+            scenes.forEach((sceneElement, sceneIndex) => {
+                const sceneName = sceneElement.getAttribute('シーン名') || `シーン${sceneIndex + 1}`;
+                const sceneDesc = sceneElement.querySelector('シーン説明')?.textContent || '';
+
+                const sceneItem = document.createElement('div');
+                sceneItem.className = `scene-item-container scene-color-${sceneIndex % 5}`;
+                sceneItem.dataset.sceneIndex = sceneIndex; // インデックスを保持
+
+                sceneItem.innerHTML = `
+                    <div class="scene-header">
+                        <span class="title-badge">${sceneName}</span>
+                        <button class="delete-btn" data-type="scene">&times;</button>
+                    </div>
+                    <textarea class="scene-desc-textarea" placeholder="シーン説明">${sceneDesc}</textarea>
+                `;
+                sceneList.appendChild(sceneItem);
+
+                // イベントリスナーの追加
+                sceneItem.querySelector('.scene-desc-textarea').addEventListener('input', (e) => {
+                    const editorXmlDoc = parseXml(mainEditor.value);
+                    if (editorXmlDoc) {
+                        const targetScene = editorXmlDoc.querySelectorAll('シーン')[sceneIndex];
+                        if (targetScene) {
+                            let descElement = targetScene.querySelector('シーン説明');
+                            if (!descElement) {
+                                descElement = editorXmlDoc.createElement('シーン説明');
+                                targetScene.prepend(descElement); // シーン名の直後に挿入
+                            }
+                            descElement.textContent = e.target.value;
+                            mainEditor.value = new XMLSerializer().serializeToString(editorXmlDoc);
+                            updateLineNumbers();
+                            autoResizeTextarea(e.target);
+                            addHistory();
+                        }
+                    }
+                });
+
+                sceneItem.querySelector('.delete-btn').addEventListener('click', (e) => {
+                    if (confirm(`「${sceneName}」シーンを削除しますか？`)) {
+                        const editorXmlDoc = parseXml(mainEditor.value);
+                        if (editorXmlDoc) {
+                            const targetScene = editorXmlDoc.querySelectorAll('シーン')[sceneIndex];
+                            if (targetScene) {
+                                targetScene.parentNode.removeChild(targetScene);
+                                mainEditor.value = new XMLSerializer().serializeToString(editorXmlDoc);
+                                updateLineNumbers();
+                                debouncedUpdateUI(); // UI全体を再同期
+                                addHistory();
+                            }
+                        }
+                    }
+                });
+
+                // シーンアイテムクリックでXML内の該当シーンをハイライト
+                sceneItem.addEventListener('click', (e) => {
+                    highlightElementInEditor(sceneElement);
+                });
+            });
+        }
+
+        function updatePageColumn(xmlDoc) {
+            pageList.innerHTML = '';
+            const pages = xmlDoc.querySelectorAll('ページ');
+            pages.forEach((pageElement, pageIndex) => {
+                const pageNumber = pageElement.getAttribute('ページ番号') || `ページ${pageIndex + 1}`;
+                const pageDesc = pageElement.querySelector('ページ説明')?.textContent || '';
+                const dialogues = Array.from(pageElement.querySelectorAll('セリフ')).map(s => s.textContent).join('\n');
+
+                const pageItem = document.createElement('div');
+                pageItem.className = 'page-item-container';
+                pageItem.dataset.pageIndex = pageIndex; // インデックスを保持
+
+                // シーン名を取得し、ページに表示
+                const parentScene = pageElement.closest('シーン');
+                const sceneName = parentScene ? parentScene.getAttribute('シーン名') : '不明なシーン';
+
+                pageItem.innerHTML = `
+                    <div class="page-header">
+                        <span class="title-badge">${sceneName} - ${pageNumber}</span>
+                        <button class="delete-btn" data-type="page">&times;</button>
+                    </div>
+                    <textarea class="page-content-textarea" placeholder="ページ説明とセリフ">${pageDesc}\n${dialogues}</textarea>
+                `;
+                pageList.appendChild(pageItem);
+
+                // イベントリスナーの追加
+                pageItem.querySelector('.page-content-textarea').addEventListener('input', (e) => {
+                    const editorXmlDoc = parseXml(mainEditor.value);
+                    if (editorXmlDoc) {
+                        const targetPage = editorXmlDoc.querySelectorAll('ページ')[pageIndex];
+                        if (targetPage) {
+                            // テキストエリアの内容を「ページ説明」と「セリフ」に分割してXMLを更新
+                            const lines = e.target.value.split('\n');
+                            let currentDesc = '';
+                            let currentDialogues = [];
+
+                            // ページ説明は最初の空行まで、またはセリフ要素までと仮定
+                            let isDescription = true;
+                            lines.forEach(line => {
+                                if (line.trim() === '' && isDescription) {
+                                    isDescription = false; // 最初の空行でページ説明は終了
+                                } else if (isDescription) {
+                                    currentDesc += line + '\n';
+                                } else {
+                                    currentDialogues.push(line);
+                                }
+                            });
+                            // 最後の改行を削除
+                            currentDesc = currentDesc.trim();
+
+                            let descElement = targetPage.querySelector('ページ説明');
+                            if (!descElement) {
+                                descElement = editorXmlDoc.createElement('ページ説明');
+                                targetPage.prepend(descElement);
+                            }
+                            descElement.textContent = currentDesc;
+
+                            // 既存のセリフをすべて削除
+                            targetPage.querySelectorAll('セリフ').forEach(s => s.parentNode.removeChild(s));
+
+                            // 新しいセリフを追加
+                            currentDialogues.forEach(dialogueText => {
+                                if (dialogueText.trim() !== '') {
+                                    const serifElement = editorXmlDoc.createElement('セリフ');
+                                    serifElement.textContent = dialogueText.trim();
+                                    targetPage.appendChild(serifElement);
+                                }
+                            });
+
+                            mainEditor.value = new XMLSerializer().serializeToString(editorXmlDoc);
+                            updateLineNumbers();
+                            autoResizeTextarea(e.target);
+                            addHistory();
+                        }
+                    }
+                });
+
+                pageItem.querySelector('.delete-btn').addEventListener('click', (e) => {
+                    if (confirm(`「${pageNumber}」ページを削除しますか？`)) {
+                        const editorXmlDoc = parseXml(mainEditor.value);
+                        if (editorXmlDoc) {
+                            const targetPage = editorXmlDoc.querySelectorAll('ページ')[pageIndex];
+                            if (targetPage) {
+                                targetPage.parentNode.removeChild(targetPage);
+                                mainEditor.value = new XMLSerializer().serializeToString(editorXmlDoc);
+                                updateLineNumbers();
+                                debouncedUpdateUI(); // UI全体を再同期
+                                addHistory();
+                            }
+                        }
+                    }
+                });
+
+                // ページアイテムクリックでXML内の該当ページをハイライト
+                pageItem.addEventListener('click', (e) => {
+                    highlightElementInEditor(pageElement);
+                });
+            });
+        }
+
+
+        function updateDialogueColumn(xmlDoc) {
+            dialogueList.innerHTML = '';
+            const scenes = xmlDoc.querySelectorAll('シーン');
+
+            scenes.forEach(sceneElement => {
+                const sceneName = sceneElement.getAttribute('シーン名') || '無題のシーン';
+                const pagesInScene = sceneElement.querySelectorAll('ページ');
+
+                pagesInScene.forEach(pageElement => {
+                    const pageNumber = pageElement.getAttribute('ページ番号') || '無題のページ';
+                    const dialogues = pageElement.querySelectorAll('セリフ');
+
+                    if (dialogues.length > 0) {
+                        const pageGroup = document.createElement('div');
+                        pageGroup.className = 'serif-page-group-container';
+                        pageGroup.innerHTML = `<div class="page-title-in-serif">${sceneName} - ${pageNumber}</div>`;
+
+                        dialogues.forEach((dialogueElement, dialogueIndex) => {
+                            const character = dialogueElement.getAttribute('キャラ') || '不明';
+                            const dialogueText = dialogueElement.textContent;
+
+                            const dialogueDiv = document.createElement('div');
+                            dialogueDiv.className = 'dialogue-content';
+                            dialogueDiv.innerHTML = `<strong>${character}:</strong> ${dialogueText}`;
+                            pageGroup.appendChild(dialogueDiv);
+
+                            // セリフアイテムクリックでXML内の該当セリフをハイライト
+                            dialogueDiv.addEventListener('click', (e) => {
+                                highlightElementInEditor(dialogueElement);
+                            });
+                        });
+                        dialogueList.appendChild(pageGroup);
+                    }
+                });
+            });
+        }
+
+        function highlightElementInEditor(xmlElement) {
+            const xmlString = mainEditor.value;
+            const lines = xmlString.split('\n');
+            let startIndex = -1;
+            let endIndex = -1;
+
+            // シリアライザで元のXML要素の文字列表現を取得
+            const serializer = new XMLSerializer();
+            const elementString = serializer.serializeToString(xmlElement);
+            const startTag = `<${xmlElement.tagName}`;
+            const endTag = `</${xmlElement.tagName}>`;
+
+            let accumulatedLength = 0;
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const lineLength = line.length + 1; // +1 for newline character
+
+                // 開始タグの検索
+                if (startIndex === -1 && line.includes(startTag)) {
+                    const tagIndexInLine = line.indexOf(startTag);
+                    if (elementString.startsWith(line.substring(tagIndexInLine))) {
+                        startIndex = accumulatedLength + tagIndexInLine;
+                    }
+                }
+
+                // 終了タグの検索
+                if (startIndex !== -1 && endIndex === -1 && line.includes(endTag)) {
+                    // ここで、現在の行がhighlightしたい要素の終了タグを含んでいるかを確認
+                    // シンプルな要素の場合 (例: <セリフ>テキスト</セリフ>)、開始行と終了行が同じ場合がある
+                    // その場合は、開始位置からelementStringの長さで範囲を決める
+                    if (elementString.includes(line)) { // elementStringが現在の行に含まれている
+                        endIndex = startIndex + elementString.length;
+                    } else { // 複数行にまたがる場合
+                        const tagIndexInLine = line.indexOf(endTag);
+                        // 終了タグの直後までを選択範囲に含める
+                        endIndex = accumulatedLength + tagIndexInLine + endTag.length;
+                    }
+                }
+                
+                // 開始タグと終了タグが同じ行にある単一行要素の場合の対応
+                if (startIndex !== -1 && endIndex === -1 && elementString.includes(line) && !line.includes(endTag) && elementString.indexOf(line) === 0) {
+                     endIndex = startIndex + elementString.length;
+                }
+
+
+                // 検索済みの場合はループを抜ける
+                if (startIndex !== -1 && endIndex !== -1) {
+                    break;
+                }
+
+                accumulatedLength += lineLength;
+            }
+
+            if (startIndex !== -1 && endIndex !== -1) {
+                mainEditor.focus();
+                mainEditor.setSelectionRange(startIndex, endIndex);
+
+                // スクロールして表示範囲に入れる
+                const startLine = xmlString.substring(0, startIndex).split('\n').length - 1;
+                const endLine = xmlString.substring(0, endIndex).split('\n').length - 1;
+                
+                const lineHeight = parseFloat(getComputedStyle(mainEditor).lineHeight) || 18; // CSSから行の高さを取得、またはデフォルト値
+                const editorHeight = mainEditor.clientHeight;
+                
+                const scrollTargetTop = startLine * lineHeight;
+                const scrollTargetBottom = (endLine + 1) * lineHeight;
+
+                if (scrollTargetTop < mainEditor.scrollTop || scrollTargetBottom > mainEditor.scrollTop + editorHeight) {
+                    // 要素全体が見えるようにスクロール位置を調整
+                    mainEditor.scrollTop = scrollTargetTop - (editorHeight / 4); // 少し上に余白を持たせる
+                }
+            } else {
+                console.warn("Could not find element in editor:", xmlElement.tagName, xmlElement.outerHTML);
+            }
+
+            // UI上のハイライトを更新
+            document.querySelectorAll('.scene-item-container, .page-item-container, .dialogue-content').forEach(el => el.classList.remove('active'));
+            
+            // XML要素のパスを辿ってUI要素をハイライト
+            let currentXmlEl = xmlElement;
+            while(currentXmlEl && currentXmlEl.tagName !== 'root') {
+                if (currentXmlEl.tagName === 'セリフ') {
+                    const parentPage = currentXmlEl.closest('ページ');
+                    const parentScene = currentXmlEl.closest('シーン');
+                    if (parentPage && parentScene) {
+                        const pageNumber = parentPage.getAttribute('ページ番号');
+                        const sceneName = parentScene.getAttribute('シーン名');
+                        // セリフの親であるページグループを探す
+                        const targetPageGroup = Array.from(dialogueList.querySelectorAll('.serif-page-group-container')).find(group => {
+                            return group.querySelector('.page-title-in-serif').textContent.includes(sceneName) &&
+                                   group.querySelector('.page-title-in-serif').textContent.includes(pageNumber);
+                        });
+                        if (targetPageGroup) {
+                            const dialogueContents = Array.from(targetPageGroup.querySelectorAll('.dialogue-content'));
+                            // XML要素のテキスト内容で一致するものを探す（完全一致ではない可能性あり）
+                            const targetDialogueDiv = dialogueContents.find(div => div.textContent.includes(currentXmlEl.textContent));
+                            if (targetDialogueDiv) {
+                                targetDialogueDiv.classList.add('active');
+                                // スクロールして表示
+                                targetDialogueDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            }
+                        }
+                    }
+                } else if (currentXmlEl.tagName === 'ページ') {
+                    const targetPageItem = Array.from(pageList.querySelectorAll('.page-item-container')).find(item => 
+                        item.dataset.pageIndex == Array.from(xmlElement.ownerDocument.querySelectorAll('ページ')).indexOf(currentXmlEl)
+                    );
+                    if (targetPageItem) {
+                        targetPageItem.classList.add('active');
+                        targetPageItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                } else if (currentXmlEl.tagName === 'シーン') {
+                    const targetSceneItem = Array.from(sceneList.querySelectorAll('.scene-item-container')).find(item => 
+                        item.dataset.sceneIndex == Array.from(xmlElement.ownerDocument.querySelectorAll('シーン')).indexOf(currentXmlEl)
+                    );
+                    if (targetSceneItem) {
+                        targetSceneItem.classList.add('active');
+                        targetSceneItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }
+                currentXmlEl = currentXmlEl.parentElement;
+            }
+        }
+
+
+        // ==========================================================
+        // ファイル操作 (新規、開く、保存、別名保存)
+        // ==========================================================
+        newBtn.addEventListener('click', () => {
+            if (confirm('現在の内容を破棄して、新しいファイルを作成しますか？')) {
+                mainEditor.value = `
+<root>
+    <シーン シーン名='新しいシーン'>
+        <シーン説明>ここにシーンの説明を記述します</シーン説明>
+        <ページ ページ番号='1'>
+            <ページ説明>ここに新しいページの説明を記述します</ページ説明>
+            <セリフ キャラ='キャラ名'>「セリフ」</セリフ>
+        </ページ>
+    </シーン>
+</root>`.trim();
+                outlineEditor.value = '';
+                characterEditor.value = '';
+                fileHandle = null;
+                undoRedoHistory = [];
+                historyPointer = -1;
+                addHistory(); // 初期状態を履歴に追加
+                debouncedUpdateUI();
+                alert('新しいファイルを作成しました。');
+            }
+        });
+
+        openBtn.addEventListener('click', () => {
+            fileInput.click(); // 隠れたファイル入力要素をクリック
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                // File System Access APIでハンドルを取得 (Chromeなど)
+                if ('showOpenFilePicker' in window) {
+                    const [handle] = await window.showOpenFilePicker({
+                        types: [{
+                            description: 'Text Files',
+                            accept: { 'text/plain': ['.txt'] },
+                        }],
+                        multiple: false
+                    });
+                    fileHandle = handle;
+                    const fileContents = await fileHandle.getFile();
+                    const text = await fileContents.text();
+                    loadContentFromFile(text);
+                } else { // Fallback for browsers without File System Access API
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        loadContentFromFile(event.target.result);
+                    };
+                    reader.readAsText(file);
+                }
+            } catch (error) {
+                console.error('ファイルの読み込み中にエラーが発生しました:', error);
+                alert('ファイルの読み込みに失敗しました。');
+            }
+        });
+
+        function loadContentFromFile(text) {
+            // 各セクションの開始タグと終了タグを定義
+            const outlineTag = '[アウトライン:]';
+            const charTag = '[キャラクター:]';
+            const xmlTag = '[ネーム本体(XML):]';
+            // 各セクションの内容を抽出
+            let outlineContent = '';
+            let characterContent = '';
+            let xmlContent = '';
+
+            const lines = text.split('\n');
+            let currentSection = '';
+
+            lines.forEach(line => {
+                if (line.startsWith(outlineTag)) {
+                    currentSection = 'outline';
+                } else if (line.startsWith(charTag)) {
+                    currentSection = 'character';
+                } else if (line.startsWith(xmlTag)) {
+                    currentSection = 'xml';
+                } else {
+                    if (currentSection === 'outline') {
+                        outlineContent += line + '\n';
+                    } else if (currentSection === 'character') {
+                        characterContent += line + '\n';
+                    } else if (currentSection === 'xml') {
+                        xmlContent += line + '\n';
+                    }
+                }
+            });
+
+            outlineEditor.value = outlineContent.trim();
+            characterEditor.value = characterContent.trim();
+            mainEditor.value = xmlContent.trim();
+
+            undoRedoHistory = [];
+            historyPointer = -1;
+            addHistory(); // 新しい内容を履歴に追加
+            debouncedUpdateUI();
+            alert('ファイルを読み込みました。');
+        }
+
+        saveBtn.addEventListener('click', async () => {
+            if (fileHandle) {
+                try {
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(generateFileContent());
+                    await writable.close();
+                    alert('ファイルを保存しました。');
+                } catch (error) {
+                    console.error('ファイルの保存中にエラーが発生しました:', error);
+                    alert('ファイルの保存に失敗しました。');
+                    fileHandle = null; // エラー発生時はハンドルをクリアして「別名保存」を促す
+                }
+            } else {
+                saveAsBtn.click(); // ファイルハンドルがない場合は「別名保存」を実行
+            }
+        });
+
+        saveAsBtn.addEventListener('click', async () => {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    types: [{
+                        description: 'Text Files',
+                        accept: { 'text/plain': ['.txt'] },
+                    }],
+                    suggestedName: 'untitled.txt'
+                });
+                const writable = await handle.createWritable();
+                await writable.write(generateFileContent());
+                await writable.close();
+                fileHandle = handle; // 新しいファイルハンドルを保存
+                alert('ファイルを別名で保存しました。');
+            } catch (error) {
+                console.error('ファイルの保存中にエラーが発生しました:', error);
+                alert('ファイルの保存に失敗しました。');
+            }
+        });
+
+        function generateFileContent() {
+            let content = '';
+            if (outlineEditor.value.trim()) {
+                content += '[アウトライン:]\n' + outlineEditor.value.trim() + '\n\n';
+            }
+            if (characterEditor.value.trim()) {
+                content += '[キャラクター:]\n' + characterEditor.value.trim() + '\n\n';
+            }
+            if (mainEditor.value.trim()) {
+                content += '[ネーム本体(XML):]\n' + mainEditor.value.trim() + '\n\n';
+            }
+            // セリフは抽出して表示するだけなので、ファイルには含めない
+            // 必要であれば、[セリフ一覧:]などとして含めることも可能だが、今回は不要と判断
+            return content.trim();
+        }
+
+        // ==========================================================
+        // ドラッグ＆ドロップ
+        // ==========================================================
+        const mainColumnContent = document.getElementById('main-column-content');
+        mainColumnContent.addEventListener('dragover', (e) => {
+            e.preventDefault(); // デフォルトの挙動をキャンセル
+            e.stopPropagation();
+            mainColumnContent.style.backgroundColor = '#f0f8ff'; // ドラッグ中の視覚的なフィードバック
+        });
+
+        mainColumnContent.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            mainColumnContent.style.backgroundColor = ''; // 背景色をリセット
+        });
+
+        mainColumnContent.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            mainColumnContent.style.backgroundColor = ''; // 背景色をリセット
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+                    try {
+                        // File System Access APIでハンドルを取得 (Chromeなど)
+                        if ('showOpenFilePicker' in window) {
+                             const [handle] = await window.showOpenFilePicker({
+                                types: [{
+                                    description: 'Text Files',
+                                    accept: { 'text/plain': ['.txt'] },
+                                }],
+                                multiple: false
+                            });
+                            fileHandle = handle;
+                            const fileContents = await fileHandle.getFile();
+                            const text = await fileContents.text();
+                            loadContentFromFile(text);
+                        } else { // Fallback for browsers without File System Access API
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                loadContentFromFile(event.target.result);
+                            };
+                            reader.readAsText(file);
+                        }
+                    } catch (error) {
+                        console.error('ファイルの読み込み中にエラーが発生しました:', error);
+                        alert('ファイルの読み込みに失敗しました。');
+                    }
+                } else {
+                    alert('テキストファイル（.txt）のみ対応しています。');
+                }
+            }
+        });
+
+
+        // ==========================================================
+        // 履歴管理 (Undo/Redo)
+        // ==========================================================
+        function addHistory() {
+            const currentState = {
+                main: mainEditor.value,
+                outline: outlineEditor.value,
+                character: characterEditor.value,
+            };
+
+            // 現在のポインタより新しい履歴を破棄
+            undoRedoHistory = undoRedoHistory.slice(0, historyPointer + 1);
+            // 新しい状態を追加
+            undoRedoHistory.push(currentState);
+
+            if (undoRedoHistory.length > HISTORY_LIMIT) {
+                undoRedoHistory.shift(); // 古い履歴を削除
+            }
+            historyPointer = undoRedoHistory.length - 1;
+            updateUndoRedoButtons();
+            saveState(); // 履歴の状態も保存
+        }
+
+        function undo() {
+            if (historyPointer > 0) {
+                historyPointer--;
+                applyHistoryState(undoRedoHistory[historyPointer]);
+                updateUndoRedoButtons();
+            }
+        }
+
+        function redo() {
+            if (historyPointer < undoRedoHistory.length - 1) {
+                historyPointer++;
+                applyHistoryState(undoRedoHistory[historyPointer]);
+                updateUndoRedoButtons();
+            }
+        }
+
+        function applyHistoryState(state) {
+            mainEditor.value = state.main;
+            outlineEditor.value = state.outline;
+            characterEditor.value = state.character;
+            updateLineNumbers();
+            debouncedUpdateUI(); // UIも更新
+        }
+
+        function updateUndoRedoButtons() {
+            undoBtn.disabled = historyPointer <= 0;
+            redoBtn.disabled = historyPointer >= undoRedoHistory.length - 1;
+        }
+
+        undoBtn.addEventListener('click', undo);
+        redoBtn.addEventListener('click', redo);
+
+        // ==========================================================
+        // シーン、ページ、セリフの追加・削除
+        // ==========================================================
+        addSceneBtn.addEventListener('click', () => {
+            const xmlString = mainEditor.value;
+            const xmlDoc = parseXml(xmlString);
+
+            if (xmlDoc) {
+                const root = xmlDoc.querySelector('root');
+                if (!root) {
+                    alert('XMLに<root>要素が見つかりません。');
+                    return;
+                }
+
+                const newScene = xmlDoc.createElement('シーン');
+                const sceneCount = xmlDoc.querySelectorAll('シーン').length;
+                newScene.setAttribute('シーン名', `新しいシーン${sceneCount + 1}`);
+
+                const newSceneDesc = xmlDoc.createElement('シーン説明');
+                newSceneDesc.textContent = 'ここに新しいシーンの説明を記述します';
+                newScene.appendChild(newSceneDesc);
+
+                const newPage = xmlDoc.createElement('ページ');
+                newPage.setAttribute('ページ番号', '1');
+
+                const newPageDesc = xmlDoc.createElement('ページ説明');
+                newPageDesc.textContent = 'ここに新しいページの説明を記述します';
+                newPage.appendChild(newPageDesc);
+
+                const newSerif = xmlDoc.createElement('セリフ');
+                newSerif.setAttribute('キャラ', 'キャラ名');
+                newSerif.textContent = '「セリフ」';
+                newPage.appendChild(newSerif);
+
+                newScene.appendChild(newPage);
+                root.appendChild(newScene);
+
+                mainEditor.value = new XMLSerializer().serializeToString(xmlDoc);
+                updateLineNumbers();
+                debouncedUpdateUI();
+                addHistory();
+            }
+        });
+
+        // 動的に生成される「Add Page to Scene」ボタンのイベントリスナー
+        // 親要素にイベント委譲
+        pageList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('add-page-to-scene-btn')) {
+                const targetSceneIndex = e.target.dataset.sceneIndex;
+                if (targetSceneIndex === undefined) return;
+
+                const xmlString = mainEditor.value;
+                const xmlDoc = parseXml(xmlString);
+
+                if (xmlDoc) {
+                    const targetScene = xmlDoc.querySelectorAll('シーン')[targetSceneIndex];
+                    if (!targetScene) return;
+
+                    const pageCountInScene = targetScene.querySelectorAll('ページ').length;
+                    const newPage = xmlDoc.createElement('ページ');
+                    newPage.setAttribute('ページ番号', `${pageCountInScene + 1}`);
+
+                    const newPageDesc = xmlDoc.createElement('ページ説明');
+                    newPageDesc.textContent = 'ここに新しいページの説明を記述します';
+                    newPage.appendChild(newPageDesc);
+
+                    const newSerif = xmlDoc.createElement('セリフ');
+                    newSerif.setAttribute('キャラ', 'キャラ名');
+                    newSerif.textContent = '「セリフ」';
+                    newPage.appendChild(newSerif);
+
+                    targetScene.appendChild(newPage);
+
+                    mainEditor.value = new XMLSerializer().serializeToString(xmlDoc);
+                    updateLineNumbers();
+                    debouncedUpdateUI();
+                    addHistory();
+                }
+            }
+        });
+
+        exportDialogueBtn.addEventListener('click', () => {
+            let exportText = '';
+            const dialogues = document.querySelectorAll('.dialogue-content');
+            dialogues.forEach(dialogueDiv => {
+                const pageGroup = dialogueDiv.closest('.serif-page-group-container');
+                const pageTitle = pageGroup ? pageGroup.querySelector('.page-title-in-serif').textContent + '\n' : '';
+                
+                // ページタイトルが前のセリフグループと同じ場合は出力しないように調整
+                if (!exportText.endsWith(pageTitle) && pageTitle.trim() !== '') {
+                    exportText += `--- ${pageTitle.trim()} ---\n`;
+                }
+                
+                exportText += dialogueDiv.textContent + '\n';
+            });
+
+            if (exportText) {
+                const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'dialogues.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+            } else {
+                alert('エクスポートするセリフがありません。');
+            }
+        });
+
+        // ==========================================================
+        // Local Storage
+        // ==========================================================
+        function saveState() {
+            const state = {
+                mainEditorContent: mainEditor.value,
+                outlineEditorContent: outlineEditor.value,
+                characterEditorContent: characterEditor.value,
+                fileHandleName: fileHandle ? fileHandle.name : null, // FileHandleは保存できないので名前だけ
+                history: undoRedoHistory,
+                historyPointer: historyPointer,
+                currentColumnIndex: currentColumnIndex,
+                sectionVisibility: {
+                    outline: !document.getElementById('outline-section').querySelector('.section-content').classList.contains('hidden'),
+                    character: !document.getElementById('character-section').querySelector('.section-content').classList.contains('hidden'),
+                    xml: !document.getElementById('main-xml-section').querySelector('.section-content').classList.contains('hidden'),
+                }
+            };
+            localStorage.setItem('mangaNameEditorState', JSON.stringify(state));
+        }
+
+        function loadState() {
             const savedState = localStorage.getItem('mangaNameEditorState');
             let editorContentLoaded = false; // エディタ内容がロードされたかどうかのフラグ
 
@@ -60,3 +1508,95 @@ function loadState() {
                 addHistory(); // 初期状態を履歴に追加
             }
         }
+
+        // ==========================================================
+        // スマートフォンでのスワイプとフッターナビゲーション
+        // ==========================================================
+        const footerNav = document.getElementById('footer-nav');
+        const navButtons = {
+            main: document.getElementById('nav-main'),
+            scene: document.getElementById('nav-scene'),
+            page: document.getElementById('nav-page'),
+            serif: document.getElementById('nav-serif')
+        };
+        const columnMap = {
+            'main': 0,
+            'scene': 1,
+            'page': 2,
+            'serif': 3
+        };
+        const columnNames = ['main', 'scene', 'page', 'serif'];
+
+        // ナビゲーションボタンのイベントリスナー
+        Object.keys(navButtons).forEach(key => {
+            navButtons[key].addEventListener('click', () => {
+                showColumn(columnMap[key]);
+            });
+        });
+
+        function updateFooterNavActiveButton(activeIndex) {
+            Object.keys(navButtons).forEach(key => {
+                navButtons[key].classList.remove('active');
+            });
+            if (columnNames[activeIndex]) {
+                navButtons[columnNames[activeIndex]].classList.add('active');
+            }
+        }
+
+        // 既存のスワイプ処理
+        columnsWrapper.addEventListener('touchstart', (e) => {
+            if (window.innerWidth <= 768) {
+                touchStartX = e.touches[0].clientX;
+                columnsWrapper.style.transition = 'none'; // スワイプ中はトランジションを一時停止
+            }
+        }, { passive: false });
+
+        columnsWrapper.addEventListener('touchmove', (e) => {
+            if (window.innerWidth <= 768) {
+                touchEndX = e.touches[0].clientX;
+                const diff = touchEndX - touchStartX;
+                const newTransform = -currentColumnIndex * window.innerWidth + diff;
+                columnsWrapper.style.transform = `translateX(${newTransform}px)`; // px指定に変更
+            }
+        }, { passive: false });
+
+        columnsWrapper.addEventListener('touchend', (e) => { 
+            if (window.innerWidth <= 768) {
+                const diff = touchEndX - touchStartX;
+                const swipeThreshold = window.innerWidth * 0.15; // 例: 15%に調整
+
+                let newColumnIndex = currentColumnIndex;
+                if (diff < -swipeThreshold) { // 左方向へのスワイプ
+                    newColumnIndex = Math.min(columns.length - 1, currentColumnIndex + 1);
+                } else if (diff > swipeThreshold) { // 右方向へのスワイプ
+                    newColumnIndex = Math.max(0, currentColumnIndex - 1);
+                } else {
+                    // 閾値以下のスワイプの場合、現在表示中のカラムに留まる
+                    newColumnIndex = currentColumnIndex;
+                }
+                
+                columnsWrapper.style.transition = 'transform 0.3s ease-out'; // トランジションを再適用
+                showColumn(newColumnIndex); // 修正後のnewColumnIndexを渡す
+            }
+        }, { passive: false }); 
+
+        // リサイズイベントでカラム表示を調整
+        window.addEventListener('resize', () => {
+            showColumn(currentColumnIndex); 
+            autoResizeAllTextareas(); 
+            // モバイルからPC、PCからモバイルへの切り替えでフッターナビの表示/非表示を制御
+            if (window.innerWidth > 768) {
+                footerNav.style.display = 'none';
+                document.body.style.paddingBottom = '0';
+            } else {
+                footerNav.style.display = 'flex';
+                document.body.style.paddingBottom = '60px'; // フッターの高さに合わせて調整
+            }
+        });
+
+        // 初期ロード時にもリサイズイベントをトリガーしてフッターナビの表示を制御
+        window.dispatchEvent(new Event('resize'));
+
+    </script>
+</body>
+</html>
