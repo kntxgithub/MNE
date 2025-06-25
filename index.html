@@ -567,7 +567,7 @@
                 max-height: none; /* スマホでも内部のtextareaがスクロールするように */
             }
         }
-    /* 既存のCSSのどこかに追加 */
+/* 既存のCSSのどこかに追加 */
 
     .footer-nav {
         position: fixed; /* 画面下部に固定 */
@@ -575,11 +575,12 @@
         left: 0;
         width: 100%; /* 全幅 */
         background-color: #333; /* 背景色 */
-        display: flex; /* ボタンを横並びにする */
+        display: none; /* デフォルトで非表示 (PCでは表示しない) */
         justify-content: space-around; /* ボタンを均等に配置 */
         padding: 10px 0;
         box-shadow: 0 -2px 5px rgba(0,0,0,0.2); /* 影 */
         z-index: 1000; /* 他の要素より手前に表示 */
+        height: 56px; /* フッターの固定高さ (padding 10px*2 + content height) */
     }
 
     .footer-nav .nav-button {
@@ -598,12 +599,50 @@
     .footer-nav .nav-button:hover {
         background-color: #777;
     }
+    
+    .footer-nav .nav-button.active {
+        background-color: #007bff; /* アクティブなボタンの色 */
+        color: white;
+    }
 
-    /* スマートフォン表示時のコンテンツ下部の余白調整 */
+    /* スマートフォン表示時のスタイル (ここが重要) */
     @media (max-width: 768px) {
-        .columns-wrapper {
-            padding-bottom: 70px; /* フッターナビの高さに合わせて調整 */
+        .footer-nav {
+            display: flex; /* スマートフォンで表示 */
         }
+
+        /* columns-wrapperの高さを調整し、フッターの上までにする */
+        .columns-wrapper {
+            height: calc(100vh - 56px); /* 画面の高さからフッターの高さ(56px)を引く */
+            padding-bottom: 0; /* columns-wrapper自体の下パディングは不要 */
+            overflow-y: hidden; /* columns-wrapper自体は縦スクロールさせない */
+            /* PC版のoverflow-x: auto; はそのまま維持されますが、
+               transformでのスライド移動なので、実質的な横スクロールバーは出ません */
+        }
+
+        /* 各カラム内のコンテンツがスクロールするようにする */
+        .column {
+            display: flex; /* column内のコンテンツをflexで縦方向に並べる */
+            flex-direction: column;
+            overflow-y: auto; /* カラム内でコンテンツが溢れたら縦スクロールバーを出す */
+            padding-bottom: 70px; /* フッターの高さ + 少し余白（スクロールバーが見えやすいように） */
+            box-sizing: border-box; /* paddingがwidth/heightに含まれるように */
+            height: 100%; /* 親要素(columns-wrapper)の高さを全て使う */
+        }
+        
+        /* 特定のコンテンツエリア（テキストエリアなど）にpadding-bottomを適用 */
+        /* 例えば、メインエディタのテキストエリアがフッターに隠れないように */
+        /* 各カラム内のtextareaが直接スクロール対象になる場合、padding-bottomを調整 */
+        textarea {
+            margin-bottom: 15px; /* テキストエリアの下にも適切な余白 */
+        }
+        /* 各カラム内のコンテンツエリアにスクロールバーを持たせるため、
+           必要に応じて内部のコンテナに高さを設定し、overflow-y: auto を適用します。
+           この例では .column に適用しましたが、
+           もし .column 内にスクロールする特定のコンテンツエリアがある場合は、
+           その要素に対して overflow-y: auto と padding-bottom を適用してください。
+           例: .column-content { height: 100%; overflow-y: auto; padding-bottom: 70px; }
+        */
     }
     </style>
 </head>
