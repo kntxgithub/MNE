@@ -567,6 +567,44 @@
                 max-height: none; /* スマホでも内部のtextareaがスクロールするように */
             }
         }
+    /* 既存のCSSのどこかに追加 */
+
+    .footer-nav {
+        position: fixed; /* 画面下部に固定 */
+        bottom: 0; /* 下端に配置 */
+        left: 0;
+        width: 100%; /* 全幅 */
+        background-color: #333; /* 背景色 */
+        display: flex; /* ボタンを横並びにする */
+        justify-content: space-around; /* ボタンを均等に配置 */
+        padding: 10px 0;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.2); /* 影 */
+        z-index: 1000; /* 他の要素より手前に表示 */
+    }
+
+    .footer-nav .nav-button {
+        background-color: #555;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+        flex-grow: 1; /* ボタンを均等な幅にする */
+        margin: 0 5px; /* ボタン間の余白 */
+    }
+
+    .footer-nav .nav-button:hover {
+        background-color: #777;
+    }
+
+    /* スマートフォン表示時のコンテンツ下部の余白調整 */
+    @media (max-width: 768px) {
+        .columns-wrapper {
+            padding-bottom: 70px; /* フッターナビの高さに合わせて調整 */
+        }
+    }
     </style>
 </head>
 <body>
@@ -656,6 +694,13 @@
         </div>
     </div>
 
+
+    <nav class="footer-nav">
+        <button class="nav-button" data-column-index="0">メイン</button>
+        <button class="nav-button" data-column-index="1">シーン</button>
+        <button class="nav-button" data-column-index="2">ページ</button>
+        <button class="nav-button" data-column-index="3">セリフ</button>
+    </nav>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const outlineEditor = document.getElementById('outlineEditor');
@@ -1413,7 +1458,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     sceneItemContainer.appendChild(itemTextArea);
                     autoResizeTextArea(itemTextArea); 
 
-                    sceneItemContainer.addEventListener('click', () => {
+                　sceneItemContainer.addEventListener('click', () => {
                         setActiveElement(sceneItemContainer, 'scene');
                         // showColumn(1); // シーンカラムへの自動移動を削除
 
@@ -1831,6 +1876,60 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             showColumn(currentColumnIndex);
         });
+// グローバル変数を定義（もし定義されていない場合）
+    let currentColumnIndex = 0; // 現在表示されているカラムのインデックスを保持
+    const columnsWrapper = document.querySelector('.columns-wrapper');
+    const columns = document.querySelectorAll('.column'); // 全カラム要素を取得
+
+    // showColumn関数（既存のものでも、必要に応じて調整）
+    function showColumn(index) {
+        if (index < 0 || index >= columns.length) return;
+        currentColumnIndex = index;
+        const transformValue = -index * 100;
+        columnsWrapper.style.transform = `translateX(${transformValue}vw)`;
+
+        // アクティブなナビゲーションボタンのスタイルを更新する
+        updateNavButtonActiveState();
+    }
+
+    // ナビゲーションボタンのアクティブ状態を更新する関数
+    function updateNavButtonActiveState() {
+        document.querySelectorAll('.nav-button').forEach((button, index) => {
+            if (index === currentColumnIndex) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+    }
+
+            // ナビゲーションボタンのイベントリスナーを設定
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const columnIndex = parseInt(button.dataset.columnIndex);
+                    showColumn(columnIndex);
+                    // スマートフォン表示時に、ナビゲーションボタンが押されたら、
+                    // 該当カラムが完全に表示されるようにスクロール位置を調整する
+                    if (window.innerWidth <= 768) {
+                        // columnsWrapper.scrollLeft = columns[columnIndex].offsetLeft;
+                        // translateXで移動しているので、追加のスクロールは不要
+                    }
+                });
+            });
+
+            // 初期表示時にアクティブ状態を設定
+            updateNavButtonActiveState();
+
+            // ページロード時やリサイズ時に現在のカラムを表示（既存のコードに追加または確認）
+            window.addEventListener('resize', () => {
+                showColumn(currentColumnIndex);
+                autoResizeAllTextareas();
+                // リサイズ時にもアクティブ状態を更新
+                updateNavButtonActiveState();
+            });
+
+            // 初期表示
+            showColumn(currentColumnIndex);
     </script>
 </body>
 </html>
