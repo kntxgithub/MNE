@@ -10,39 +10,44 @@
             margin: 0;
             padding: 0;
             height: 100vh; /* ビューポートの高さに合わせる */
-            display: flex;
-            flex-direction: column;
             background-color: #e0e0e0;
-            overflow: hidden; /* 全体スクロールは禁止 (カラムスライドのため) */
+            overflow: hidden; /* body自体はスクロールさせない */
+            /* display: flex; flex-direction: column; は削除 */
         }
-
+        /* 新しいメインコンテンツエリアのラッパー */
+        .main-content-area {
+            height: calc(100vh - 56px); /* 全体の高さからフッターの高さ(56px)を引く */
+            width: 100%;
+            position: relative; /* 必要に応じて、内部のabsolute/fixed要素の基準とする */
+            /* overflow: hidden; */ /* 基本的にcolumns-wrapperがoverflowを制御するので不要 */
+        }
         /* グローバルヘッダーは不要なため削除 */
         /* .global-header { ... } を削除 */
 
         /* PC版のデフォルトスタイル（4カラム表示） */
-        .columns-wrapper { /* カラム全体を包むラッパー */
-            flex-grow: 1;
-            display: flex;
-            width: 100%; /* PCでは100%幅 */
-            padding-top: 0; /* グローバルヘッダーを削除したので0 */
-            padding-bottom: 0; /* フッターナビを削除したので0 */
-            box-sizing: border-box;
-            overflow-x: auto; /* PCでは横スクロールを許可 */
-            transition: none; /* PCではスライドアニメーションなし */
+        /* columns-wrapper のスタイル */
+        .columns-wrapper {
+            display: flex; /* PC版では横並び、モバイル版ではスライドのために必要 */
+            height: 100%; /* 親要素 (main-content-area) の高さをすべて使う */
+            width: 400vw; /* 4カラムあるため、画面幅の4倍の幅を持たせる */
+            transition: transform 0.3s ease-out; /* スライドアニメーション */
+            /* PCでの横スクロールバーは通常不要だが、もしあればここで制御 */
+            /* overflow-x: hidden; */ /* スワイプでカラムを切り替えるのであればhidden */
+            /* overflow-y: hidden; */ /* 縦スクロールは各columnが担当するのでhidden */
         }
 
+        /* 各カラムのスタイル */
         .column {
-            width: 25vw; /* 各カラムの幅をビューポートの25%に */
             flex-shrink: 0; /* カラムが縮まないように */
-            background-color: #fff;
-            display: flex;
+            width: 100vw; /* 各カラムがビューポート幅を占める */
+            height: 100%; /* 親要素 (columns-wrapper) の高さをすべて使う */
+            display: flex; /* カラム内の要素を縦方向に配置 */
             flex-direction: column;
-            border-right: 1px solid #eee; /* 各カラムの右側に境界線 */
-            box-sizing: border-box;
-            overflow: hidden; /* カラム自体はスクロールバーを持たない */
-        }
-        .column:last-child {
-            border-right: none; /* 最後のカラムには境界線不要 */
+            overflow-y: auto; /* カラム内でコンテンツが溢れたら縦スクロールバーを出す */
+            padding-bottom: 70px; /* フッターの高さ + 少し余白（スクロールバーが見えやすいように） */
+            box-sizing: border-box; /* paddingがwidth/heightに含まれるように */
+            background-color: #f9f9f9; /* 各カラムの背景色 */
+            border-right: 1px solid #ccc; /* 各カラム間の区切り線（PC用） */
         }
 
 
@@ -647,88 +652,88 @@
     </style>
 </head>
 <body>
-    <div class="columns-wrapper" id="columnsWrapper">
-        <div class="column main-column" data-column-id="main">
-            <div class="column-header">
-                <span class="header-title">メイン</span>
-                <div class="controls">
-                    <button id="newBtn">新規</button>
-                    <button id="openBtn">開く</button>
-                    <input type="file" id="fileInput" style="display: none;">
-                    <button id="saveBtn">保存</button>
-                    <button id="saveAsBtn">別名保存</button>
-                    <button id="undoBtn">↶</button>
-                    <button id="redoBtn">↷</button>
-                </div>
-            </div>
-            <div class="column-content">
-                <div class="section-container" id="outlineSection">
-                    <div class="section-header">
-                        <h3>アウトライン</h3>
-                        <button class="toggle-btn" data-target="outlineContent">隠す</button>
-                    </div>
-                    <div class="section-content" id="outlineContent">
-                        <textarea id="outlineEditor" class="outline-textarea" placeholder="ここに物語のアウトラインを記述してください。"></textarea>
+    <div class="main-content-area">
+        <div class="columns-wrapper" id="columnsWrapper">
+            <div class="column main-column" data-column-id="main">
+                <div class="column-header">
+                    <span class="header-title">メイン</span>
+                    <div class="controls">
+                        <button id="newBtn">新規</button>
+                        <button id="openBtn">開く</button>
+                        <input type="file" id="fileInput" style="display: none;">
+                        <button id="saveBtn">保存</button>
+                        <button id="saveAsBtn">別名保存</button>
+                        <button id="undoBtn">↶</button>
+                        <button id="redoBtn">↷</button>
                     </div>
                 </div>
-                
-                <div class="section-container" id="characterSection">
-                    <div class="section-header">
-                        <h3>キャラクター</h3>
-                        <div class="controls">
-                            <button class="add-character-btn" id="addCharacterBtn">追加</button>
-                            <button class="toggle-btn" data-target="characterContent">隠す</button>
+                <div class="column-content">
+                    <div class="section-container" id="outlineSection">
+                        <div class="section-header">
+                            <h3>アウトライン</h3>
+                            <button class="toggle-btn" data-target="outlineContent">隠す</button>
+                        </div>
+                        <div class="section-content" id="outlineContent">
+                            <textarea id="outlineEditor" class="outline-textarea" placeholder="ここに物語のアウトラインを記述してください。"></textarea>
                         </div>
                     </div>
-                    <div class="section-content" id="characterContent">
-                        <textarea id="characterEditor" class="character-textarea"></textarea>
+                    
+                    <div class="section-container" id="characterSection">
+                        <div class="section-header">
+                            <h3>キャラクター</h3>
+                            <div class="controls">
+                                <button class="add-character-btn" id="addCharacterBtn">追加</button>
+                                <button class="toggle-btn" data-target="characterContent">隠す</button>
+                            </div>
+                        </div>
+                        <div class="section-content" id="characterContent">
+                            <textarea id="characterEditor" class="character-textarea"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="section-container" id="mainEditorSection">
+                        <div class="section-header">
+                            <h3>ネーム本体 (XML)</h3>
+                            <button class="toggle-btn" data-target="mainEditorContent">隠す</button>
+                        </div>
+                        <div class="section-content" id="mainEditorContent">
+                            <textarea id="mainEditor" class="main-textarea" placeholder="XML形式でネームを記述してください。例：<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明><セリフ>セリフA</セリフ></ページ></シーン></root>"></textarea>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="section-container" id="mainEditorSection">
-                    <div class="section-header">
-                        <h3>ネーム本体 (XML)</h3>
-                        <button class="toggle-btn" data-target="mainEditorContent">隠す</button>
-                    </div>
-                    <div class="section-content" id="mainEditorContent">
-                        <textarea id="mainEditor" class="main-textarea" placeholder="XML形式でネームを記述してください。例：
-<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明><セリフ>セリフA</セリフ></ページ></シーン></root>">
-</textarea>
+            <div class="column scene-column" data-column-id="scene">
+                <div class="column-header">
+                    <span class="header-title">シーン</span>
+                    <div class="controls">
+                        <button id="addSceneBtn">シーン追加</button>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="column scene-column" data-column-id="scene">
-            <div class="column-header">
-                <span class="header-title">シーン</span>
-                <div class="controls">
-                    <button id="addSceneBtn">シーン追加</button>
+                <div class="column-content" id="sceneContent">
+                    <p>メインエディタの内容からシーンを抽出します。</p>
                 </div>
             </div>
-            <div class="column-content" id="sceneContent">
-                <p>メインエディタの内容からシーンを抽出します。</p>
-            </div>
-        </div>
 
-        <div class="column page-column" data-column-id="page">
-            <div class="column-header">
-                <span class="header-title">ページ</span>
-            </div>
-            <div class="column-content" id="pageContent">
-                <p>メインエディタの内容からページを抽出します。</p>
-            </div>
-        </div>
-
-        <div class="column serif-column" data-column-id="serif">
-            <div class="column-header">
-                <span class="header-title">セリフ</span>
-                <div class="controls">
-                    <button id="exportDialogueBtn">エクスポート</button>
+            <div class="column page-column" data-column-id="page">
+                <div class="column-header">
+                    <span class="header-title">ページ</span>
+                </div>
+                <div class="column-content" id="pageContent">
+                    <p>メインエディタの内容からページを抽出します。</p>
                 </div>
             </div>
-            <div class="column-content" id="dialogueContent">
-                <p>メインエディタの内容からセリフを抽出します。</p>
+
+            <div class="column serif-column" data-column-id="serif">
+                <div class="column-header">
+                    <span class="header-title">セリフ</span>
+                    <div class="controls">
+                        <button id="exportDialogueBtn">エクスポート</button>
+                    </div>
+                </div>
+                <div class="column-content" id="dialogueContent">
+                    <p>メインエディタの内容からセリフを抽出します。</p>
+                </div>
             </div>
         </div>
     </div>
@@ -1969,6 +1974,22 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             // 初期表示
             showColumn(currentColumnIndex);
+
+// autoResizeAllTextareas 関数の定義 (この部分を追加してください)
+    function autoResizeAllTextareas() {
+        document.querySelectorAll('textarea').forEach(textarea => {
+            textarea.style.height = 'auto'; // 一度高さをリセット
+            textarea.style.height = (textarea.scrollHeight) + 'px'; // スクロール高さに合わせて調整
+        });
+    }
+
+    // 他のJavaScriptコード（以前提供した部分など）
+    // 例:
+    // window.addEventListener('resize', () => {
+    //     showColumn(currentColumnIndex); 
+    //     autoResizeAllTextareas(); // ここで呼び出される
+    //     updateNavButtonActiveState(); 
+    // });
     </script>
 </body>
 </html>
