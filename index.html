@@ -24,7 +24,7 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            height: 100vh; /* ビューポートの高さに合わせる */
+            min-height: 100vh; 
             display: flex;
             flex-direction: column;
             background-color: #e0e0e0;
@@ -38,10 +38,11 @@
             flex-grow: 1;
             display: flex;
             width: 100%; /* PCでは100%幅 */
-            padding-top: 0; /* グローバルヘッダーを削除したので0 */
-            padding-bottom: 0; /* フッターナビを削除したので0 */
+            padding-top: 0; 
+            padding-bottom: 0;
             box-sizing: border-box;
             overflow-x: auto; /* PCでは横スクロールを許可 */
+            overflow-y: hidden; /* ★追加: 縦方向のはみ出しを制御 */
             transition: none; /* PCではスライドアニメーションなし */
         }
 
@@ -559,7 +560,6 @@
         @media (max-width: 768px) {
             body {
                 overflow-y: hidden; /* 全体スクロールを禁止 (横スライドのため) */
-                padding-bottom:60px;/*タブバーの高さ分、bodyに余白を設ける*/
             }
             .tab-bar {
                 display: flex; /* スマホの時だけ表示 */
@@ -568,10 +568,11 @@
                 width: 400vw; /* 4カラム分の幅 */
                 transform: translateX(0vw); /* 初期表示はJSで設定 */
                 transition: transform 0.3s ease-in-out; /* スライドアニメーション */
-                padding-top: 0; /* グローバルヘッダーを削除したので0 */
-                padding-bottom: 0; /* フッターナビを削除したので0 */
+                padding-top: 0; 
+                padding-bottom: 0; 
                 box-sizing: border-box;
                 overflow-x: hidden; /* 横スクロール禁止 (JSで制御するため) */
+                overflow-y: hidden; /* ★追加: 縦方向のはみ出しを制御 */
             }
 
             .column {
