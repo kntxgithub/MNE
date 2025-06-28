@@ -1,9 +1,15 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <!-- <head>タグ内に追加 -->
+    <link rel="manifest" href="./manifest.json">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>漫画ネームエディタ</title>
+    <!--<meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>漫画ネームエディタhikaku2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,18 +20,18 @@
             flex-direction: column;
             background-color: #e0e0e0;
             overflow: hidden; /* 全体スクロールは禁止 (カラムスライドのため) */
-            /* モバイルでフッターナビのスペースを確保 */
-            padding-bottom: 0; /* PCデフォルト */
-            transition: padding-bottom 0.3s ease-in-out;
         }
+
+        /* グローバルヘッダーは不要なため削除 */
+        /* .global-header { ... } を削除 */
 
         /* PC版のデフォルトスタイル（4カラム表示） */
         .columns-wrapper { /* カラム全体を包むラッパー */
             flex-grow: 1;
             display: flex;
             width: 100%; /* PCでは100%幅 */
-            padding-top: 0;
-            padding-bottom: 0;
+            padding-top: 0; /* グローバルヘッダーを削除したので0 */
+            padding-bottom: 0; /* フッターナビを削除したので0 */
             box-sizing: border-box;
             overflow-x: auto; /* PCでは横スクロールを許可 */
             transition: none; /* PCではスライドアニメーションなし */
@@ -112,6 +118,7 @@
             flex-grow: 1;
             overflow-y: auto; /* この領域でスクロールする */
             padding: 10px;
+            /*display: flex;*/
             flex-direction: column;
             gap: 10px;
         }
@@ -139,15 +146,15 @@
 
         .outline-textarea {
             min-height: 50px;
-            max-height: none; 
+            max-height: none; /* max-heightを削除 (自動で伸びる) */
             resize: vertical; 
         }
 
         .character-textarea { 
             min-height: 70vh; 
-            max-height: none; 
+            max-height: none; /* max-heightを削除 (自動で伸びる) */
             resize: vertical; 
-            overflow-y: auto; 
+            overflow-y: auto; /* キャラクターは内容が多いのでスクロール許可 */
         }
         
         /* シーン/ページ/セリフの動的表示用スタイル */
@@ -190,14 +197,14 @@
             border-radius: 0;
             padding: 5px;
             overflow: hidden; 
-            min-height: 40px; 
+            min-height: 40px; /* シーン説明の最小の高さ */
             max-height: none; 
             resize: none; 
             height: auto; 
         }
         
         /* ページとセリフのtextarea */
-        .page-item-container textarea{
+        .page-item-container textarea{ /*,}.dialogue-content textarea { */
             width: 100%;
             border: 1px solid #ddd;
             padding: 5px;
@@ -205,11 +212,12 @@
             background-color: white;
             border-radius: 0;
             overflow: hidden; 
-            min-height: 40px; 
+            min-height: 40px; /* ページ説明・セリフの最小の高さ */
             max-height: none; 
             resize: none; 
             height: auto; 
         }
+
 
         .item-wrapper .content-display {
             flex-grow: 1;
@@ -222,6 +230,47 @@
             white-space: pre-wrap;
             word-wrap: break-word;
             min-height: 1.6em;
+        }
+
+        .line-numbers {
+            width: 35px;
+            text-align: right;
+            padding-right: 5px;
+            color: #aaa;
+            font-size: 0.8em;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        /* ファイルドロップ時のスタイル (このレイアウトでは直接見えないかもしれない) */
+        body.drag-over .column.main-column {
+            box-shadow: 0 0 15px rgba(0, 123, 255, 0.5);
+            border: 2px dashed #007bff;
+        }
+
+        /* シーンカラム内の追加ボタン */
+        .add-button-container {
+            text-align: center;
+            margin: 0;
+            padding-top: 5px;
+            border-top: 1px dashed #eee;
+            margin-bottom: 10px;
+        }
+        .add-button-container button {
+            background-color: #17A2B8;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.9em;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0 auto;
+            display: block;
+        }
+        .add-button-container button:hover {
+            background-color: #138496;
         }
 
         /* シーンアイテムの具体的なスタイル */
@@ -247,9 +296,7 @@
         }
 
         .page-item-container {
-            /* シーンと同じ色を適用するためのカスタムプロパティ */
-            background-color: var(--scene-bg-color, #fff); /* デフォルトは白 */
-            border: 1px solid #ccc; /* hikaku2.htmlに合わせて太めの枠線 */
+            border: 1px solid #ccc;
             padding: 0px;
             margin: 0;
             margin-bottom: 5px;
@@ -258,53 +305,59 @@
             cursor: pointer;
             transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
-        
-        /* シーンの背景色ローテーション用クラス - hikaku2.htmlに合わせる */
-        .scene-color-0 { background-color: #fff; } /* シーン1は白 */
-        .scene-color-1 { background-color: #e0f7fa; } /* シーン2は薄い水色 */
-        .scene-color-2 { background-color: #f0f4c3; } /* シーン3は薄い黄色 */
-        .scene-color-3 { background-color: #ffe0b2; } /* シーン4は薄いピンク */
-        .scene-color-4 { background-color: #e1bee7; } /* シーン5は薄い紫 */
 
-        /* セリフ表示部分のスタイル - hikaku2.htmlに忠実に */
+        /* シーンの背景色ローテーション用クラス */
+        .scene-color-0 { background-color: #e0f7fa; }
+        .scene-color-1 { background-color: #f0f4c3; }
+        .scene-color-2 { background-color: #ffe0b2; } 
+        .scene-color-3 { background-color: #e1bee7; }
+        .scene-color-4 { background-color: #b3e5fc; }
+
+        /* セリフ表示部分のスタイル */
+        .serif-page-group-container {
+            border: 1px solid #dcdcdc;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            padding: 10px;
+            padding-top: 0;
+            background-color: #fffbf0; /* 薄いオレンジ色 #fffbf0 に変更 */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+
+
         .dialogue-content {
-            /* セリフの背景と枠線 */
-            background-color: #fff3e0; /* 薄いオレンジ */
-            border: 1px solid #ffcc80; /* 少し濃いオレンジの枠線 */
-            padding: 5px; /* 内側の余白 */
-            margin: 5px 0; /* 上下のマージン */
-            border-radius: 3px; /* 角を少し丸く */
-            box-sizing: border-box; /* paddingとborderを幅に含める */
-
-            /* 左側の太いボーダー */
-            border-left: 3px solid #ff9800; /* 濃いオレンジの左ボーダー */
-            
-            display: flex; /* セリフが複数行になっても表示できるように */
-            align-items: flex-start; /* 上揃え */
+            margin-bottom: 8px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: none;
+            flex-grow: 1;
+            white-space: pre-wrap;
+            word-wrap: break-word;
             font-size: 0.95em;
             line-height: 1.6;
-            white-space: pre-wrap; /* 改行を保持 */
-            word-wrap: break-word; /* 長い単語の改行 */
-        }
-        .dialogue-content textarea {
+            font-style:italic; /* 親のitalicを打ち消す */
+            color: #333;
+            background-color: white; /* 各セリフdivの背景は白に */
+            border-radius: 3px;
             width: 100%;
-            border: none; /* テキストエリアの枠線なし */
-            padding: 0;
-            margin: 0;
-            background: transparent;
-            font-size: inherit;
-            line-height: inherit;
-            resize: none;
-            overflow: hidden;
-            height: auto;
-            min-height: 1.6em; /* 少なくとも1行分の高さ */
+            border: 1px solid #ddd;
+            border-left: 3px solid #f9ab00; /* セリフのdivに左ボーダーを適用 */
+            padding: 5px; /* ボーダー分の調整と内容のパディング */
         }
+        /* セリフのdiv内のテキストは直接表示されるので、textareaのスタイルは不要 */
+
 
         .scene-item-header, .page-item-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 5px 10px; 
+            padding: 5px 10px; /* シーンとページで共通のパディング */
             flex-shrink: 0;
         }
 
@@ -419,46 +472,45 @@
             min-height: 150px;
         }
 
-        /* 各シーンのページ追加ボタン */
-        .add-page-btn {
-            background-color: #607d8b; /* 暗い青緑系の色 (hikaku2.htmlのボタンに似た色) */
+        /* 個別のシーン内でページを追加するためのボタン */
+        .add-page-to-scene-btn {
+            background-color: #34495e;
             color: white;
-            border: none;
             padding: 5px 10px;
+            border: none;
             border-radius: 3px;
             cursor: pointer;
             font-size: 0.9em;
-            margin: 5px 10px 10px auto; /* 上, 右, 下, 左: シーン説明の下、右寄せ */
-            display: block; /* 独立したブロック要素に */
-            transition: background-color 0.2s;
-            align-self: flex-end; /* シーンアイテム内で右下に寄せる */
+            width: calc(100% - 20px); /* Padding分を考慮 */
+            box-sizing: border-box;
+            margin: 10px; /* シーンアイテムの下に少しマージン */
+            display: block;
+            text-align: center;
         }
-
-        .add-page-btn:hover {
-            background-color: #455a64; /* ホバーで少し暗く */
+        .add-page-to-scene-btn:hover {
+            background-color: #2c3e50; /* ホバー時の色 */
         }
 
 
         /* --- スマートフォン対応のためのメディアクエリ --- */
         @media (max-width: 768px) {
             body {
-                overflow-y: hidden; 
-                padding-bottom: 60px; 
+                overflow-y: hidden; /* 全体スクロールを禁止 (横スライドのため) */
             }
 
             .columns-wrapper {
-                width: 400vw; 
-                transform: translateX(0vw); 
-                transition: transform 0.3s ease-in-out; 
-                padding-top: 0; 
-                padding-bottom: 0; 
+                width: 400vw; /* 4カラム分の幅 */
+                transform: translateX(0vw); /* 初期表示はJSで設定 */
+                transition: transform 0.3s ease-in-out; /* スライドアニメーション */
+                padding-top: 0; /* グローバルヘッダーを削除したので0 */
+                padding-bottom: 0; /* フッターナビを削除したので0 */
                 box-sizing: border-box;
-                overflow-x: hidden; 
+                overflow-x: hidden; /* 横スクロール禁止 (JSで制御するため) */
             }
 
             .column {
-                width: 100vw; 
-                border-right: none; 
+                width: 100vw; /* 各カラムの幅をビューポートの幅に */
+                border-right: none; /* スマホではカラム間の境界線は不要 */
             }
 
             .column-header {
@@ -489,43 +541,9 @@
                 padding: 8px;
             }
 
+            /* スマホ時のsection-contentのmax-heightも調整 */
             .section-content {
-                max-height: none; 
-            }
-
-            /* フッターナビゲーションのスタイル */
-            .footer-nav {
-                display: none; /* 初期は非表示に設定 */
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                background-color: #34495e; 
-                justify-content: space-around;
-                padding: 10px 0;
-                box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-                z-index: 100;
-            }
-
-            .footer-nav button {
-                background: none;
-                border: none;
-                color: white;
-                font-size: 0.9em;
-                padding: 10px 5px;
-                cursor: pointer;
-                flex-grow: 1;
-                text-align: center;
-                transition: background-color 0.2s;
-            }
-
-            .footer-nav button:hover {
-                background-color: #5a6268;
-            }
-
-            .footer-nav button.active {
-                background-color: #007bff; 
-                font-weight: bold;
+                max-height: none; /* スマホでも内部のtextareaがスクロールするように */
             }
         }
 
@@ -546,14 +564,13 @@
             textarea {
                 font-size: 0.9em;
             }
-
-            .section-content {
-                max-height: none; 
+            .line-numbers {
+                width: 25px;
+                font-size: 0.7em;
             }
 
-            .footer-nav button {
-                font-size: 0.8em;
-                padding: 8px 3px;
+            .section-content {
+                max-height: none; /* スマホでも内部のtextareaがスクロールするように */
             }
         }
     </style>
@@ -645,13 +662,6 @@
         </div>
     </div>
 
-    <footer class="footer-nav" id="footerNav">
-        <button data-column-index="0">メイン</button>
-        <button data-column-index="1">シーン</button>
-        <button data-column-index="2">ページ</button>
-        <button data-column-index="3">セリフ</button>
-    </footer>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const outlineEditor = document.getElementById('outlineEditor');
@@ -681,8 +691,7 @@
             const exportDialogueBtn = document.getElementById('exportDialogueBtn');
 
             const columnsWrapper = document.getElementById('columnsWrapper');
-            const footerNav = document.getElementById('footerNav'); 
-
+            
             let currentFileName = '新規ネーム.txt';
             let history = [''];
             let historyIndex = 0;
@@ -693,47 +702,38 @@
             let currentFileHandle = null;
 
             const xmlParser = new DOMParser();
-            const xmlSerializer = new XMLSerializer(); 
+            // const xmlSerializer = new XMLSerializer(); // XMLSerializerは使用しない
 
             let nodeIdCounter = 0; 
 
+            // XMLノードとDOM要素の関連付け用マップ
             const sceneNodeIdToDomElementMap = new Map();
             const pageNodeIdToDomElementMap = new Map();
+            const sceneNodeIdToFirstPageDomElementMap = new Map();
             const dialogueNodeIdToDomElementMap = new Map(); 
 
             let activeSceneElement = null;
             let activePageElement = null;
-            let activeDialogueElement = null; 
+            let activeDialogueElement = null; // 個別のセリフ要素
 
-            // --- カラム表示制御用の変数 ---             
-            let currentColumnIndex = 0; 
+            // --- カラム表示制御用の変数 ---            
+            let currentColumnIndex = 0; // 0:メイン, 1:シーン, 2:ページ, 3:セリフ
             const columns = document.querySelectorAll('.column');
-            let touchStartX = 0;
-            let touchEndX = 0;
+            let startX = 0;
+            let currentTranslateX = 0;
+            let isDragging = false;
 
             function showColumn(index) {
                 if (index < 0 || index >= columns.length) return;
                 currentColumnIndex = index;
 
-                document.querySelectorAll('.footer-nav button').forEach((btn, i) => {
-                    if (i === currentColumnIndex) {
-                        btn.classList.add('active');
-                    } else {
-                        btn.classList.remove('active');
-                    }
-                });
-
                 if (window.innerWidth <= 768) {
                     columnsWrapper.style.transform = `translateX(-${index * 100}vw)`;
                     columnsWrapper.style.scrollBehavior = 'auto'; 
-                    footerNav.style.display = 'flex'; 
-                    document.body.style.paddingBottom = '60px'; 
                 } else {
                     columnsWrapper.style.transform = `translateX(0)`; 
                     columnsWrapper.style.scrollBehavior = 'smooth'; 
                     columnsWrapper.scrollLeft = columns[index].offsetLeft;
-                    footerNav.style.display = 'none'; 
-                    document.body.style.paddingBottom = '0'; 
                 }
             }
 
@@ -741,7 +741,7 @@
                 if (historyIndex > 0) {
                     historyIndex--;
                     mainEditor.value = history[historyIndex];
-                    updateUIImmediate(); 
+                    updateUIImmediate(); // UIを即座に更新
                 }
             }
 
@@ -749,7 +749,7 @@
                 if (historyIndex < history.length - 1) {
                     historyIndex++;
                     mainEditor.value = history[historyIndex];
-                    updateUIImmediate(); 
+                    updateUIImmediate(); // UIを即座に更新
                 }
             }
 
@@ -790,7 +790,8 @@
 *性格・裏性格
 *環境・生い立ち`;
 
-                mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページの説明</ページ説明><セリフ>セリフ</セリフ></ページ></シーン></root>`; 
+                // 新規作成時のXML初期値に、空のセリフ要素も含むように変更
+                mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明></ページ></シーン></root>`; 
                 currentFileName = '新規ネーム.txt';
                 currentFileHandle = null;
                 history = [mainEditor.value];
@@ -845,7 +846,8 @@
 *性格・裏性格
 *環境・生い立ち`;
 
-                    mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページの説明</ページ説明><セリフ>セリフ</セリフ></ページ></シーン></root>`; 
+                    // 初期XML値もセリフが空でもタグがあるように変更
+mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明></ページ></シーン></root>`; 
                     history = [mainEditor.value];
                     historyIndex = 0;
 
@@ -856,6 +858,7 @@
                 }
                 showColumn(currentColumnIndex); 
                 updateUIImmediate();
+                // autoResizeAllTextareas(); // これはupdateUIImmediate内でsetTimeoutで呼び出す
             }
 
             function setSectionVisibility(contentDiv, isHidden) {
@@ -880,16 +883,16 @@
                 updateTimeout = setTimeout(() => {
                     updateUndoRedoButtons();
                     syncColumnsFromMainEditor();
-                    setTimeout(autoResizeAllTextareas, 50); 
+                    setTimeout(autoResizeAllTextareas, 50); // Small delay
                     saveState();
                     console.log('UI updated and State saved (debounced).');
-                }, DEBOUNCE_DELAY); // DEBOUNCE_DELAYを修正
+                }, DEBOUNCE_DELAY);
             }
 
             function updateUIImmediate() {
                 updateUndoRedoButtons();
                 syncColumnsFromMainEditor();
-                setTimeout(autoResizeAllTextareas, 50); 
+                setTimeout(autoResizeAllTextareas, 50); // Small delay to ensure DOM is rendered before resizing
                 saveState();
                 console.log('UI updated and State saved (immediate).');
             }
@@ -909,8 +912,9 @@
                 history.push(content);
                 if (history.length > MAX_HISTORY) {
                     history.shift();
+                } else {
+                    historyIndex++;
                 }
-                historyIndex = history.length - 1; 
                 updateUndoRedoButtons();
             }
 
@@ -921,7 +925,7 @@
                             {
                                 description: 'Text Files',
                                 accept: {
-                                    'text/plain': ['.txt', '.xml'], 
+                                    'text/plain': ['.txt'],
                                 },
                             },
                         ],
@@ -929,67 +933,53 @@
                     const file = await fileHandle.getFile();
                     const reader = new FileReader();
                     reader.onload = (event) => {
-                        const content = event.target.result;
-                        try {
-                            const parser = new DOMParser();
-                            const xmlDoc = parser.parseFromString(content, "text/xml");
-                            currentXmlDoc = xmlDoc; 
-
-                            const errorNode = xmlDoc.querySelector('parsererror');
-                            // XML parsing error または root要素が見つからない場合、あるいはファイル内容が空の場合
-                            if (errorNode || !xmlDoc.documentElement || xmlDoc.documentElement.nodeName !== 'root' || content.trim() === '') {
-                                alert('ファイルの解析中にエラーが発生しました、またはファイルが空です。有効なXML形式でファイルを保存してください。');
-                                console.error('XML parsing error:', errorNode ? errorNode.textContent : 'Invalid root element or empty file content');
-                                mainEditor.value = `<root/>`; // 有効な空のXMLを設定
-                            } else {
-                                const outlineElement = xmlDoc.querySelector('outline');
-                                outlineEditor.value = outlineElement ? outlineElement.textContent : '';
-
-                                const characterElement = xmlDoc.querySelector('character');
-                                characterEditor.value = characterElement ? characterElement.textContent : '';
-                                
-                                mainEditor.value = xmlSerializer.serializeToString(currentXmlDoc.documentElement);
-                            }
-
-                            currentFileName = file.name;
-                            currentFileHandle = fileHandle; 
-                            history = [mainEditor.value];
-                            historyIndex = 0;
-                            updateUIImmediate();
-                            alert(`ファイル「${currentFileName}」を開きました。`);
-
-                        } catch (e) {
-                            alert('ファイルの読み込み中にエラーが発生しました。ファイルが破損しているか、不正な形式です。');
-                            console.error('File parsing error:', e);
-                            mainEditor.value = `<root/>`; // エラー時も有効な空のXMLを設定
-                            updateUIImmediate(); // デフォルトでUIを更新
-                        }
+                        extractAndSetSeparateContents(event.target.result);
+                        currentFileName = file.name;
+                        currentFileHandle = fileHandle;
+                        history = [mainEditor.value];
+                        historyIndex = 0;
+                        updateUIImmediate();
+                    };
+                    reader.onerror = () => {
+                        alert('ファイルの読み込みに失敗しました。');
                     };
                     reader.readAsText(file);
-                } catch (error) {
-                    if (error.name === 'AbortError') {
-                        console.log('ファイル選択がキャンセルされました。');
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        console.log('File picker was cancelled.');
                     } else {
-                        console.error('ファイルを開く際にエラーが発生しました:', error);
-                        alert('ファイルを開く際にエラーが発生しました。');
+                        console.error('Error opening file:', err);
+                        alert('ファイルのオープン中にエラーが発生しました。');
                     }
                 }
             });
 
-            saveBtn.addEventListener('click', async () => {
-                if (currentFileHandle) {
-                    await writeFile(currentFileHandle, mainEditor.value);
-                    alert('ファイルを上書き保存しました。');
-                } else {
-                    saveAsBtn.click(); 
-                }
-            });
+            async function saveContentToDisk(handle = null, silent = false) { // silent引数を追加
+                const xmlContent = mainEditor.value;
+                const fullContentToSave = `[アウトライン:]\n${outlineEditor.value}\n\n` +
+                                          `[キャラクター:]\n${characterEditor.value}\n\n` +
+                                          `[ネーム本体(XML):]\n${xmlContent}\n\n` +
+                                          `[セリフ一覧(今後廃止):]\n`;
 
-            saveAsBtn.addEventListener('click', async () => {
                 try {
-                    const suggestedName = currentFileName.endsWith('.txt') ? currentFileName : currentFileName + '.txt';
-                    const fileHandle = await window.showSaveFilePicker({
-                        suggestedName: suggestedName,
+                    if (handle) { // fileHandleが渡された場合（簡易保存）
+                        try {
+                            const writable = await handle.createWritable();
+                            await writable.write(fullContentToSave);
+                            await writable.close();
+                            if (!silent) { // silentがtrueの場合はアラートを出さない
+                                alert(`ファイルを保存しました: ${handle.name}`);
+                            }
+                            currentFileHandle = handle; // 成功したハンドルを現在のハンドルとして保持
+                            currentFileName = handle.name;
+                            return true; // 成功したらtrueを返す
+                        } catch (writeError) {
+                            console.warn('簡易保存に失敗しました。別名保存を試みます:', writeError); // ファイルが移動されたなどで上書き保存できない場合は、フォールバックで別名保存
+                        }
+                    }
+
+                    // handleがnullの場合、または簡易保存に失敗した場合
+                    const newHandle = await window.showSaveFilePicker({
                         types: [
                             {
                                 description: 'Text Files',
@@ -997,592 +987,827 @@
                                     'text/plain': ['.txt'],
                                 },
                             },
-                            {
-                                description: 'XML Files',
-                                accept: {
-                                    'application/xml': ['.xml'],
-                                },
-                            },
                         ],
+                        suggestedName: currentFileName
                     });
-                    await writeFile(fileHandle, mainEditor.value);
-                    currentFileHandle = fileHandle;
-                    currentFileName = fileHandle.name;
-                    alert(`ファイル「${currentFileName}」を保存しました。`);
-                } catch (error) {
-                    if (error.name === 'AbortError') {
-                        console.log('ファイル保存がキャンセルされました。');
+                    const writable = await newHandle.createWritable();
+                    await writable.write(fullContentToSave);
+                    await writable.close();
+                    if (!silent) { // silentがtrueの場合はアラートを出さない
+                        alert(`ファイルを保存しました: ${newHandle.name}`);
+                    }
+                    currentFileHandle = newHandle; // 新しいファイルハンドルを保存
+                    currentFileName = newHandle.name; // 新しいファイル名を保存
+                    return true; // 成功したらtrueを返す
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        console.log('Save operation was cancelled.');
                     } else {
-                        console.error('ファイルを保存する際にエラーが発生しました:', error);
-                        alert('ファイルを保存する際にエラーが発生しました。');
+                        console.error('Error saving file:', err);
+                        alert('ファイルの保存中にエラーが発生しました。');
                     }
-                }
-            });
-
-            async function writeFile(fileHandle, contents) {
-                const writable = await fileHandle.createWritable();
-                await writable.write(contents);
-                await writable.close();
-            }
-            
-            newBtn.addEventListener('click', clearAllEditors);
-            undoBtn.addEventListener('click', undo);
-            redoBtn.addEventListener('click', redo);
-
-            mainEditor.addEventListener('input', () => {
-                addToHistory(mainEditor.value);
-                updateUI(); 
-            });
-
-            outlineEditor.addEventListener('input', updateUI);
-            characterEditor.addEventListener('input', updateUI);
-
-
-            function autoResizeTextArea(textarea) {
-                if (textarea) { 
-                    textarea.style.height = 'auto'; 
-                    textarea.style.height = textarea.scrollHeight + 'px'; 
+                    return false; // 失敗したらfalseを返す
                 }
             }
 
-            function autoResizeAllTextareas() {
-                document.querySelectorAll('textarea').forEach(autoResizeTextArea);
-            }
-
-            toggleButtons.forEach(button => {
-                button.addEventListener('click', (event) => {
-                    const targetId = button.dataset.target;
-                    const targetContent = document.getElementById(targetId);
-                    const isHidden = targetContent.classList.contains('hidden');
-                    setSectionVisibility(targetContent, !isHidden);
-                    saveState(); 
-                });
-            });
-
-            addCharacterBtn.addEventListener('click', () => {
-                const newCharacterText = `
-――――――――――
-*新キャラクター（名前：読み方、愛称）男女、歳
-*関係性
-*見た目、身体的特徴、服装
-*性格・裏性格
-*環境・生い立ち`;
-                characterEditor.value += newCharacterText;
-                autoResizeTextArea(characterEditor);
-                updateUI();
-            });
-
-            function syncColumnsFromMainEditor() {
-                const xmlString = mainEditor.value;
-                try {
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(xmlString, "text/xml");
-                    currentXmlDoc = xmlDoc; 
-
-                    const errorNode = xmlDoc.querySelector('parsererror');
-                    if (errorNode) {
-                        sceneContentDiv.innerHTML = `<p style="color: red;">XMLエラー: ${errorNode.textContent}</p>`;
-                        pageContentDiv.innerHTML = `<p style="color: red;">XMLエラー: ${errorNode.textContent}</p>`;
-                        dialogueContentDiv.innerHTML = `<p style="color: red;">XMLエラー: ${errorNode.textContent}</p>`;
-                        return;
-                    }
-
-                    if (!xmlDoc.documentElement || xmlDoc.documentElement.nodeName !== 'root') {
-                        sceneContentDiv.innerHTML = `<p style="color: red;">XMLファイルに&lt;root&gt;要素が見つかりません。</p>`;
-                        pageContentDiv.innerHTML = `<p style="color: red;">XMLファイルに&lt;root&gt;要素が見つかりません。</p>`;
-                        dialogueContentDiv.innerHTML = `<p style="color: red;">XMLファイルに&lt;root&gt;要素が見つかりません。</p>`;
-                        return;
-                    }
-
-                    renderSceneColumn(xmlDoc);
-                    renderPageColumn(xmlDoc);
-                    renderDialogueColumn(xmlDoc);
-
-                } catch (e) {
-                    sceneContentDiv.innerHTML = `<p style="color: red;">XML解析エラー: ${e.message}</p>`;
-                    pageContentDiv.innerHTML = `<p style="color: red;">XML解析エラー: ${e.message}</p>`;
-                    dialogueContentDiv.innerHTML = `<p style="color: red;">XML解析エラー: ${e.message}</p>`;
-                    console.error("XML parse error:", e);
-                }
-            }
-
-            // --- シーンカラムのレンダリング ---
-            function renderSceneColumn(xmlDoc) {
-                sceneContentDiv.innerHTML = ''; 
-                const scenes = xmlDoc.querySelectorAll('root > シーン');
-                // hikaku2.htmlのシーンカラーを正確に再現
-                const sceneColors = ['#fff', '#e0f7fa', '#f0f4c3', '#ffe0b2', '#e1bee7'];
-
-                if (scenes.length === 0) {
-                    sceneContentDiv.innerHTML = '<p>シーンがありません。<br>「シーン追加」ボタンで追加できます。</p>';
-                    return;
-                }
-
-                scenes.forEach((sceneNode, sceneIndex) => {
-                    if (!sceneNode.hasAttribute('data-node-id')) {
-                        sceneNode.setAttribute('data-node-id', `s-${nodeIdCounter++}`);
-                    }
-                    const sceneNodeId = sceneNode.getAttribute('data-node-id');
-
-                    const sceneDiv = document.createElement('div');
-                    sceneDiv.classList.add('scene-item-container');
-                    sceneDiv.setAttribute('data-scene-node-id', sceneNodeId); 
-                    // シーンの色を直接スタイルに適用
-                    const bgColor = sceneColors[sceneIndex % sceneColors.length];
-                    sceneDiv.style.backgroundColor = bgColor;
-                    // ページに色を伝えるためのカスタムプロパティを設定
-                    sceneDiv.style.setProperty('--scene-bg-color', bgColor);
-
-                    const sceneHeader = document.createElement('div');
-                    sceneHeader.classList.add('scene-item-header');
-
-                    const sceneTitleBadge = document.createElement('span');
-                    sceneTitleBadge.classList.add('scene-title-badge');
-                    sceneTitleBadge.textContent = `シーン ${sceneIndex + 1}`;
-                    sceneHeader.appendChild(sceneTitleBadge);
-
-                    const deleteSceneBtn = document.createElement('button');
-                    deleteSceneBtn.classList.add('delete-scene-btn');
-                    deleteSceneBtn.textContent = '削除';
-                    deleteSceneBtn.addEventListener('click', (event) => {
-                        event.stopPropagation(); 
-                        if (confirm(`シーン ${sceneIndex + 1} を削除しますか？`)) {
-                            sceneNode.remove(); 
-                            mainEditor.value = xmlSerializer.serializeToString(xmlDoc.documentElement);
-                            addToHistory(mainEditor.value); 
-                            updateUIImmediate(); 
+            saveBtn.addEventListener('click', async () => {
+                if (currentFileHandle) { // 既にファイルハンドルが存在する場合
+                    const overwriteConfirmed = confirm(`「${currentFileName}」に上書き保存しますか？\n\nキャンセルを選ぶと、名前を変えて保存するか選択できます。`);
+                    if (overwriteConfirmed) { // はい（上書き）
+                        await saveContentToDisk(currentFileHandle, false); // silentをfalseにしてアラートを出す
+                    } else { // いいえ（キャンセル） -> 名前を変えて保存するか尋ねる
+                        const saveAsConfirmed = confirm('名前を変えて保存しますか？');
+                        if (saveAsConfirmed) { // はい（名前を変えて保存）
+                            await saveContentToDisk(null, false); // silentをfalseにしてアラートを出す
                         }
-                    });
-                    sceneHeader.appendChild(deleteSceneBtn);
-                    sceneDiv.appendChild(sceneHeader);
-
-                    const sceneDescNode = sceneNode.querySelector('シーン説明');
-                    const sceneDescTextarea = document.createElement('textarea');
-                    sceneDescTextarea.classList.add('scene-item-textarea');
-                    sceneDescTextarea.placeholder = 'ここにシーンの説明を記述';
-                    sceneDescTextarea.value = sceneDescNode ? sceneDescNode.textContent : '';
-                    sceneDescTextarea.addEventListener('input', (event) => {
-                        if (sceneDescNode) {
-                            sceneDescNode.textContent = event.target.value;
-                        } else {
-                            const newSceneDesc = xmlDoc.createElement('シーン説明');
-                            newSceneDesc.textContent = event.target.value;
-                            sceneNode.insertBefore(newSceneDesc, sceneNode.firstChild);
-                        }
-                        mainEditor.value = xmlSerializer.serializeToString(xmlDoc.documentElement);
-                        addToHistory(mainEditor.value);
-                        autoResizeTextArea(event.target);
-                    });
-                    sceneDescTextarea.addEventListener('focus', () => {
-                        setActiveElement(sceneDiv, null, null); 
-                    });
-                    sceneDiv.appendChild(sceneDescTextarea);
-
-                    sceneContentDiv.appendChild(sceneDiv);
-                    sceneNodeIdToDomElementMap.set(sceneNodeId, sceneDiv); 
-                });
-
-                restoreActiveElement();
-                setTimeout(autoResizeAllTextareas, 100); 
-            }
-
-            // --- ページカラムのレンダリング ---
-            function renderPageColumn(xmlDoc) {
-                pageContentDiv.innerHTML = ''; 
-                // シーンごとのページとボタンを管理するため、シーンのDOM要素を取得
-                const scenesInDom = document.querySelectorAll('.scene-item-container');
-
-                if (scenesInDom.length === 0) {
-                    pageContentDiv.innerHTML = '<p>ページがありません。<br>シーンカラムから追加できます。</p>';
-                    return;
+                        // いいえ（キャンセル） -> 何もしない
+                    }
+                } else { // ファイルハンドルがまだ存在しない場合（初回保存）
+                    await saveContentToDisk(null, false); // silentをfalseにしてアラートを出す
                 }
+            });
 
-                scenesInDom.forEach(sceneDomEl => {
-                    const sceneNodeId = sceneDomEl.getAttribute('data-scene-node-id');
-                    const sceneNode = currentXmlDoc.querySelector(`[data-node-id="${sceneNodeId}"]`);
-                    
-                    if (!sceneNode) return;
+            saveAsBtn.addEventListener('click', async () => {
+                // 常に別名保存ダイアログを開く
+                await saveContentToDisk(null, false); // silentをfalseにしてアラートを出す
+            });
 
-                    const pages = sceneNode.querySelectorAll('ページ');
-                    
-                    pages.forEach((pageNode, pageIndex) => {
-                        if (!pageNode.hasAttribute('data-node-id')) {
-                            pageNode.setAttribute('data-node-id', `p-${nodeIdCounter++}`);
-                        }
-                        const pageNodeId = pageNode.getAttribute('data-node-id');
-                        
-                        const pageDiv = document.createElement('div');
-                        pageDiv.classList.add('page-item-container');
-                        pageDiv.setAttribute('data-page-node-id', pageNodeId);
-                        pageDiv.setAttribute('data-scene-node-id', sceneNodeId); // 親シーンのIDも保持
-
-                        // 親シーンの背景色を取得してページに適用
-                        const sceneBgColor = window.getComputedStyle(sceneDomEl).backgroundColor;
-                        pageDiv.style.backgroundColor = sceneBgColor;
-
-                        const pageHeader = document.createElement('div');
-                        pageHeader.classList.add('page-item-header');
-
-                        const pageTitleBadge = document.createElement('span');
-                        pageTitleBadge.classList.add('page-title-badge');
-                        pageTitleBadge.textContent = `ページ ${pageIndex + 1}`; // 「ページ 1」形式に修正
-                        pageHeader.appendChild(pageTitleBadge);
-
-                        const deletePageBtn = document.createElement('button');
-                        deletePageBtn.classList.add('delete-page-btn');
-                        deletePageBtn.textContent = '削除';
-                        deletePageBtn.addEventListener('click', (event) => {
-                            event.stopPropagation();
-                            if (confirm(`ページ ${pageIndex + 1} を削除しますか？`)) {
-                                pageNode.remove();
-                                mainEditor.value = xmlSerializer.serializeToString(xmlDoc.documentElement);
-                                addToHistory(mainEditor.value);
-                                updateUIImmediate();
-                            }
-                        });
-                        pageHeader.appendChild(deletePageBtn);
-                        pageDiv.appendChild(pageHeader);
-
-                        const pageDescNode = pageNode.querySelector('ページ説明');
-                        const pageDescTextarea = document.createElement('textarea');
-                        pageDescTextarea.classList.add('page-item-textarea');
-                        pageDescTextarea.placeholder = 'ここにページの説明を記述';
-                        pageDescTextarea.value = pageDescNode ? pageDescNode.textContent : '';
-                        pageDescTextarea.addEventListener('input', (event) => {
-                            if (pageDescNode) {
-                                pageDescNode.textContent = event.target.value;
-                            } else {
-                                const newPageDesc = xmlDoc.createElement('ページ説明');
-                                newPageDesc.textContent = event.target.value;
-                                pageNode.insertBefore(newPageDesc, pageNode.firstChild);
-                            }
-                            mainEditor.value = xmlSerializer.serializeToString(xmlDoc.documentElement);
-                            addToHistory(mainEditor.value);
-                            autoResizeTextArea(event.target);
-                        });
-                        pageDescTextarea.addEventListener('focus', () => {
-                            setActiveElement(
-                                sceneNodeIdToDomElementMap.get(sceneNode.getAttribute('data-node-id')),
-                                pageDiv,
-                                null
-                            );
-                        });
-                        pageDiv.appendChild(pageDescTextarea);
-
-                        pageContentDiv.appendChild(pageDiv);
-                        pageNodeIdToDomElementMap.set(pageNodeId, pageDiv); 
-                    });
-
-                    // 各シーンに内包されるページが全てレンダリングされた後、
-                    // そのシーンに対応するDOM要素の一番最後に「このシーンにページを追加」ボタンを追加
-                    // NOTE: このボタンはページカラムに移動
-                    const addPageBtn = document.createElement('button');
-                    addPageBtn.classList.add('add-page-btn');
-                    addPageBtn.textContent = `シーン ${sceneIndex + 1} にページを追加`; // シーン番号を明記
-                    addPageBtn.setAttribute('data-target-scene-node-id', sceneNodeId); // どのシーンに紐づくか
-                    addPageBtn.addEventListener('click', (event) => {
-                        event.stopPropagation(); 
-
-                        const targetSceneNodeId = event.target.getAttribute('data-target-scene-node-id');
-                        const targetSceneNode = currentXmlDoc.querySelector(`[data-node-id="${targetSceneNodeId}"]`);
-
-                        if (!targetSceneNode) {
-                            console.error('Target scene node not found for adding page.');
-                            return;
-                        }
-
-                        const newPage = xmlDoc.createElement('ページ');
-                        const newPageDesc = xmlDoc.createElement('ページ説明');
-                        newPageDesc.textContent = '新しいページの説明';
-                        newPage.appendChild(newPageDesc);
-                        
-                        const newDialogue = xmlDoc.createElement('セリフ');
-                        newDialogue.textContent = 'セリフ'; // デフォルトのセリフ形式に合わせる
-                        newPage.appendChild(newDialogue);
-
-                        targetSceneNode.appendChild(newPage); 
-
-                        mainEditor.value = xmlSerializer.serializeToString(xmlDoc.documentElement);
-                        addToHistory(mainEditor.value);
-                        updateUIImmediate();
-                    });
-                    // シーンの各ページの後にボタンを追加するが、
-                    // シーン内のすべてのページがレンダリングされた後にまとめて追加
-                    pageContentDiv.appendChild(addPageBtn);
-                });
-
-                restoreActiveElement();
-                setTimeout(autoResizeAllTextareas, 100);
-            }
-
-            // --- セリフカラムのレンダリング ---
-            function renderDialogueColumn(xmlDoc) {
-                dialogueContentDiv.innerHTML = ''; 
-
-                const scenes = xmlDoc.querySelectorAll('root > シーン');
-
-                if (scenes.length === 0) {
-                    dialogueContentDiv.innerHTML = '<p>セリフがありません。<br>メインエディタから追加できます。</p>';
-                    return;
+            const mainColumn = document.querySelector('.column.main-column');
+            document.body.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.innerWidth > 768) {
+                    document.body.classList.add('drag-over');
                 }
+            });
 
-                scenes.forEach((sceneNode, sceneIndex) => {
-                    const pagesInScene = sceneNode.querySelectorAll('ページ');
-                    pagesInScene.forEach((pageNode, pageIndex) => {
-                        const dialogues = pageNode.querySelectorAll('セリフ');
-                        
-                            dialogues.forEach((dialogueNode, dialogueIndex) => {
-                                if (!dialogueNode.hasAttribute('data-node-id')) {
-                                    dialogueNode.setAttribute('data-node-id', `d-${nodeIdCounter++}`);
-                                }
-                                const dialogueNodeId = dialogueNode.getAttribute('data-node-id');
-
-                                const dialogueDiv = document.createElement('div');
-                                dialogueDiv.classList.add('dialogue-content');
-                                dialogueDiv.setAttribute('data-dialogue-node-id', dialogueNodeId);
-                                dialogueDiv.setAttribute('data-scene-node-id', sceneNode.getAttribute('data-node-id'));
-                                dialogueDiv.setAttribute('data-page-node-id', pageNode.getAttribute('data-node-id'));
-
-                                // セリフ内容全体をtextareaに入れる
-                                const dialogueTextarea = document.createElement('textarea');
-                                dialogueTextarea.value = dialogueNode.textContent; // XMLノードのテキスト内容全体をセット
-                                dialogueTextarea.placeholder = 'セリフを入力'; // 「キャラクター名: 」のプレースホルダーを削除
-
-                                dialogueTextarea.addEventListener('input', (event) => {
-                                    dialogueNode.textContent = event.target.value; // textareaの値をそのままXMLノードに保存
-                                    mainEditor.value = xmlSerializer.serializeToString(xmlDoc.documentElement);
-                                    addToHistory(mainEditor.value);
-                                    autoResizeTextArea(event.target);
-                                });
-                                dialogueTextarea.addEventListener('focus', () => {
-                                    setActiveElement(
-                                        sceneNodeIdToDomElementMap.get(sceneNode.getAttribute('data-node-id')),
-                                        pageNodeIdToDomElementMap.get(pageNode.getAttribute('data-node-id')),
-                                        dialogueDiv
-                                    );
-                                });
-
-                                dialogueDiv.appendChild(dialogueTextarea);
-
-                                dialogueContentDiv.appendChild(dialogueDiv); 
-                                dialogueNodeIdToDomElementMap.set(dialogueNodeId, dialogueDiv); 
-                            });
-                    });
-                });
-                restoreActiveElement();
-                setTimeout(autoResizeAllTextareas, 100);
-            }
-
-            function setActiveElement(sceneEl, pageEl, dialogueEl) {
-                document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
-
-                if (sceneEl) {
-                    sceneEl.classList.add('active');
-                    if (window.innerWidth <= 768) {
-                        showColumn(1); 
-                    } else {
-                        sceneEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            document.body.addEventListener('dragleave', (e) => {
+                if (window.innerWidth > 768) {
+                    if (!mainColumn.contains(e.relatedTarget) && e.relatedTarget !== null) {
+                        document.body.classList.remove('drag-over');
                     }
                 }
-                if (pageEl) {
-                    pageEl.classList.add('active');
-                    if (window.innerWidth <= 768) {
-                        showColumn(2); 
-                    } else {
-                        pageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                }
-                if (dialogueEl) {
-                    dialogueEl.classList.add('active');
-                    if (window.innerWidth <= 768) {
-                        showColumn(3); 
-                    } else {
-                        dialogueEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                }
-
-                activeSceneElement = sceneEl;
-                activePageElement = pageEl;
-                activeDialogueElement = dialogueEl;
-            }
-
-            function restoreActiveElement() {
-                if (activeSceneElement && document.body.contains(activeSceneElement)) {
-                    activeSceneElement.classList.add('active');
-                } else {
-                    activeSceneElement = null;
-                }
-                if (activePageElement && document.body.contains(activePageElement)) {
-                    activePageElement.classList.add('active');
-                } else {
-                    activePageElement = null;
-                }
-                if (activeDialogueElement && document.body.contains(activeDialogueElement)) {
-                    activeDialogueElement.classList.add('active');
-                } else {
-                    activeDialogueElement = null;
-                }
-            }
-
-            addSceneBtn.addEventListener('click', () => {
-                if (!currentXmlDoc || !currentXmlDoc.documentElement || currentXmlDoc.documentElement.nodeName !== 'root') {
-                    currentXmlDoc = document.implementation.createDocument(null, 'root', null); 
-                }
-
-                const newScene = currentXmlDoc.createElement('シーン');
-                const newSceneDesc = currentXmlDoc.createElement('シーン説明');
-                newSceneDesc.textContent = '新しいシーンの説明';
-                newScene.appendChild(newSceneDesc);
-
-                const newPage = currentXmlDoc.createElement('ページ');
-                const newPageDesc = currentXmlDoc.createElement('ページ説明');
-                newPageDesc.textContent = '新しいページの説明';
-                newPage.appendChild(newPageDesc);
-                
-                const newDialogue = currentXmlDoc.createElement('セリフ');
-                newDialogue.textContent = 'セリフ'; // デフォルトのセリフ形式に合わせる
-                newPage.appendChild(newDialogue); 
-                
-                newScene.appendChild(newPage); 
-
-                currentXmlDoc.documentElement.appendChild(newScene); 
-
-                mainEditor.value = xmlSerializer.serializeToString(currentXmlDoc.documentElement);
-                addToHistory(mainEditor.value);
-                updateUIImmediate();
             });
 
-
-            exportDialogueBtn.addEventListener('click', () => {
-                let textContent = '';
-                const scenes = currentXmlDoc.querySelectorAll('root > シーン');
-                
-                scenes.forEach((sceneNode, sceneIndex) => {
-                    const sceneDescNode = sceneNode.querySelector('シーン説明');
-                    const sceneDesc = sceneDescNode ? sceneDescNode.textContent : `シーン ${sceneIndex + 1} (説明なし)`;
-                    textContent += `## シーン ${sceneIndex + 1}: ${sceneDesc}\n\n`;
-
-                    const pagesInScene = sceneNode.querySelectorAll('ページ');
-                    pagesInScene.forEach((pageNode, pageIndex) => {
-                        const pageDescNode = pageNode.querySelector('ページ説明');
-                        const pageDesc = pageDescNode ? pageDescNode.textContent : `ページ ${pageIndex + 1} (説明なし)`;
-                        textContent += `### ページ ${pageIndex + 1}: ${pageDesc}\n`; // 「ページ 1」形式に合わせる
-
-                        const dialogues = pageNode.querySelectorAll('セリフ');
-                        if (dialogues.length > 0) {
-                            dialogues.forEach((dialogueNode) => { // dialogueIndex は不要
-                                textContent += `- ${dialogueNode.textContent}\n`; // セリフ内容をそのまま出力
-                            });
-                        } else {
-                            textContent += `- (セリフなし)\n`;
-                        }
-                        textContent += '\n'; 
-                    });
-                    textContent += '\n'; 
-                });
-
-                const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'セリフ一覧.txt';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            });
-
-
-            loadState();
-
-            mainEditor.addEventListener('dragover', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                mainEditor.classList.add('drag-over');
-                document.body.classList.add('drag-over'); 
-            });
-
-            mainEditor.addEventListener('dragleave', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                mainEditor.classList.remove('drag-over');
-                document.body.classList.remove('drag-over');
-            });
-
-            mainEditor.addEventListener('drop', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                mainEditor.classList.remove('drag-over');
+            mainColumn.addEventListener('drop', async (e) => {
+                e.preventDefault();
                 document.body.classList.remove('drag-over');
 
-                const files = event.dataTransfer.files;
-                if (files.length > 0) {
-                    const file = files[0];
+                const file = e.dataTransfer.files[0];
+                if (file && file.type === 'text/plain') {
                     const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const content = e.target.result;
-                        try {
-                            const parser = new DOMParser();
-                            const xmlDoc = parser.parseFromString(content, "text/xml");
-                            currentXmlDoc = xmlDoc;
-
-                            const errorNode = xmlDoc.querySelector('parsererror');
-                            if (errorNode || !xmlDoc.documentElement || xmlDoc.documentElement.nodeName !== 'root' || content.trim() === '') {
-                                alert('ドロップされたファイルの解析中にエラーが発生しました、またはファイルが空です。有効なXML形式でファイルを保存してください。');
-                                console.error('XML parsing error (drag & drop):', errorNode ? errorNode.textContent : 'Invalid root element or empty file content');
-                                mainEditor.value = `<root/>`; 
-                            } else {
-                                const outlineElement = xmlDoc.querySelector('outline');
-                                outlineEditor.value = outlineElement ? outlineElement.textContent : '';
-
-                                const characterElement = xmlDoc.querySelector('character');
-                                characterEditor.value = characterElement ? characterElement.textContent : '';
-
-                                mainEditor.value = xmlSerializer.serializeToString(currentXmlDoc.documentElement);
-                            }
-
-                            currentFileName = file.name;
-                            currentFileHandle = file.getFileSystemHandle(); 
-                            history = [mainEditor.value];
-                            historyIndex = 0;
-                            updateUIImmediate();
-                            alert(`ファイル「${currentFileName}」を読み込みました。`);
-
-                        } catch (parseError) {
-                            alert('ドロップされたファイルの読み込み中にエラーが発生しました。');
-                            console.error('Dropped file parsing error:', parseError);
-                            mainEditor.value = `<root/>`;
-                            updateUIImmediate();
-                        }
+                    reader.onload = (event) => {
+                        extractAndSetSeparateContents(event.target.result);
+                        currentFileName = file.name;
+                        currentFileHandle = null; // ドラッグ＆ドロップで開いた場合はハンドルをリセット
+                        history = [mainEditor.value];
+                        historyIndex = 0;
+                        updateUIImmediate();
+                    };
+                    reader.onerror = () => {
+                        alert('ファイルの読み込みに失敗しました。');
                     };
                     reader.readAsText(file);
                 }
             });
 
-            document.body.addEventListener('dragover', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
+            function extractAndSetSeparateContents(fullText) {
+                const extracted = { outline: '', character: '', main: '' };
+
+                const outlineMatch = fullText.match(/\[アウトライン:\]\n([\s\S]*?)(?=\n*\[キャラクター:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
+                if (outlineMatch) extracted.outline = outlineMatch[1].trim();
+                else if (fullText.includes('[アウトライン:]')) extracted.outline = ''; // タグはあるが内容がない場合
+
+                const characterMatch = fullText.match(/\[キャラクター:\]\n([\s\S]*?)(?=\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
+                if (characterMatch) extracted.character = characterMatch[1].trim();
+                else if (fullText.includes('[キャラクター:]')) extracted.character = ''; // タグはあるが内容がない場合
+
+                const mainXmlMatch = fullText.match(/\[ネーム本体\(XML\):\]\n([\s\S]*?)(?=\n*\[セリフ一覧\(今後廃止\):\]|$)/);
+                if (mainXmlMatch) extracted.main = mainXmlMatch[1].trim();
+                else if (fullText.includes('[ネーム本体(XML):]')) extracted.main = ''; // タグはあるが内容がない場合
+                
+                // どのセクションタグも見つからなかった場合は、mainEditorに全て入れる
+                if (!outlineMatch && !characterMatch && !mainXmlMatch) {
+                    extracted.main = fullText;
+                }
+
+                outlineEditor.value = extracted.outline;
+                characterEditor.value = extracted.character;
+                mainEditor.value = extracted.main;
+            }
+
+            // カスタムXMLシリアライズ関数
+            function serializeXmlToCompactString(node) {
+                let result = '';
+
+                if (!node) {
+                    return result;
+                }
+
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    result += `<${node.tagName}>`;
+                    for (let child of node.childNodes) {
+                        result += serializeXmlToCompactString(child);
+                    }
+                    result += `</${node.tagName}>`;
+                } else if (node.nodeType === Node.TEXT_NODE) {
+                    // XMLエンティティをエスケープ
+                    result += node.textContent
+                                .replace(/&/g, '&amp;')
+                                .replace(/</g, '&lt;')
+                                .replace(/>/g, '&gt;')
+                                .replace(/"/g, '&quot;')
+                                .replace(/'/g, '&apos;');
+                } else if (node.nodeType === Node.CDATA_SECTION_NODE) {
+                    result += `<![CDATA[${node.textContent}]]>`;
+                } else if (node.nodeType === Node.COMMENT_NODE) {
+                    result += ``;
+                }
+                // 他のノードタイプは無視
+                return result;
+            }
+
+
+            function syncColumnsFromMainEditor() {
+                const mainText = mainEditor.value;
+
+                // マップをクリアして再構築
+                sceneNodeIdToDomElementMap.clear();
+                pageNodeIdToDomElementMap.clear();
+                sceneNodeIdToFirstPageDomElementMap.clear();
+                dialogueNodeIdToDomElementMap.clear();
+                nodeIdCounter = 0; // ノードIDカウンターをリセット
+
+                try {
+                    let textToParse = mainText.trim();
+                    if (!textToParse.startsWith('<root>') || !textToParse.endsWith('</root>')) {
+                        // rootタグがない場合でもパースを試みるが、エラーになる可能性を考慮
+                        textToParse = `<root>${textToParse}</root>`; 
+                    }
+                    currentXmlDoc = xmlParser.parseFromString(textToParse, 'application/xml');
+
+                    const parserError = currentXmlDoc.querySelector('parsererror');
+                    if (parserError) {
+                        console.error('XML Parsing Error:', parserError.textContent);
+                        const errorMessage = '<p style="color: red;">XMLパースエラー: メインエディタの記述を確認してください。</p>';
+                        sceneContentDiv.innerHTML = errorMessage;
+                        pageContentDiv.innerHTML = errorMessage;
+                        dialogueContentDiv.innerHTML = errorMessage;
+                        return; // <--- IMPORTANT: Returns here on parse error.
+                    }
+                } catch (e) {
+                    console.error('Failed to parse XML:', e);
+                    const errorMessage = '<p style="color: red;">XMLパースに失敗しました。</p>';
+                    sceneContentDiv.innerHTML = errorMessage;
+                    pageContentDiv.innerHTML = errorMessage;
+                    dialogueContentDiv.innerHTML = errorMessage;
+                    return; // <--- IMPORTANT: Returns here on parse error.
+                }
+
+                const scenes = currentXmlDoc.querySelectorAll('シーン');
+                const sceneItems = [];
+                scenes.forEach((sceneElement, index) => {
+                    const nodeId = `node-${nodeIdCounter++}`; 
+                    sceneItems.push({
+                        title: `シーン${index + 1}`,
+                        text: sceneElement.querySelector('シーン説明')?.textContent || '',
+                        nodeId: nodeId, 
+                        rawNode: sceneElement, 
+                        sceneIndex: index
+                    });
+                });
+                renderSceneColumnContent(sceneContentDiv, sceneItems);
+
+                // --- ページカラムの描画 ---
+                pageContentDiv.innerHTML = '';
+                let globalPageIndex = 1;
+                if (scenes.length === 0) {
+                    const p = document.createElement('p');
+                    p.textContent = `メインエディタの内容からページを抽出します。`;
+                    pageContentDiv.appendChild(p);
+                } else {
+                    scenes.forEach((sceneElement, sceneIndex) => {
+                        const sceneNodeIdForDom = [...sceneNodeIdToDomElementMap.keys()].find(key => sceneNodeIdToDomElementMap.get(key).xmlNode === sceneElement);
+                        const sceneTitle = `シーン${sceneIndex + 1}`;
+                        const sceneColorClass = `scene-color-${sceneIndex % 5}`; 
+
+                        const pagesInScene = sceneElement.querySelectorAll('ページ');
+                        
+                        if (pagesInScene.length === 0) {
+                            const p = document.createElement('p');
+                            p.textContent = `このシーンにはページがありません。`;
+                            p.style.fontSize = '0.9em';
+                            p.style.color = '#777';
+                            p.style.marginLeft = '10px';
+                            p.style.marginBottom = '10px';
+                            pageContentDiv.appendChild(p);
+                        } 
+                        
+                        pagesInScene.forEach((pageElement, pageIndexInScene) => { // pageIndexInSceneを追加
+                            const nodeId = `node-${nodeIdCounter++}`;
+                            const pageItemContainer = document.createElement('div');
+                            pageItemContainer.classList.add('page-item-container');
+                            pageItemContainer.setAttribute('data-node-id', nodeId); 
+                            pageItemContainer.xmlNode = pageElement; // XMLノードをDOM要素に紐付け
+                            pageItemContainer.setAttribute('data-parent-scene-id', sceneNodeIdForDom); // 親シーンのDOM IDを保持
+                            pageItemContainer.setAttribute('data-scene-index', sceneIndex); // シーンのインデックス
+                            pageItemContainer.setAttribute('data-page-index-in-scene', pageIndexInScene); // シーン内のページインデックス
+                            pageItemContainer.classList.add(sceneColorClass); 
+                            
+                            pageItemContainer.addEventListener('click', (event) => {
+                                setActiveElement(pageItemContainer, 'page');
+                                showColumn(2); 
+                                if (window.innerWidth > 768) { 
+                                    pageItemContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
+                            });
+
+                            const pageHeader = document.createElement('div');
+                            pageHeader.classList.add('page-item-header');
+                            const pageTitleBadge = document.createElement('span');
+                            pageTitleBadge.classList.add('page-title-badge');
+                            pageTitleBadge.textContent = `ページ${globalPageIndex}`;
+                            pageHeader.appendChild(pageTitleBadge);
+
+                            const deleteButton = document.createElement('button');
+                            deleteButton.classList.add('delete-page-btn');
+                            deleteButton.textContent = '削除';
+                            deleteButton.addEventListener('click', (e) => {
+                                e.stopPropagation(); 
+                                deletePage(pageItemContainer.xmlNode, `ページ${globalPageIndex}`);
+                            });
+                            pageHeader.appendChild(deleteButton);
+                            pageItemContainer.appendChild(pageHeader);
+
+                            const itemTextArea = document.createElement('textarea');
+                            // <ページ説明>と<セリフ>の内容を結合してtextareaに表示
+                            let combinedText = '';
+                            pageElement.childNodes.forEach(child => {
+                                if (child.nodeType === Node.ELEMENT_NODE) {
+                                    if (child.tagName === 'ページ説明') {
+                                        combinedText += child.textContent;
+                                    } else if (child.tagName === 'セリフ') {
+                                        combinedText += `「${child.textContent}」`;
+                                    }
+                                } else if (child.nodeType === Node.TEXT_NODE && child.textContent.trim().length > 0) {
+                                    // 要素間のテキストノードも考慮（ただし、今回のXML構造ではあまり発生しないはず）
+                                    combinedText += child.textContent;
+                                }
+                            });
+                            itemTextArea.value = combinedText;
+
+                            itemTextArea.classList.add('page-text'); 
+                            itemTextArea.placeholder = 'ページ内の説明やセリフ';
+                            itemTextArea.addEventListener('input', (e) => {
+                                autoResizeTextArea(e.target);
+                                // updatePageContentInXmlに、DOM要素の参照とテキスト、そしてシーンとページインデックスを渡す
+                                updatePageContentInXml(
+                                    pageItemContainer.getAttribute('data-scene-index'),
+                                    pageItemContainer.getAttribute('data-page-index-in-scene'),
+                                    e.target.value // 入力されたテキスト全体を渡す
+                                );
+                            });
+                            itemTextArea.addEventListener('change', () => { 
+                                updateUIImmediate(); 
+                            });
+                            pageItemContainer.appendChild(itemTextArea);
+                            autoResizeTextArea(itemTextArea); 
+                            
+                            pageContentDiv.appendChild(pageItemContainer);
+                            pageNodeIdToDomElementMap.set(nodeId, pageItemContainer);
+
+                            if (!sceneNodeIdToFirstPageDomElementMap.has(sceneNodeIdForDom)) {
+                                sceneNodeIdToFirstPageDomElementMap.set(sceneNodeIdForDom, pageItemContainer);
+                            }
+                            globalPageIndex++;
+                        });
+                        
+                        const addPageButtonForScene = document.createElement('button');
+                        addPageButtonForScene.classList.add('add-page-to-scene-btn');
+                        addPageButtonForScene.textContent = `「${sceneTitle}」にページを追加`;
+                        addPageButtonForScene.setAttribute('data-scene-node-id', sceneNodeIdForDom); 
+                        addPageButtonForScene.xmlNode = sceneElement; 
+                        addPageButtonForScene.addEventListener('click', (e) => {
+                            e.stopPropagation(); 
+                            addPageToSpecificScene(sceneElement); 
+                        });
+                        pageContentDiv.appendChild(addPageButtonForScene);
+                    });
+                }
+                
+                // --- セリフカラムの描画 ---
+                dialogueContentDiv.innerHTML = '';
+                let globalPageIndexForDialogue = 1; // セリフカラム描画用のページカウンターを初期化
+                if (scenes.length === 0) {
+                    const p = document.createElement('p');
+                    p.textContent = `メインエディタの内容からセリフを抽出します。`;
+                    dialogueContentDiv.appendChild(p);
+                } else {
+                    scenes.forEach((sceneElement, sceneIndex) => {
+                        const pagesInScene = sceneElement.querySelectorAll('ページ');
+
+                        pagesInScene.forEach((pageElement, pageIndexInScene) => {
+                            const dialoguesInPage = pageElement.querySelectorAll('セリフ');
+                            // XMLノードとDOM要素の関連付けのために、pageElementのnodeIdを取得
+                            const pageNodeIdForDom = [...pageNodeIdToDomElementMap.keys()].find(key => pageNodeIdToDomElementMap.get(key).xmlNode === pageElement);
+
+                            if (dialoguesInPage.length > 0) {
+                                // ページごとのセリフをまとめるためのコンテナ
+                                const serifPageGroupContainer = document.createElement('div');
+                                serifPageGroupContainer.classList.add('serif-page-group-container');
+
+                                // ★★★ ここからが追加・修正部分 ★★★
+                                // ページ番号を表示するヘッダーを追加
+                                const pageHeader = document.createElement('p');
+                                pageHeader.style.fontWeight = 'bold';
+                                pageHeader.style.color = '#333';
+                                pageHeader.style.fontSize = '0.9em';
+                                pageHeader.style.marginBottom = '5px';
+                                pageHeader.style.paddingBottom = '5px';
+                                pageHeader.style.borderBottom = '1px dashed #ccc';
+                                // ページカラムと一貫性を持たせるために、通し番号を使用
+                                pageHeader.textContent = `ページ ${globalPageIndexForDialogue}`;
+                                serifPageGroupContainer.appendChild(pageHeader);
+                                // ★★★ ここまでが追加・修正部分 ★★★
+
+                                dialoguesInPage.forEach((dialogueElement, dialogueIndexInPage) => {
+                                    const nodeId = `node-${nodeIdCounter++}`;
+                                    const dialogueContentDivItem = document.createElement('div');
+                                    dialogueContentDivItem.classList.add('dialogue-content');
+                                    dialogueContentDivItem.setAttribute('data-node-id', nodeId);
+                                    dialogueContentDivItem.xmlNode = dialogueElement;
+                                    dialogueContentDivItem.setAttribute('data-parent-page-id', pageNodeIdForDom);
+                                    dialogueContentDivItem.setAttribute('data-scene-index', sceneIndex);
+                                    dialogueContentDivItem.setAttribute('data-page-index-in-scene', pageIndexInScene);
+                                    dialogueContentDivItem.setAttribute('data-dialogue-index-in-page', dialogueIndexInPage);
+
+                                    dialogueContentDivItem.textContent = dialogueElement.textContent; // divのtextContentに設定
+                                    dialogueContentDivItem.style.minHeight = '1.6em'; // 最小の高さを確保
+                                    dialogueContentDivItem.style.whiteSpace = 'pre-wrap'; // 改行を反映
+                                    dialogueContentDivItem.style.wordWrap = 'break-word'; // 長い単語の折り返し
+
+                                    dialogueContentDivItem.addEventListener('click', (event) => {
+                                        setActiveElement(dialogueContentDivItem, 'dialogue');
+                                        showColumn(3);
+                                        if (window.innerWidth > 768) {
+                                            dialogueContentDivItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }
+                                    });
+
+                                    serifPageGroupContainer.appendChild(dialogueContentDivItem); // ページグループに追加
+                                    dialogueNodeIdToDomElementMap.set(nodeId, dialogueContentDivItem);
+                                });
+                                dialogueContentDiv.appendChild(serifPageGroupContainer); // セリフカラム全体に追加
+                            }
+                            
+                            // ページを1つ処理したのでカウンターをインクリメント
+                            globalPageIndexForDialogue++;
+                        });
+                    });
+                }
+                highlightActiveElements();
+            }
+
+            function renderSceneColumnContent(container, sceneItems) {
+                container.innerHTML = '';
+                if (sceneItems.length === 0) {
+                    const p = document.createElement('p');
+                    p.textContent = `メインエディタの内容からシーンを抽出します。`;
+                    container.appendChild(p);
+                    return;
+                }
+
+                sceneItems.forEach(item => {
+                    const sceneItemContainer = document.createElement('div');
+                    sceneItemContainer.classList.add('scene-item-container');
+                    sceneItemContainer.classList.add(`scene-color-${item.sceneIndex % 5}`); 
+                    sceneItemContainer.setAttribute('data-node-id', item.nodeId); 
+                    sceneItemContainer.xmlNode = item.rawNode; 
+                    sceneItemContainer.setAttribute('data-scene-index', item.sceneIndex); // シーンのインデックスをDOMに保持
+                    
+                    const header = document.createElement('div');
+                    header.classList.add('scene-item-header');
+
+                    const titleBadge = document.createElement('span');
+                    titleBadge.classList.add('scene-title-badge');
+                    titleBadge.textContent = item.title;
+                    header.appendChild(titleBadge);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.classList.add('delete-scene-btn');
+                    deleteButton.textContent = '削除';
+                    deleteButton.addEventListener('click', (e) => {
+                        e.stopPropagation(); 
+                        deleteScene(sceneItemContainer.xmlNode); 
+                    });
+                    header.appendChild(deleteButton);
+                    sceneItemContainer.appendChild(header);
+
+                    const itemTextArea = document.createElement('textarea');
+                    itemTextArea.value = item.text;
+                    itemTextArea.classList.add('scene-text'); 
+                    itemTextArea.placeholder = 'シーンの説明';
+                    itemTextArea.addEventListener('input', (e) => {
+                        autoResizeTextArea(e.target);
+                        // updateSceneContentInXmlにシーンのインデックスとテキストを渡す
+                        updateSceneContentInXml(sceneItemContainer.getAttribute('data-scene-index'), e.target.value); 
+                    });
+                    itemTextArea.addEventListener('change', () => { 
+                        updateUIImmediate(); 
+                    });
+                    sceneItemContainer.appendChild(itemTextArea);
+                    autoResizeTextArea(itemTextArea); 
+
+                    sceneItemContainer.addEventListener('click', () => {
+                        setActiveElement(sceneItemContainer, 'scene');
+                        const firstPageElement = sceneNodeIdToFirstPageDomElementMap.get(item.nodeId); 
+                        if (firstPageElement) {
+                            setActiveElement(firstPageElement, 'page');
+                            showColumn(2); 
+                            if (window.innerWidth > 768) { 
+                                setTimeout(() => {
+                                    firstPageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }, 300); 
+                            }
+                        } else {
+                            showColumn(2);
+                        }
+                    });
+                    
+                    container.appendChild(sceneItemContainer);
+                    sceneNodeIdToDomElementMap.set(item.nodeId, sceneItemContainer);
+                });
+            }
+
+            // XMLツリーを探索して対象のシーン要素を特定するヘルパー関数
+            function getSceneElementByIndex(sceneIndex) {
+                const scenes = currentXmlDoc.querySelectorAll('シーン');
+                return scenes[sceneIndex] || null;
+            }
+
+            // XMLツリーを探索して対象のページ要素を特定するヘルパー関数
+            function getPageElementByIndex(sceneIndex, pageIndexInScene) {
+                const sceneElement = getSceneElementByIndex(sceneIndex);
+                if (sceneElement) {
+                    const pages = sceneElement.querySelectorAll('ページ');
+                    return pages[pageIndexInScene] || null;
+                }
+                return null;
+            }
+
+            // XMLツリーを探索して対象のセリフ要素を特定するヘルパー関数
+            function getDialogueElementByIndex(sceneIndex, pageIndexInScene, dialogueIndexInPage) {
+                const pageElement = getPageElementByIndex(sceneIndex, pageIndexInScene);
+                if (pageElement) {
+                    const dialogues = pageElement.querySelectorAll('セリフ');
+                    return dialogues[dialogueIndexInPage] || null;
+                }
+                return null;
+            }
+
+
+            // シーンの更新関数を修正
+            function updateSceneContentInXml(sceneIndex, newText) {
+                const sceneElement = getSceneElementByIndex(sceneIndex);
+                if (sceneElement) {
+                    let sceneDescElement = sceneElement.querySelector('シーン説明');
+                    if (!sceneDescElement) {
+                        sceneDescElement = currentXmlDoc.createElement('シーン説明');
+                        sceneElement.insertBefore(sceneDescElement, sceneElement.firstChild);
+                    }
+                    sceneDescElement.textContent = newText;
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
+                    addToHistory(mainEditor.value);
+                }
+            }
+
+            // ページの更新関数を修正
+            function updatePageContentInXml(sceneIndex, pageIndexInScene, fullPageText) { 
+                const pageElement = getPageElementByIndex(sceneIndex, pageIndexInScene);
+                if (pageElement) {
+                    // 既存の<ページ説明>と<セリフ>要素をすべて削除
+                    // これにより、新しい内容で完全に再構築される
+                    pageElement.querySelectorAll('ページ説明, セリフ').forEach(el => pageElement.removeChild(el));
+
+                    // 正規表現で「」で囲まれたセリフを抽出
+                    // 変更点: 改行を含む任意のアウトラインテキストを考慮できるよう「[^」]*」を「([\s\S]*?)」に変更
+                    const dialogueRegex = /「([\s\S]*?)」/g;
+                    let lastIndex = 0;
+                    let contentParts = []; // ページ説明とセリフの順序を保持する配列
+
+                    let match;
+                    while ((match = dialogueRegex.exec(fullPageText)) !== null) {
+                        // セリフの前のテキスト（ページ説明の一部）
+                        if (match.index > lastIndex) {
+                            contentParts.push({ type: 'desc', text: fullPageText.substring(lastIndex, match.index) });
+                        }
+
+                        // セリフ本体（「」の中身）
+                        const dialogueText = match[1]; 
+                        contentParts.push({ type: 'dialogue', text: dialogueText });
+
+                        lastIndex = dialogueRegex.lastIndex;
+                    }
+
+                    // 残りのテキスト（最後のセリフの後、またはセリフがない場合）
+                    if (lastIndex < fullPageText.length) {
+                        contentParts.push({ type: 'desc', text: fullPageText.substring(lastIndex) });
+                    }
+                    
+                    // contentPartsに基づいて新しい要素を作成し、pageElementに追加
+                    contentParts.forEach(part => {
+                        if (part.type === 'desc') {
+                            // 空行だけのページ説明は追加しない (trim()後の長さで判断)
+                            // ただし、改行自体は維持するためにtextContentにはそのままセット
+                            if (part.text.trim().length > 0 || part.text.includes('\n')) { 
+                                const newPageDescElement = currentXmlDoc.createElement('ページ説明');
+                                newPageDescElement.textContent = part.text; 
+                                pageElement.appendChild(newPageDescElement); 
+                            }
+                        } else if (part.type === 'dialogue') {
+                            const newDialogueElement = currentXmlDoc.createElement('セリフ');
+                            newDialogueElement.textContent = part.text;
+                            pageElement.appendChild(newDialogueElement);
+                        }
+                    });
+
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
+                    addToHistory(mainEditor.value);
+                }
+            }
+
+
+            // セリフの更新関数はdivになったので、メインエディタ側からは変更しない
+            // よって、この関数は削除するか、空にする
+            function updateDialogueContentInXml(sceneIndex, pageIndexInScene, dialogueIndexInPage, newText) {
+                // セリフカラムは編集不可なので、この関数は呼び出されません
+                // もし将来的に編集可能にする場合は、ここでXMLを更新する処理を記述します
+                console.log("Dialogue content updated (セリフカラムは編集不可です):", newText);
+            }
+
+
+            function deleteScene(sceneElement) { 
+                if (!confirm('このシーンを削除してもよろしいですか？（このシーン内のページとセリフも全て削除されます）')) {
+                    return;
+                }
+                if (sceneElement && sceneElement.parentNode) {
+                    sceneElement.parentNode.removeChild(sceneElement);
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
+                    addToHistory(mainEditor.value);
+                    updateUIImmediate(); 
+                }
+            }
+
+            function deletePage(pageElement, pageTitle) { 
+                if (!confirm(`ページ ${pageTitle} を削除してもよろしいですか？（このページ内のセリフも全て削除されます）`)) {
+                    return;
+                }
+                if (pageElement && pageElement.parentNode) {
+                    pageElement.parentNode.removeChild(pageElement);
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
+                    addToHistory(mainEditor.value);
+                    updateUIImmediate();
+                }
+            }
+
+            function setActiveElement(element, type) {
+                document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+
+                if (element) {
+                    element.classList.add('active');
+                }
+
+                if (type === 'scene') {
+                    activeSceneElement = element;
+                    activePageElement = null; 
+                    activeDialogueElement = null;
+                } else if (type === 'page') {
+                    activePageElement = element;
+                    activeDialogueElement = null; 
+                    const parentSceneId = element.getAttribute('data-parent-scene-id');
+                    if (parentSceneId) {
+                        const parentSceneElement = sceneNodeIdToDomElementMap.get(parentSceneId);
+                        if (parentSceneElement && parentSceneElement !== activeSceneElement) {
+                            parentSceneElement.classList.add('active');
+                            activeSceneElement = parentSceneElement;
+                        }
+                    }
+                } else if (type === 'dialogue') {
+                    activeDialogueElement = element;
+                    const parentPageId = element.getAttribute('data-parent-page-id');
+                    if (parentPageId) {
+                        const parentPageElement = pageNodeIdToDomElementMap.get(parentPageId);
+                        if (parentPageElement && parentPageElement !== activePageElement) {
+                            parentPageElement.classList.add('active');
+                            activePageElement = parentPageElement;
+                        }
+                        const parentSceneId = parentPageElement ? parentPageElement.getAttribute('data-parent-scene-id') : null;
+                        if (parentSceneId) {
+                            const parentSceneElement = sceneNodeIdToDomElementMap.get(parentSceneId);
+                            if (parentSceneElement && parentSceneElement !== activeSceneElement) {
+                                parentSceneElement.classList.add('active');
+                                activeSceneElement = parentSceneElement;
+                            }
+                        }
+                    }
+                }
+            }
+
+            function highlightActiveElements() {
+                document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+
+                if (activeSceneElement && sceneNodeIdToDomElementMap.has(activeSceneElement.getAttribute('data-node-id'))) {
+                    sceneNodeIdToDomElementMap.get(activeSceneElement.getAttribute('data-node-id')).classList.add('active');
+                }
+                if (activePageElement && pageNodeIdToDomElementMap.has(activePageElement.getAttribute('data-node-id'))) {
+                    pageNodeIdToDomElementMap.get(activePageElement.getAttribute('data-node-id')).classList.add('active');
+                }
+                if (activeDialogueElement && dialogueNodeIdToDomElementMap.has(activeDialogueElement.getAttribute('data-node-id'))) {
+                    dialogueNodeIdToDomElementMap.get(activeDialogueElement.getAttribute('data-node-id')).classList.add('active');
+                }
+            }
+
+            function autoResizeTextArea(textarea) {
+                if (!textarea || textarea.offsetParent === null) { 
+                    return; 
+                }
+                textarea.style.height = 'auto'; 
+                // スクロール高さを取得し、少し余裕を持たせる（例: +2px）
+                textarea.style.height = (textarea.scrollHeight + 2) + 'px'; 
+            }
+
+            function autoResizeAllTextareas() {
+                // セリフはtextareaではないので、textareaのみを対象とする
+                document.querySelectorAll('textarea').forEach(autoResizeTextArea);
+            }
+
+            newBtn.addEventListener('click', clearAllEditors);
+
+            undoBtn.addEventListener('click', undo);
+            redoBtn.addEventListener('click', redo);
+
+            mainEditor.addEventListener('input', () => {
+                autoResizeTextArea(mainEditor);
+                addToHistory(mainEditor.value); 
+                updateUI(); 
             });
-            document.body.addEventListener('drop', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
+            mainEditor.addEventListener('change', () => { 
+                updateUIImmediate(); 
+            });
+
+            outlineEditor.addEventListener('input', () => {
+                autoResizeTextArea(outlineEditor);
+            });
+            outlineEditor.addEventListener('change', () => { 
+                updateUIImmediate(); 
+            });
+
+            characterEditor.addEventListener('input', () => {
+                autoResizeTextArea(characterEditor);
+            });
+            characterEditor.addEventListener('change', () => { 
+                updateUIImmediate(); 
+            });
+
+            addCharacterBtn.addEventListener('click', () => {
+                const newCharacterTemplate = `\n\n――――――――――\n*新しいキャラクター（名前：読み方、愛称）男女、歳\n*関係性\n*見た目、身体的特徴、服装\n*性格・裏性格\n*環境・生い立ち`;
+                characterEditor.value += newCharacterTemplate;
+                autoResizeTextArea(characterEditor);
+                characterEditor.focus();
+                characterEditor.setSelectionRange(characterEditor.value.length, characterEditor.value.length);
+                updateUIImmediate(); 
+            });
+
+            addSceneBtn.addEventListener('click', () => {
+                const rootElement = currentXmlDoc.querySelector('root');
+                if (rootElement) {
+                    const newSceneElement = currentXmlDoc.createElement('シーン');
+                    const newSceneDescElement = currentXmlDoc.createElement('シーン説明');
+                    newSceneDescElement.textContent = '新しいシーン';
+                    newSceneElement.appendChild(newSceneDescElement);
+                    
+                    const newPageElement = currentXmlDoc.createElement('ページ');
+                    const newPageDescElement = currentXmlDoc.createElement('ページ説明');
+                    newPageDescElement.textContent = '新しいページ';
+                    newPageElement.appendChild(newPageDescElement);
+                    newSceneElement.appendChild(newPageElement);
+
+                    rootElement.appendChild(newSceneElement);
+                    
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
+                    addToHistory(mainEditor.value);
+                    updateUIImmediate(); 
+                    mainEditor.focus();
+                } else {
+                    alert("XMLの<root>タグが見つかりません。構造を確認してください。");
+                }
+            });
+
+            function addPageToSpecificScene(sceneElement) { 
+                if (sceneElement) {
+                    const newPageElement = currentXmlDoc.createElement('ページ');
+                    const newPageDescElement = currentXmlDoc.createElement('ページ説明');
+                    newPageDescElement.textContent = '新しいページ';
+                    newPageElement.appendChild(newPageDescElement);
+
+                    sceneElement.appendChild(newPageElement); 
+
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
+                    addToHistory(mainEditor.value);
+                    updateUIImmediate(); 
+                    mainEditor.focus();
+                } else {
+                    alert('選択されたシーンがXML内で見つかりません。');
+                }
+            }
+
+
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const targetId = e.target.dataset.target;
+                    const targetContent = document.getElementById(targetId);
+                    setSectionVisibility(targetContent, !targetContent.classList.contains('hidden'));
+                });
+            });
+
+            // セリフのエクスポート機能
+            exportDialogueBtn.addEventListener('click', async () => {
+                const pageDialogues = []; // ページごとのセリフを格納する配列
+
+                // ページごとのグループコンテナを取得
+                const pageGroupContainers = dialogueContentDiv.querySelectorAll('.serif-page-group-container');
+                
+                if (pageGroupContainers.length === 0) {
+                    alert('エクスポートするセリフがありません。');
+                    return;
+                }
+
+                // 各ページグループをループして、ページ内のセリフを収集
+                pageGroupContainers.forEach(group => {
+                    const dialoguesInPage = [];
+                    const dialogueElements = group.querySelectorAll('.dialogue-content');
+                    dialogueElements.forEach(dialogueEl => {
+                        dialoguesInPage.push(dialogueEl.textContent);
+                    });
+                    // ページ内のセリフを「空白行1つ」で結合して配列に追加
+                    pageDialogues.push(dialoguesInPage.join('\n\n'));
+                });
+
+                // 各ページのセリフ塊を「空白行2つ」で結合して最終的なテキストを生成
+                const allDialogues = pageDialogues.join('\n\n\n');
+
+                // ↓↓↓ ファイル保存処理は元のコードと同じです ↓↓↓
+
+                // ファイル名に日付を含める
+                const date = new Date();
+                const dateString = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}_${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}${date.getSeconds().toString().padStart(2, '0')}`;
+                const suggestedFileName = `セリフ_${dateString}.txt`;
+
+                try {
+                    const fileHandle = await window.showSaveFilePicker({
+                        types: [{
+                                description: 'Text Files',
+                                accept: {
+                                    'text/plain': ['.txt'],
+                                },
+                            },],
+                        suggestedName: suggestedFileName
+                    });
+
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(allDialogues);
+                    await writable.close();
+                    alert(`セリフをエクスポートしました: ${suggestedFileName}`);
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        console.log('Dialogue export was cancelled.');
+                    } else {
+                        console.error('Error exporting dialogues:', err);
+                        alert('セリフのエクスポート中にエラーが発生しました。');
+                    }
+                }
             });
 
 
-            // スワイプ操作によるカラム移動 (モバイルのみ)
+            loadState();
+            // autoResizeAllTextareas(); // これはupdateUIImmediate内でsetTimeoutで呼び出す
+
+            let touchStartX = 0;
+            let touchEndX = 0;
+
             columnsWrapper.addEventListener('touchstart', (e) => {
                 if (window.innerWidth <= 768) {
-                    touchStartX = e.changedTouches[0].screenX;
+                    touchStartX = e.touches[0].clientX;
                     columnsWrapper.style.transition = 'none'; 
+                    currentTranslateX = parseFloat(columnsWrapper.style.transform.replace('translateX(', '').replace('vw)', '') || '0');
                 }
             }, { passive: false }); 
 
             columnsWrapper.addEventListener('touchmove', (e) => {
                 if (window.innerWidth <= 768) {
-                    touchEndX = e.changedTouches[0].screenX;
-                    const diff = touchStartX - touchEndX; 
-                    const currentTranslate = -currentColumnIndex * window.innerWidth;
-                    const newTransform = (currentTranslate - diff) / window.innerWidth; 
+                    touchEndX = e.touches[0].clientX;
+                    const diff = touchEndX - touchStartX;
+                    const newTransform = currentTranslateX + (diff / window.innerWidth) * 100; 
                     columnsWrapper.style.transform = `translateX(${newTransform}vw)`;
                 }
             }, { passive: false });
@@ -1590,49 +1815,31 @@
             columnsWrapper.addEventListener('touchend', (e) => { 
                 if (window.innerWidth <= 768) {
                     const diff = touchEndX - touchStartX;
-                    const swipeThreshold = window.innerWidth * 0.15; 
+                    // スワイプの閾値を画面幅の20%から、よりスムーズな停止のために調整
+                    const swipeThreshold = window.innerWidth * 0.15; // 例: 15%に調整
 
                     let newColumnIndex = currentColumnIndex;
-                    if (diff < -swipeThreshold) { 
+                    if (diff < -swipeThreshold) { // 左方向へのスワイプ
                         newColumnIndex = Math.min(columns.length - 1, currentColumnIndex + 1);
-                    } else if (diff > swipeThreshold) { 
+                    } else if (diff > swipeThreshold) { // 右方向へのスワイプ
                         newColumnIndex = Math.max(0, currentColumnIndex - 1);
                     } else {
+                        // 閾値以下のスワイプの場合、現在表示中のカラムに留まる
                         newColumnIndex = currentColumnIndex;
                     }
                     
-                    columnsWrapper.style.transition = 'transform 0.3s ease-out'; 
-                    showColumn(newColumnIndex); 
+                    // トランジションを適用して、スムーズに新しいカラムに移動
+                    columnsWrapper.style.transition = 'transform 0.3s ease-out'; // ここは既存でも問題ないです
+                    showColumn(newColumnIndex); // 修正後のnewColumnIndexを渡す
                 }
             }, { passive: false }); 
-
-            document.querySelectorAll('.footer-nav button').forEach(button => {
-                button.addEventListener('click', (event) => {
-                    const index = parseInt(event.target.dataset.columnIndex, 10);
-                    showColumn(index);
-                });
-            });
 
             window.addEventListener('resize', () => {
                 showColumn(currentColumnIndex); 
                 autoResizeAllTextareas(); 
-                if (window.innerWidth > 768) {
-                    footerNav.style.display = 'none';
-                    document.body.style.paddingBottom = '0';
-                } else {
-                    footerNav.style.display = 'flex';
-                    document.body.style.paddingBottom = '60px'; 
-                }
             });
 
-            // 初期ロード時のカラム表示とフッターナビの制御
-            if (window.innerWidth <= 768) {
-                footerNav.style.display = 'flex';
-                document.body.style.paddingBottom = '60px';
-            } else {
-                footerNav.style.display = 'none';
-                document.body.style.paddingBottom = '0';
-            }
+            showColumn(currentColumnIndex);
         });
     </script>
 </body>
