@@ -20,11 +20,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>漫画ネームエディタhikaku2</title>
     <style>
+        html{
+            height: 100%; /* ★追加: bodyが100%の高さを継承するための親 */
+            }
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            min-height: 100vh; 
+            /* min-height: 100vh; から height: 100%; に変更 */
+            height: 100%; 
             display: flex;
             flex-direction: column;
             background-color: #e0e0e0;
@@ -778,6 +782,21 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            const bodyElement = document.body;
+
+            function adjustHeight() {
+                // window.innerHeight はアドレスバーなどを除いた実際の表示領域の高さを返す
+                const vh = window.innerHeight;
+                bodyElement.style.height = `${vh}px`;
+            }
+
+            // ページ読み込み時とウィンドウサイズ変更時に高さを調整
+            window.addEventListener('resize', adjustHeight);
+            window.addEventListener('orientationchange', adjustHeight); // 画面の向きが変わった時にも対応
+
+            // 初回実行
+            adjustHeight();
+            
             const outlineEditor = document.getElementById('outlineEditor');
             const characterEditor = document.getElementById('characterEditor');
             const mainEditor = document.getElementById('mainEditor');
