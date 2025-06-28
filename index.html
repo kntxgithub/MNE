@@ -796,7 +796,7 @@
 
             // 初回実行
             adjustHeight();
-            
+
             const outlineEditor = document.getElementById('outlineEditor');
             const characterEditor = document.getElementById('characterEditor');
             const mainEditor = document.getElementById('mainEditor');
@@ -2041,6 +2041,19 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             });
 
             showColumn(currentColumnIndex);
+            
+            // ★★★★★★★★★★★ ここから追加 ★★★★★★★★★★★
+            // Service Workerの登録
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js').then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }).catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+                });
+            }
+            // ★★★★★★★★★★★ ここまで追加 ★★★★★★★★★★★
         });
 
     </script>
