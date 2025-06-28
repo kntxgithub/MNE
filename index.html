@@ -42,7 +42,7 @@
             padding-bottom: 0;
             box-sizing: border-box;
             overflow-x: auto; /* PCでは横スクロールを許可 */
-            overflow-y: hidden; /* ★追加: 縦方向のはみ出しを制御 */
+            /* overflow-y: hidden; を削除 */
             transition: none; /* PCではスライドアニメーションなし */
         }
 
@@ -504,13 +504,11 @@
             display: none; /* PCでは非表示 */
             background:white;
             border-top:1px solid #ddd;
-            flex-shrink: 0;
+            flex-shrink: 0; /* ★重要: これにより高さが固定される */
             box-shadow: 0 -2px 4px rgba(0,0,0,0.05 );
-            z-index:1000; /* 最前面に表示 */
-            position: fixed; /* 画面下部に固定 */
-            bottom: 0;
-            left: 0;
-            right: 0;
+            z-index: 10;   /* position:fixed でないので値は低くてもOK */
+            /* position: fixed; 関連のプロパティをすべて削除 */
+            /* bottom, left, right を削除 */
             height: 60px; /* タブバーの高さ */
             box-sizing: border-box;
         }
@@ -572,7 +570,7 @@
                 padding-bottom: 0; 
                 box-sizing: border-box;
                 overflow-x: hidden; /* 横スクロール禁止 (JSで制御するため) */
-                overflow-y: hidden; /* ★追加: 縦方向のはみ出しを制御 */
+                /* overflow-y: hidden; を削除 */
             }
 
             .column {
