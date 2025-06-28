@@ -1,19 +1,19 @@
 {
   "name": "漫画ネームエディタ",
   "short_name": "ネームエディタ",
-  "start_url": "./index.html",
+  "start_url": "/MNE/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#34495e",
   "description": "漫画のネームを作成・編集するためのエディタです。",
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "/MNE/icon192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "./icon-512.png",
+      "src": "/MNE/icon512.png",
       "sizes": "512x512",
       "type": "image/png"
     }

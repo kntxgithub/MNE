@@ -2,18 +2,18 @@
 const CACHE_NAME = 'mne-cache-v1';
 // キャッシュするファイルのリスト
 const urlsToCache = [
-  './',              // ルート（index.htmlなど）
-  './index.html',
-  './manifest.json',
+  '/MNE/',              // ルート（index.htmlなど）
+  '/MNE/index.html',
+  '/MNE/manifest.json',
   // アイコンもキャッシュしておくとオフラインでも表示される
-  './icon-192.png',
-  './icon-512.png'
+  '/MNE/icon192.png',
+  '/MNE/icon512.png'
   // 必要に応じて他のアイコンも追加
-  // './icon180.png',
-  // './icon152.png',
-  // './icon120.png',
-  // './icon32.png',
-  // './icon16.png'
+  // '/MNE/icon180.png',
+  // '/MNE/icon152.png',
+  // '/MNE/icon120.png',
+  // '/MNE/icon32.png',
+  // '/MNE/icon16.png'
 ];
 
 // 1. インストールイベント
