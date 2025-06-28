@@ -730,25 +730,52 @@
 
 <!-- タブバー（モバイル用） -->
     <div class="tab-bar">
-        <div class="tab-item active" data-page="0" onclick="switchToPage(0)">
+        <div class="tab-item active" data-page="0">
             <span class="tab-icon">📝</span>
             <span class="tab-label">メイン</span>
         </div>
-        <div class="tab-item" data-page="1" onclick="switchToPage(1)">
+        <div class="tab-item" data-page="1">
             <span class="tab-icon">🎬</span>
             <span class="tab-label">シーン</span>
         </div>
-        <div class="tab-item" data-page="2" onclick="switchToPage(2)">
+        <div class="tab-item" data-page="2">
             <span class="tab-icon">📄</span>
             <span class="tab-label">ページ</span>
         </div>
-        <div class="tab-item" data-page="3" onclick="switchToPage(3)">
+        <div class="tab-item" data-page="3">
             <span class="tab-icon">💬</span>
             <span class="tab-label">セリフ</span>
         </div>
     </div>
 
     <script>
+        function switchToPage(index) {
+            // この関数はグローバルである必要があるため、DOMの準備を待つ必要はない
+            // ただし、中の処理で使う変数はDOM読み込み後にセットされるため、
+            // 呼び出しタイミングによってはエラーになる可能性がある。
+            // onclickで呼ばれる場合は問題ない。
+            const columnsWrapper = document.getElementById('columnsWrapper');
+            const columns = document.querySelectorAll('.column');
+            
+            // showColumn関数もグローバルからアクセスできるようにする必要があるか、
+            // もしくはこの中で直接ロジックを書く必要がある。
+            // 一旦、showColumnもグローバルに移動するのが簡単。
+            // ※この時点ではまだ showColumn はグローバルではないので、後続の修正で対応
+
+            if (window.innerWidth > 768) {
+                columnsWrapper.style.scrollBehavior = 'smooth'; 
+                // この時点では columns はまだ取得できていない可能性があるが、onclickのタイミングならOK
+                if(columns.length > index) {
+                columns[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                }
+                return;
+            }
+            // showColumnを呼び出す
+            if (typeof showColumnGlobal === "function") {
+                showColumnGlobal(index);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const outlineEditor = document.getElementById('outlineEditor');
             const characterEditor = document.getElementById('characterEditor');
@@ -817,7 +844,7 @@
                 if (window.innerWidth <= 768) {
                     columnsWrapper.style.transform = `translateX(-${index * 100}vw)`;
                     
-                    // --- タブのアクティブ状態を更新 ---
+                    // --- この部分は残す ---
                     const tabs = document.querySelectorAll('.tab-item');
                     tabs.forEach(tab => tab.classList.remove('active'));
                     const activeTab = document.querySelector(`.tab-item[data-page='${index}']`);
@@ -832,17 +859,6 @@
                     columnsWrapper.style.scrollBehavior = 'smooth'; 
                     columnsWrapper.scrollLeft = columns[index].offsetLeft;
                 }
-            }
-
-            function switchToPage(index) {
-                if (window.innerWidth > 768) {
-                    // PC表示の場合は何もしないか、もしくはスクロール移動
-                    columnsWrapper.style.scrollBehavior = 'smooth'; 
-                    columns[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-                    return;
-                }
-                // モバイル表示の場合はカラムをスライド
-                showColumn(index);
             }
 
             function undo() {
@@ -1981,6 +1997,23 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 isSwiping = false;
                 isScrolling = false;
             }, { passive: true });
+
+            // --- ここからタブバーのイベントリスナーを追加 ---
+            const tabItems = document.querySelectorAll('.tab-item');
+            tabItems.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const pageIndex = parseInt(tab.dataset.page, 10);
+                    
+                    if (window.innerWidth > 768) {
+                        // PC表示の場合
+                        columnsWrapper.style.scrollBehavior = 'smooth'; 
+                        columns[pageIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                    } else {
+                        // モバイル表示の場合
+                        showColumn(pageIndex);
+                    }
+                });
+            });
 
             window.addEventListener('resize', () => {
                 showColumn(currentColumnIndex); 
