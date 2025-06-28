@@ -498,25 +498,33 @@
         .add-page-to-scene-btn:hover {
             background-color: #2c3e50; /* ホバー時の色 */
         }
-        /*タブバー*/
+/*タブバー*/
         .tab-bar {
-            display: flex;
+            display: none; /* PCでは非表示 */
             background:white;
             border-top:1px solid #ddd;
             flex-shrink: 0;
             box-shadow: 0 -2px 4px rgba(0,0,0,0.05 );
-            z-index:10;
+            z-index:1000; /* 最前面に表示 */
+            position: fixed; /* 画面下部に固定 */
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px; /* タブバーの高さ */
+            box-sizing: border-box;
         }
         .tab-item {
             flex: 1;
-            padding: 12px;
+            padding: 8px 0;
             display: flex;
             flex-direction: column;
+            justify-content: center;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
             cursor: pointer;
             transition: background 0.2s;
             position: relative;
+            color: #666;
         }
         
         .tab-item:active {
@@ -527,33 +535,35 @@
             content: '';
             position: absolute;
             top: 0;
-            left: 0;
-            right: 0;
+            left: 10%;
+            right: 10%;
             height: 3px;
             background: #1a73e8;
+            border-radius: 0 0 3px 3px;
         }
         
         .tab-icon {
-            font-size: 20px;
+            font-size: 22px;
         }
         
         .tab-label {
-            font-size: 11px;
-            color: #666;
+            font-size: 10px;
         }
         
-        .tab-item.active .tab-label {
+        .tab-item.active {
             color: #1a73e8;
         }
-
 
 
         /* --- スマートフォン対応のためのメディアクエリ --- */
         @media (max-width: 768px) {
             body {
                 overflow-y: hidden; /* 全体スクロールを禁止 (横スライドのため) */
+                padding-bottom:60px;/*タブバーの高さ分、bodyに余白を設ける*/
             }
-
+            .tab-bar {
+                display: flex; /* スマホの時だけ表示 */
+            }
             .columns-wrapper {
                 width: 400vw; /* 4カラム分の幅 */
                 transform: translateX(0vw); /* 初期表示はJSで設定 */
@@ -718,25 +728,25 @@
         </div>
     </div>
 
-            <!-- タブバー（モバイル用） -->
-        <div class="tab-bar">
-            <div class="tab-item active" data-page="0" onclick="switchToPage(0)">
-                <span class="tab-icon">📝</span>
-                <span class="tab-label">メイン</span>
-            </div>
-            <div class="tab-item" data-page="1" onclick="switchToPage(1)">
-                <span class="tab-icon">🎬</span>
-                <span class="tab-label">シーン</span>
-            </div>
-            <div class="tab-item" data-page="2" onclick="switchToPage(2)">
-                <span class="tab-icon">📄</span>
-                <span class="tab-label">ページ</span>
-            </div>
-            <div class="tab-item" data-page="3" onclick="switchToPage(3)">
-                <span class="tab-icon">💬</span>
-                <span class="tab-label">セリフ</span>
-            </div>
+<!-- タブバー（モバイル用） -->
+    <div class="tab-bar">
+        <div class="tab-item active" data-page="0" onclick="switchToPage(0)">
+            <span class="tab-icon">📝</span>
+            <span class="tab-label">メイン</span>
         </div>
+        <div class="tab-item" data-page="1" onclick="switchToPage(1)">
+            <span class="tab-icon">🎬</span>
+            <span class="tab-label">シーン</span>
+        </div>
+        <div class="tab-item" data-page="2" onclick="switchToPage(2)">
+            <span class="tab-icon">📄</span>
+            <span class="tab-label">ページ</span>
+        </div>
+        <div class="tab-item" data-page="3" onclick="switchToPage(3)">
+            <span class="tab-icon">💬</span>
+            <span class="tab-label">セリフ</span>
+        </div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -802,15 +812,37 @@
             function showColumn(index) {
                 if (index < 0 || index >= columns.length) return;
                 currentColumnIndex = index;
+                saveState(); // カラム移動時にも状態を保存
 
                 if (window.innerWidth <= 768) {
                     columnsWrapper.style.transform = `translateX(-${index * 100}vw)`;
-                    columnsWrapper.style.scrollBehavior = 'auto'; 
+                    
+                    // --- タブのアクティブ状態を更新 ---
+                    const tabs = document.querySelectorAll('.tab-item');
+                    tabs.forEach(tab => tab.classList.remove('active'));
+                    const activeTab = document.querySelector(`.tab-item[data-page='${index}']`);
+                    if (activeTab) {
+                        activeTab.classList.add('active');
+                    }
+                    // --- ここまで追加 ---
+
                 } else {
+                    // PC表示時の挙動 (変更なし)
                     columnsWrapper.style.transform = `translateX(0)`; 
                     columnsWrapper.style.scrollBehavior = 'smooth'; 
                     columnsWrapper.scrollLeft = columns[index].offsetLeft;
                 }
+            }
+
+            function switchToPage(index) {
+                if (window.innerWidth > 768) {
+                    // PC表示の場合は何もしないか、もしくはスクロール移動
+                    columnsWrapper.style.scrollBehavior = 'smooth'; 
+                    columns[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                    return;
+                }
+                // モバイル表示の場合はカラムをスライド
+                showColumn(index);
             }
 
             function undo() {
