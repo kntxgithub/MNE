@@ -560,93 +560,88 @@
         }
 
 
-        /* --- スマートフォン対応のためのメディアクエリ --- */
-            body.mobile-view { /*@media (max-width: 768px) { */
-        
-                overflow-y: hidden; /* 全体スクロールを禁止 (横スライドのため) */
-            }
-            body.mobile-view .tab-bar {
-                display: flex; /* スマホの時だけ表示 */
-            }
-            body.mobile-view .columns-wrapper {
-                width: 400vw; /* 4カラム分の幅 */
-                transform: translateX(0vw); /* 初期表示はJSで設定 */
-                transition: transform 0.3s ease-in-out; /* スライドアニメーション */
-                padding-top: 0; 
-                padding-bottom: 0; 
-                box-sizing: border-box;
-                overflow-x: hidden; /* 横スクロール禁止 (JSで制御するため) */
-                /* overflow-y: hidden; を削除 */
-            }
+        /* --- スマートフォン対応のためのスタイル（クラス制御） --- */
+        body.mobile-view {
+            overflow-y: hidden;
+        }
 
-            body.mobile-view .column {
-                width: 100vw; /* 各カラムの幅をビューポートの幅に */
-                border-right: none; /* スマホではカラム間の境界線は不要 */
-            }
+        body.mobile-view .tab-bar {
+            display: flex;
+        }
 
-            body.mobile-view .column-header {
-                flex-direction: column;
-                align-items: flex-start;
-                padding: 8px;
-            }
+        body.mobile-view .columns-wrapper {
+            width: 400vw;
+            transform: translateX(0vw);
+            transition: transform 0.3s ease-in-out;
+            padding-top: 0;
+            padding-bottom: 0;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
 
-            body.mobile-view .column-header .header-title {
-                margin-right: 0;
-                margin-bottom: 5px;
-            }
+        body.mobile-view .column {
+            width: 100vw;
+            border-right: none;
+        }
 
-            body.mobile-view .column-header .controls {
-                width: 100%;
-                justify-content: space-around;
-                gap: 5px;
-            }
+        body.mobile-view .column-header {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 8px;
+        }
 
-            body.mobile-view .column-header .controls button {
-                flex-grow: 1;
-                margin-left: 0;
-                padding: 8px 5px;
-                font-size: 1em;
-            }
+        body.mobile-view .column-header .header-title {
+            margin-right: 0;
+            margin-bottom: 5px;
+        }
 
-            /* ★★★★★★★★★★★ ここからが変更点 ★★★★★★★★★★★ */
+        body.mobile-view .column-header .controls {
+            width: 100%;
+            justify-content: space-around;
+            gap: 5px;
+        }
 
-            /* シーンとセリフカラムのヘッダーを1行にレイアウト */
-            body.mobile-view.scene-column .column-header,
-            .serif-column .column-header {
-                flex-direction: row; /* 横並びに戻す */
-                justify-content: space-between; /* 両端揃え */
-                align-items: center; /* 垂直中央揃え */
-            }
+        body.mobile-view .column-header .controls button {
+            flex-grow: 1;
+            margin-left: 0;
+            padding: 8px 5px;
+            font-size: 1em;
+        }
 
-            /* 上記カラムのタイトル下のマージンを削除 */
-            body.mobile-view.scene-column .column-header .header-title,
-            .serif-column .column-header .header-title {
-                margin-bottom: 0;
-            }
+        /* シーンとセリフカラムのヘッダーを1行にレイアウト */
+        body.mobile-view .scene-column .column-header,
+        body.mobile-view .serif-column .column-header {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-            /* 上記カラムのコントロール部分の幅を自動に */
-            body.mobile-view.scene-column .column-header .controls,
-            .serif-column .column-header .controls {
-                width: auto;
-            }
+        /* 上記カラムのタイトル下のマージンを削除 */
+        body.mobile-view .scene-column .column-header .header-title,
+        body.mobile-view .serif-column .column-header .header-title {
+            margin-bottom: 0;
+        }
 
-            /* 上記カラムのボタンが幅いっぱいに広がるのを防ぐ */
-            body.mobile-view.scene-column .column-header .controls button,
-            .serif-column .column-header .controls button {
-                flex-grow: 0; /* 幅を自動にする */
-                padding: 6px 12px; /* パディングを少し調整して見栄えを良くする */
-            }
+        /* 上記カラムのコントロール部分の幅を自動に */
+        body.mobile-view .scene-column .column-header .controls,
+        body.mobile-view .serif-column .column-header .controls {
+            width: auto;
+        }
 
-            /* ★★★★★★★★★★★ ここまでが変更点 ★★★★★★★★★★★ */
+        /* 上記カラムのボタンが幅いっぱいに広がるのを防ぐ */
+        body.mobile-view .scene-column .column-header .controls button,
+        body.mobile-view .serif-column .column-header .controls button {
+            flex-grow: 0;
+            padding: 6px 12px;
+        }
 
-            body.mobile-view.column-content {
-                padding: 8px;
-            }
+        body.mobile-view .column-content {
+            padding: 8px;
+        }
 
-            /* スマホ時のsection-contentのmax-heightも調整 */
-            body.mobile-view.section-content {
-                max-height: none; /* スマホでも内部のtextareaがスクロールするように */
-            }
+        body.mobile-view .section-content {
+            max-height: none;
+        }
         
 
         @media (max-width: 480px) {
@@ -893,22 +888,21 @@
                 currentColumnIndex = index;
                 saveState(); // カラム移動時にも状態を保存
 
-                if (window.innerWidth <= 768) {
+                // ★★★ 判定条件をウィンドウ幅から、bodyのクラスの有無に変更 ★★★
+                if (document.body.classList.contains('mobile-view')) {
+                    // スマホ表示の時の動作
                     columnsWrapper.style.transform = `translateX(-${index * 100}vw)`;
                     
-                    // --- この部分は残す ---
                     const tabs = document.querySelectorAll('.tab-item');
                     tabs.forEach(tab => tab.classList.remove('active'));
                     const activeTab = document.querySelector(`.tab-item[data-page='${index}']`);
                     if (activeTab) {
                         activeTab.classList.add('active');
                     }
-                    // --- ここまで追加 ---
-
                 } else {
-                    // PC表示時の挙動 (変更なし)
-                    columnsWrapper.style.transform = `translateX(0)`; 
-                    columnsWrapper.style.scrollBehavior = 'smooth'; 
+                    // PC表示の時の動作
+                    columnsWrapper.style.transform = `translateX(0)`;
+                    columnsWrapper.style.scrollBehavior = 'smooth';
                     columnsWrapper.scrollLeft = columns[index].offsetLeft;
                 }
             }
@@ -1293,7 +1287,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                 .replace(/</g, '<')
                                 .replace(/>/g, '>')
                                 .replace(/"/g, '"')
-                                .replace(/'/g, '&apos;');
+                                .replace(/'/g, ''');
                 } else if (node.nodeType === Node.CDATA_SECTION_NODE) {
                     result += `<![CDATA[${node.textContent}]]>`;
                 } else if (node.nodeType === Node.COMMENT_NODE) {
