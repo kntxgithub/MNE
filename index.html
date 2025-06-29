@@ -608,6 +608,37 @@
                 font-size: 1em;
             }
 
+            /* ★★★★★★★★★★★ ここからが変更点 ★★★★★★★★★★★ */
+
+            /* シーンとセリフカラムのヘッダーを1行にレイアウト */
+            .scene-column .column-header,
+            .serif-column .column-header {
+                flex-direction: row; /* 横並びに戻す */
+                justify-content: space-between; /* 両端揃え */
+                align-items: center; /* 垂直中央揃え */
+            }
+
+            /* 上記カラムのタイトル下のマージンを削除 */
+            .scene-column .column-header .header-title,
+            .serif-column .column-header .header-title {
+                margin-bottom: 0;
+            }
+
+            /* 上記カラムのコントロール部分の幅を自動に */
+            .scene-column .column-header .controls,
+            .serif-column .column-header .controls {
+                width: auto;
+            }
+
+            /* 上記カラムのボタンが幅いっぱいに広がるのを防ぐ */
+            .scene-column .column-header .controls button,
+            .serif-column .column-header .controls button {
+                flex-grow: 0; /* 幅を自動にする */
+                padding: 6px 12px; /* パディングを少し調整して見栄えを良くする */
+            }
+
+            /* ★★★★★★★★★★★ ここまでが変更点 ★★★★★★★★★★★ */
+
             .column-content {
                 padding: 8px;
             }
@@ -1257,11 +1288,11 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 } else if (node.nodeType === Node.TEXT_NODE) {
                     // XMLエンティティをエスケープ
                     result += node.textContent
-                                .replace(/&/g, '&amp;')
-                                .replace(/</g, '&lt;')
-                                .replace(/>/g, '&gt;')
-                                .replace(/"/g, '&quot;')
-                                .replace(/'/g, '&apos;');
+                                .replace(/&/g, '&')
+                                .replace(/</g, '<')
+                                .replace(/>/g, '>')
+                                .replace(/"/g, '"')
+                                .replace(/'/g, ''');
                 } else if (node.nodeType === Node.CDATA_SECTION_NODE) {
                     result += `<![CDATA[${node.textContent}]]>`;
                 } else if (node.nodeType === Node.COMMENT_NODE) {
