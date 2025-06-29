@@ -18,7 +18,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>漫画ネームエディタdd7dd6c</title>
+    <title>漫画ネームエディタ ver1(04d5180)</title>
     <style>
         html{
             height: 100%; /* ★追加: bodyが100%の高さを継承するための親 */
@@ -1287,7 +1287,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                 .replace(/</g, '<')
                                 .replace(/>/g, '>')
                                 .replace(/"/g, '"')
-                                .replace(/'/g, '&apos;');
+                                .replace(/'/g, ''');
                 } else if (node.nodeType === Node.CDATA_SECTION_NODE) {
                     result += `<![CDATA[${node.textContent}]]>`;
                 } else if (node.nodeType === Node.COMMENT_NODE) {
@@ -1969,65 +1969,77 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             let isScrolling = false; // 縦スクロール中かどうかのフラグ
 
             columnsWrapper.addEventListener('touchstart', (e) => {
-                // ★判定をウィンドウ幅からbodyのクラスに変更
-                if (!document.body.classList.contains('mobile-view')) return;
+                if (window.innerWidth > 768) return;
 
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
-                touchEndX = touchStartX;
-                isSwiping = false;
-                isScrolling = false;
-                columnsWrapper.style.transition = 'none';
+                touchEndX = touchStartX; // touchendで使うために初期化
+                isSwiping = false;   // フラグをリセット
+                isScrolling = false; // フラグをリセット
+
+                columnsWrapper.style.transition = 'none'; 
                 currentTranslateX = parseFloat(columnsWrapper.style.transform.replace('translateX(', '').replace('vw)', '') || '0');
-            }, { passive: true });
+                
+            }, { passive: true }); // passive: true にしてスクロールの開始を妨げない
 
             columnsWrapper.addEventListener('touchmove', (e) => {
-                // ★判定をウィンドウ幅からbodyのクラスに変更
-                if (!document.body.classList.contains('mobile-view') || isScrolling) return;
+                if (window.innerWidth > 768 || isScrolling) return;
 
                 const moveX = e.touches[0].clientX;
                 const moveY = e.touches[0].clientY;
                 const diffX = moveX - touchStartX;
                 const diffY = moveY - touchStartY;
 
+                // まだスワイプもスクロールも開始していない場合、方向を判定
                 if (!isSwiping && !isScrolling) {
+                    // 左右の動きが上下の動きより大きく、かつ一定以上動いた場合、スワイプを開始
                     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
                         isSwiping = true;
                     } else if (Math.abs(diffY) > 10) {
+                        // 上下の動きが優勢な場合はスクロールとみなし、この後の処理をブロック
                         isScrolling = true;
                         return;
                     }
                 }
                 
                 if (isSwiping) {
+                    // スワイプ中と確定したら、ブラウザのデフォルト動作（縦スクロールなど）をキャンセル
                     e.preventDefault();
+                    
                     touchEndX = moveX;
                     const transformDiff = (diffX / window.innerWidth) * 100;
                     columnsWrapper.style.transform = `translateX(${currentTranslateX + transformDiff}vw)`;
                 }
-            }, { passive: false });
 
-            columnsWrapper.addEventListener('touchend', (e) => {
-                // ★判定をウィンドウ幅からbodyのクラスに変更
-                if (!document.body.classList.contains('mobile-view')) return;
+            }, { passive: false }); // preventDefaultを呼ぶので passive: false にする
 
+            columnsWrapper.addEventListener('touchend', (e) => { 
+                if (window.innerWidth > 768) return;
+
+                // 横スワイプ中でなければ、何もしない（縦スクロールなどを妨げない）
                 if (!isSwiping) {
+                    // 微妙に動いてしまった場合に元の位置に戻す処理
                     columnsWrapper.style.transition = 'transform 0.3s ease-out';
                     showColumn(currentColumnIndex);
                     return;
                 }
 
                 const diff = touchEndX - touchStartX;
-                const swipeThreshold = window.innerWidth * 0.25;
+                // スワイプの閾値を画面幅の25%に設定 (感度を下げる)
+                const swipeThreshold = window.innerWidth * 0.25; 
+
                 let newColumnIndex = currentColumnIndex;
-                if (diff < -swipeThreshold) {
+                if (diff < -swipeThreshold) { // 左方向へのスワイプ
                     newColumnIndex = Math.min(columns.length - 1, currentColumnIndex + 1);
-                } else if (diff > swipeThreshold) {
+                } else if (diff > swipeThreshold) { // 右方向へのスワイプ
                     newColumnIndex = Math.max(0, currentColumnIndex - 1);
                 }
+                // 閾値以下の場合は元の位置に戻る（newColumnIndexは変更されない）
                 
                 columnsWrapper.style.transition = 'transform 0.3s ease-out';
                 showColumn(newColumnIndex);
+                
+                // 最後にフラグをリセット
                 isSwiping = false;
                 isScrolling = false;
             }, { passive: true });
