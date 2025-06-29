@@ -561,14 +561,14 @@
 
 
         /* --- スマートフォン対応のためのメディアクエリ --- */
-        @media (max-width: 768px) {
-            body {
+            body.mobile-view { /*@media (max-width: 768px) { */
+        
                 overflow-y: hidden; /* 全体スクロールを禁止 (横スライドのため) */
             }
-            .tab-bar {
+            body.mobile-view .tab-bar {
                 display: flex; /* スマホの時だけ表示 */
             }
-            .columns-wrapper {
+            body.mobile-view .columns-wrapper {
                 width: 400vw; /* 4カラム分の幅 */
                 transform: translateX(0vw); /* 初期表示はJSで設定 */
                 transition: transform 0.3s ease-in-out; /* スライドアニメーション */
@@ -579,29 +579,29 @@
                 /* overflow-y: hidden; を削除 */
             }
 
-            .column {
+            body.mobile-view .column {
                 width: 100vw; /* 各カラムの幅をビューポートの幅に */
                 border-right: none; /* スマホではカラム間の境界線は不要 */
             }
 
-            .column-header {
+            body.mobile-view .column-header {
                 flex-direction: column;
                 align-items: flex-start;
                 padding: 8px;
             }
 
-            .column-header .header-title {
+            body.mobile-view .column-header .header-title {
                 margin-right: 0;
                 margin-bottom: 5px;
             }
 
-            .column-header .controls {
+            body.mobile-view .column-header .controls {
                 width: 100%;
                 justify-content: space-around;
                 gap: 5px;
             }
 
-            .column-header .controls button {
+            body.mobile-view .column-header .controls button {
                 flex-grow: 1;
                 margin-left: 0;
                 padding: 8px 5px;
@@ -611,7 +611,7 @@
             /* ★★★★★★★★★★★ ここからが変更点 ★★★★★★★★★★★ */
 
             /* シーンとセリフカラムのヘッダーを1行にレイアウト */
-            .scene-column .column-header,
+            body.mobile-view.scene-column .column-header,
             .serif-column .column-header {
                 flex-direction: row; /* 横並びに戻す */
                 justify-content: space-between; /* 両端揃え */
@@ -619,19 +619,19 @@
             }
 
             /* 上記カラムのタイトル下のマージンを削除 */
-            .scene-column .column-header .header-title,
+            body.mobile-view.scene-column .column-header .header-title,
             .serif-column .column-header .header-title {
                 margin-bottom: 0;
             }
 
             /* 上記カラムのコントロール部分の幅を自動に */
-            .scene-column .column-header .controls,
+            body.mobile-view.scene-column .column-header .controls,
             .serif-column .column-header .controls {
                 width: auto;
             }
 
             /* 上記カラムのボタンが幅いっぱいに広がるのを防ぐ */
-            .scene-column .column-header .controls button,
+            body.mobile-view.scene-column .column-header .controls button,
             .serif-column .column-header .controls button {
                 flex-grow: 0; /* 幅を自動にする */
                 padding: 6px 12px; /* パディングを少し調整して見栄えを良くする */
@@ -639,15 +639,15 @@
 
             /* ★★★★★★★★★★★ ここまでが変更点 ★★★★★★★★★★★ */
 
-            .column-content {
+            body.mobile-view.column-content {
                 padding: 8px;
             }
 
             /* スマホ時のsection-contentのmax-heightも調整 */
-            .section-content {
+            body.mobile-view.section-content {
                 max-height: none; /* スマホでも内部のtextareaがスクロールするように */
             }
-        }
+        
 
         @media (max-width: 480px) {
             .column-header .controls button {
@@ -683,6 +683,7 @@
             <div class="column-header">
                 <span class="header-title">メイン</span>
                 <div class="controls">
+                    <button id="viewModeBtn" title="表示モードを切り替えます">表示切替</button>
                     <button id="newBtn">新規</button>
                     <button id="openBtn">開く</button>
                     <input type="file" id="fileInput" style="display: none;">
@@ -1292,7 +1293,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                 .replace(/</g, '<')
                                 .replace(/>/g, '>')
                                 .replace(/"/g, '"')
-                                .replace(/'/g, "'");
+                                .replace(/'/g, '''); 
                 } else if (node.nodeType === Node.CDATA_SECTION_NODE) {
                     result += `<![CDATA[${node.textContent}]]>`;
                 } else if (node.nodeType === Node.COMMENT_NODE) {
@@ -2066,10 +2067,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 });
             });
 
-            window.addEventListener('resize', () => {
-                showColumn(currentColumnIndex); 
-                autoResizeAllTextareas(); 
-            });
+            window.addEventListener('resize', applyViewMode); // ★applyViewModeを呼ぶように変更
 
             showColumn(currentColumnIndex);
             
@@ -2085,6 +2083,60 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 });
             }
             // ★★★★★★★★★★★ ここまで追加 ★★★★★★★★★★★
+            const viewModeBtn = document.getElementById('viewModeBtn');
+
+            /**
+             * ローカルストレージとウィンドウ幅に基づいて、PC/スマホ表示を適用する関数
+             */
+            function applyViewMode() {
+                const body = document.body;
+                const override = localStorage.getItem('viewModeOverride'); // 'pc', 'mobile', または null
+                
+                // モバイル表示にするべきか判定
+                const isMobile = (override === 'mobile') || (override === null && window.innerWidth <= 768);
+
+                if (isMobile) {
+                    body.classList.add('mobile-view');
+                } else {
+                    body.classList.remove('mobile-view');
+                }
+
+                // ボタンのテキストとツールチップを更新
+                if (override) {
+                    viewModeBtn.textContent = '自動に戻す';
+                    viewModeBtn.title = 'ウィンドウ幅に応じた自動表示に戻します';
+                } else {
+                    viewModeBtn.textContent = '表示切替';
+                    viewModeBtn.title = '現在の表示をPC⇔スマホで切り替えます';
+                }
+
+                // 表示モード変更後にカラム位置とUIを再計算
+                showColumn(currentColumnIndex);
+                autoResizeAllTextareas();
+            }
+
+            // 表示切替ボタンのクリックイベント
+            viewModeBtn.addEventListener('click', () => {
+                const override = localStorage.getItem('viewModeOverride');
+
+                if (override) {
+                    // 現在が強制モードなら、自動判定に戻す
+                    localStorage.removeItem('viewModeOverride');
+                } else {
+                    // 現在が自動判定なら、現在の表示とは逆のモードに強制する
+                    const isCurrentlyMobile = document.body.classList.contains('mobile-view');
+                    if (isCurrentlyMobile) {
+                        localStorage.setItem('viewModeOverride', 'pc'); // スマホ表示なのでPCに強制
+                    } else {
+                        localStorage.setItem('viewModeOverride', 'mobile'); // PC表示なのでスマホに強制
+                    }
+                }
+                // 変更を適用
+                applyViewMode();
+            });
+
+            // 初期読み込み時に表示モードを適用
+            applyViewMode();
         });
 
     </script>
