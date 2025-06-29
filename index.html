@@ -1287,13 +1287,13 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     }
                     result += `</${node.tagName}>`;
                 } else if (node.nodeType === Node.TEXT_NODE) {
-                    // XMLエンティティをエスケープ
+                    // XMLエンティティをエスケープ (ここが修正された部分です)
                     result += node.textContent
                                 .replace(/&/g, '&')
                                 .replace(/</g, '<')
                                 .replace(/>/g, '>')
                                 .replace(/"/g, '"')
-                                .replace(/'/g, '''); 
+                                .replace(/'/g, ''');
                 } else if (node.nodeType === Node.CDATA_SECTION_NODE) {
                     result += `<![CDATA[${node.textContent}]]>`;
                 } else if (node.nodeType === Node.COMMENT_NODE) {
