@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>漫画ネームエディタ.ver1.3</title>
+    <title>漫画ネームエディタ.ver1.4</title>
 
     <!-- PWA & Favicon -->
     <link rel="manifest" href="/MNE/manifest.json">
@@ -18,31 +18,27 @@
     
     <style>
         /* 基本レイアウト */
-        html {
+        html, body {
             height: 100%;
-        }
-        body {
-            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            height: 100%; 
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #e0e0e0;
+        }
+        body {
             display: flex;
             flex-direction: column;
-            background-color: #e0e0e0;
-            /* overflow: hidden; を削除またはコメントアウト */
         }
-        /* 2. 新しいラッパー用のスタイルを追加 */
-        .main-content {
-            flex-grow: 1; /* 残りの高さをすべて取る */
-            display: flex; /* 中のcolumns-wrapperを伸縮させるため */
-            overflow: hidden; /* ★★★ここでスクロールをコンテナ内に封じ込める */
-        }
-        .columns-wrapper {
+        .main-container {
             flex-grow: 1;
             display: flex;
+            overflow: hidden; /* ★重要: ここでコンテナの高さを固定 */
+        }
+        .columns-wrapper {
+            display: flex;
             width: 100%;
-            /* height: 0; を削除しても良い（main-contentで制御するため） */
-            height: 100%; /* ★★★高さを100%に指定 */
+            height: 100%;
             overflow-x: auto;
             transition: none;
         }
@@ -74,282 +70,81 @@
             justify-content: space-between;
             align-items: center;
         }
-        .column-header .header-title {
-            flex-shrink: 0;
-            margin-right: auto;
-        }
-        .column-header .controls {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            align-items: center;
-        }
+        .column-header .header-title { flex-shrink: 0; margin-right: auto; }
+        .column-header .controls { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
         .column-header .controls button {
-            background-color: #6c757d;
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: background-color 0.2s;
-            margin-left: 5px;
+            background-color: #6c757d; color: white; padding: 5px 10px; border: none;
+            border-radius: 3px; cursor: pointer; font-size: 13px; margin-left: 5px;
         }
-        .column-header .controls button:hover {
-            background-color: #5a6268;
-        }
-        .column-header .controls button:disabled {
-            background-color: #999;
-            cursor: not-allowed;
-        }
-        .column-content {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-height: 0;
-        }
+        .column-header .controls button:hover { background-color: #5a6268; }
+        .column-header .controls button:disabled { background-color: #999; cursor: not-allowed; }
+        
+        .column-content { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 
         /* テキストエリア共通 */
         textarea {
-            width: 100%;
-            height: auto;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            width: 100%; height: auto; padding: 8px; border: 1px solid #ddd; border-radius: 4px;
             font-family: 'Meiryo', 'Hiragino Kaku Gothic ProN', 'BIZ UDPGothic', sans-serif;
-            font-size: 1em;
-            line-height: 1.6;
-            resize: none;
-            box-sizing: border-box;
-            min-height: 50px;
-            overflow: hidden;
+            font-size: 1em; line-height: 1.6; resize: none; box-sizing: border-box; min-height: 50px; overflow: hidden;
         }
-        .main-textarea { resize: vertical; }
-        .outline-textarea { resize: vertical; }
+        .main-textarea, .outline-textarea { resize: vertical; }
         .character-textarea { min-height: 70vh; resize: vertical; overflow-y: auto; }
 
         /* 動的生成要素 */
-        .scene-item-container {
-            border: 1px solid #ccc;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            cursor: pointer;
-        }
-        .scene-color-0 { background-color: #e0f7fa; }
-        .scene-color-1 { background-color: #f0f4c3; }
-        .scene-color-2 { background-color: #ffe0b2; }
-        .scene-color-3 { background-color: #e1bee7; }
-        .scene-color-4 { background-color: #b3e5fc; }
-
-        .page-item-container {
-            border: 1px solid #ccc;
-            margin-bottom: 5px;
-            border-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            cursor: pointer;
-        }
-        .serif-page-group-container {
-            border: 1px solid #dcdcdc;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            padding: 10px;
-            padding-top: 0;
-            background-color: #fffbf0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .dialogue-content {
-            margin-bottom: 8px;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-left: 3px solid #f9ab00;
-            padding: 5px;
-            border-radius: 3px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-size: 0.95em;
-            line-height: 1.6;
-            cursor: pointer;
-        }
-        .scene-item-header, .page-item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px 10px;
-        }
-        .scene-title-badge, .page-title-badge {
-            background-color: #007bff;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        .delete-scene-btn, .delete-page-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.8em;
-        }
+        .scene-item-container { border: 1px solid #ccc; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; cursor: pointer; }
+        .scene-color-0 { background-color: #e0f7fa; } .scene-color-1 { background-color: #f0f4c3; } .scene-color-2 { background-color: #ffe0b2; } .scene-color-3 { background-color: #e1bee7; } .scene-color-4 { background-color: #b3e5fc; }
+        .page-item-container { border: 1px solid #ccc; margin-bottom: 5px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer; }
+        .serif-page-group-container { border: 1px solid #dcdcdc; border-radius: 5px; margin-bottom: 15px; padding: 10px; padding-top: 0; background-color: #fffbf0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .dialogue-content { margin-bottom: 8px; background-color: white; border: 1px solid #ddd; border-left: 3px solid #f9ab00; padding: 5px; border-radius: 3px; white-space: pre-wrap; word-wrap: break-word; font-size: 0.95em; line-height: 1.6; cursor: pointer; }
+        .scene-item-header, .page-item-header { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; }
+        .scene-title-badge, .page-title-badge { background-color: #007bff; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .delete-scene-btn, .delete-page-btn { background-color: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 0.8em; }
         .delete-scene-btn:hover, .delete-page-btn:hover { background-color: #c82333; }
         .add-page-to-scene-btn {
-            background-color: #34495e;
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.9em;
-            width: calc(100% - 20px);
-            box-sizing: border-box;
-            margin: 10px;
-            text-align: center;
+            background-color: #34495e; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.9em;
+            width: calc(100% - 20px); box-sizing: border-box; margin: 10px; text-align: center;
         }
         .add-page-to-scene-btn:hover { background-color: #2c3e50; }
 
         /* セクション折りたたみ */
-        .section-container {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            background-color: #f8f8f8;
-            overflow: hidden;
-        }
-        .section-header {
-            background-color: #f0f0f0;
-            padding: 8px 10px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        .section-container { border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background-color: #f8f8f8; overflow: hidden; }
+        .section-header { background-color: #f0f0f0; padding: 8px 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-weight: bold; cursor: pointer; }
         .section-header h3 { margin: 0; font-size: 1em; color: #333; flex-grow: 1; }
-        .toggle-btn, .add-character-btn {
-            background-color: #6c757d;
-            color: white;
-            padding: 4px 8px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.8em;
-            margin-left: 5px;
-        }
+        .toggle-btn, .add-character-btn { background-color: #6c757d; color: white; padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; margin-left: 5px; }
         .toggle-btn:hover, .add-character-btn:hover { background-color: #5a6268; }
         .section-content { padding: 10px; }
         .section-content.hidden { display: none; }
 
         /* アクティブ要素のハイライト */
-        .scene-item-container.active, .page-item-container.active, .dialogue-content.active { 
-            box-shadow: 0 0 8px 3px rgba(0, 123, 255, 0.5);
-            border-color: #007bff;
-        }
+        .scene-item-container.active, .page-item-container.active, .dialogue-content.active { box-shadow: 0 0 8px 3px rgba(0, 123, 255, 0.5); border-color: #007bff; }
 
         /* タブバー */
-        .tab-bar {
-            display: none;
-            background: white;
-            border-top: 1px solid #ddd;
-            flex-shrink: 0;
-            height: 60px;
-            box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
-        }
-        .tab-item {
-            flex: 1;
-            padding: 8px 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 2px;
-            cursor: pointer;
-            position: relative;
-            color: #666;
-        }
+        .tab-bar { display: none; background: white; border-top: 1px solid #ddd; flex-shrink: 0; height: 60px; box-shadow: 0 -2px 4px rgba(0,0,0,0.05); }
+        .tab-item { flex: 1; padding: 8px 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px; cursor: pointer; position: relative; color: #666; }
         .tab-item.active { color: #1a73e8; }
-        .tab-item.active::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 10%;
-            right: 10%;
-            height: 3px;
-            background: #1a73e8;
-            border-radius: 0 0 3px 3px;
-        }
+        .tab-item.active::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 3px; background: #1a73e8; border-radius: 0 0 3px 3px; }
         .tab-icon { font-size: 22px; }
         .tab-label { font-size: 10px; }
 
-        /* --- スマートフォン表示用のスタイル（クラス制御） --- */
-        body.mobile-view .tab-bar {
-            display: flex;
-        }
-        body.mobile-view .columns-wrapper {
-            width: 100%; /* 親は100%幅 */
-            overflow-x: auto; /* 子要素のスクロールを許可 */
-            scroll-snap-type: x mandatory; /* スワイプ時にカラムでピタッと止まる */
-            -webkit-overflow-scrolling: touch; /* iOSでの慣性スクロール */
-        }
-        /* スクロールバーを非表示にする */
+        /* --- スマートフォン表示用のスタイル --- */
+        body.mobile-view .tab-bar { display: flex; }
+        body.mobile-view .columns-wrapper { scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
         body.mobile-view .columns-wrapper::-webkit-scrollbar { display: none; }
         body.mobile-view .columns-wrapper { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        body.mobile-view .column {
-            width: 100vw; /* 各カラムは画面幅いっぱい */
-            border-right: none;
-            scroll-snap-align: start; /* スナップ位置をカラムの開始点に設定 */
-        }
-        body.mobile-view .column-header {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 8px;
-        }
-        body.mobile-view .column-header .header-title {
-            margin-right: 0;
-            margin-bottom: 5px;
-        }
-        body.mobile-view .column-header .controls {
-            width: 100%;
-            justify-content: space-around;
-        }
-        body.mobile-view .column-header .controls button {
-            flex-grow: 1;
-            margin-left: 0;
-            padding: 8px 5px;
-            font-size: 1em;
-        }
-        /* ボタンが1つのヘッダーを1行に戻す */
+        body.mobile-view .column { width: 100vw; border-right: none; scroll-snap-align: start; }
+        body.mobile-view .column-header { flex-direction: column; align-items: flex-start; padding: 8px; }
+        body.mobile-view .column-header .header-title { margin-right: 0; margin-bottom: 5px; }
+        body.mobile-view .column-header .controls { width: 100%; justify-content: space-around; }
+        body.mobile-view .column-header .controls button { flex-grow: 1; margin-left: 0; padding: 8px 5px; font-size: 1em; }
         body.mobile-view .scene-column .column-header,
-        body.mobile-view .serif-column .column-header {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-        }
+        body.mobile-view .serif-column .column-header { flex-direction: row; justify-content: space-between; align-items: center; }
         body.mobile-view .scene-column .column-header .header-title,
-        body.mobile-view .serif-column .column-header .header-title {
-            margin-bottom: 0;
-        }
+        body.mobile-view .serif-column .column-header .header-title { margin-bottom: 0; }
         body.mobile-view .scene-column .column-header .controls,
-        body.mobile-view .serif-column .column-header .controls {
-            width: auto;
-        }
+        body.mobile-view .serif-column .column-header .controls { width: auto; }
         body.mobile-view .scene-column .column-header .controls button,
-        body.mobile-view .serif-column .column-header .controls button {
-            flex-grow: 0;
-            padding: 6px 12px;
-        }
+        body.mobile-view .serif-column .column-header .controls button { flex-grow: 0; padding: 6px 12px; }
 
-        /* 480px以下のさらに小さい画面への対応 */
         @media (max-width: 480px) {
             .column-header .controls button { font-size: 0.9em; padding: 6px 3px; }
             .section-header h3 { font-size: 0.9em; }
@@ -359,8 +154,7 @@
     </style>
 </head>
 <body>
-    <!-- ★★★ この main-content ラッパーを追加 ★★★ -->
-    <div class="main-content">
+    <div class="main-container">
         <div class="columns-wrapper" id="columnsWrapper">
             <div class="column main-column" data-column-id="main">
                 <div class="column-header">
@@ -378,109 +172,59 @@
                 </div>
                 <div class="column-content">
                     <div class="section-container" id="outlineSection">
-                        <div class="section-header">
-                            <h3>アウトライン</h3>
-                            <button class="toggle-btn" data-target="outlineContent">隠す</button>
-                        </div>
-                        <div class="section-content" id="outlineContent">
-                            <textarea id="outlineEditor" class="outline-textarea" placeholder="ここに物語のアウトラインを記述してください。"></textarea>
-                        </div>
+                        <div class="section-header"><h3 >アウトライン</h3><button class="toggle-btn" data-target="outlineContent">隠す</button></div>
+                        <div class="section-content" id="outlineContent"><textarea id="outlineEditor" class="outline-textarea" placeholder="ここに物語のアウトラインを記述してください。"></textarea></div>
                     </div>
-                    
                     <div class="section-container" id="characterSection">
-                        <div class="section-header">
-                            <h3>キャラクター</h3>
-                            <div class="controls">
-                                <button class="add-character-btn" id="addCharacterBtn">追加</button>
-                                <button class="toggle-btn" data-target="characterContent">隠す</button>
-                            </div>
-                        </div>
-                        <div class="section-content" id="characterContent">
-                            <textarea id="characterEditor" class="character-textarea"></textarea>
-                        </div>
+                        <div class="section-header"><h3>キャラクター</h3><div class="controls"><button class="add-character-btn" id="addCharacterBtn">追加</button><button class="toggle-btn" data-target="characterContent">隠す</button></div></div>
+                        <div class="section-content" id="characterContent"><textarea id="characterEditor" class="character-textarea"></textarea></div>
                     </div>
-
                     <div class="section-container" id="mainEditorSection">
-                        <div class="section-header">
-                            <h3>ネーム本体 (XML)</h3>
-                            <button class="toggle-btn" data-target="mainEditorContent">隠す</button>
-                        </div>
-                        <div class="section-content" id="mainEditorContent">
-                            <textarea id="mainEditor" class="main-textarea" placeholder="XML形式でネームを記述してください。例：<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明><セリフ>セリフA</セリフ></ページ></シーン></root>"></textarea>
-                        </div>
+                        <div class="section-header"><h3>ネーム本体 (XML)</h3><button class="toggle-btn" data-target="mainEditorContent">隠す</button></div>
+                        <div class="section-content" id="mainEditorContent"><textarea id="mainEditor" class="main-textarea" placeholder="XML形式でネームを記述してください。例：<root><シーン><シーン説明>...</シーン説明><ページ>...</ページ></シーン></root>"></textarea></div>
                     </div>
                 </div>
             </div>
-
             <div class="column scene-column" data-column-id="scene">
-                <div class="column-header">
-                    <span class="header-title">シーン</span>
-                    <div class="controls">
-                        <button id="addSceneBtn">シーン追加</button>
-                    </div>
-                </div>
+                <div class="column-header"><span class="header-title">シーン</span><div class="controls"><button id="addSceneBtn">シーン追加</button></div></div>
                 <div class="column-content" id="sceneContent"></div>
             </div>
-
             <div class="column page-column" data-column-id="page">
-                <div class="column-header">
-                    <span class="header-title">ページ</span>
-                </div>
+                <div class="column-header"><span class="header-title">ページ</span></div>
                 <div class="column-content" id="pageContent"></div>
             </div>
-
             <div class="column serif-column" data-column-id="serif">
-                <div class="column-header">
-                    <span class="header-title">セリフ</span>
-                    <div class="controls">
-                        <button id="exportDialogueBtn">エクスポート</button>
-                    </div>
-                </div>
+                <div class="column-header"><span class="header-title">セリフ</span><div class="controls"><button id="exportDialogueBtn">エクスポート</button></div></div>
                 <div class="column-content" id="dialogueContent"></div>
             </div>
         </div>
     </div>
-    <!-- タブバー（モバイル用） -->
     <div class="tab-bar">
-        <div class="tab-item active" data-page="0">
-            <span class="tab-icon">📝</span>
-            <span class="tab-label">メイン</span>
-        </div>
-        <div class="tab-item" data-page="1">
-            <span class="tab-icon">🎬</span>
-            <span class="tab-label">シーン</span>
-        </div>
-        <div class="tab-item" data-page="2">
-            <span class="tab-icon">📄</span>
-            <span class="tab-label">ページ</span>
-        </div>
-        <div class="tab-item" data-page="3">
-            <span class="tab-icon">💬</span>
-            <span class="tab-label">セリフ</span>
-        </div>
+        <div class="tab-item active" data-page="0"><span class="tab-icon">📝</span><span class="tab-label">メイン</span></div>
+        <div class="tab-item" data-page="1"><span class="tab-icon">🎬</span><span class="tab-label">シーン</span></div>
+        <div class="tab-item" data-page="2"><span class="tab-icon">📄</span><span class="tab-label">ページ</span></div>
+        <div class="tab-item" data-page="3"><span class="tab-icon">💬</span><span class="tab-label">セリフ</span></div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM要素の取得 ---
             const bodyElement = document.body;
             const columnsWrapper = document.getElementById('columnsWrapper');
-            const columns = document.querySelectorAll('.column');
+            const columns = Array.from(document.querySelectorAll('.column'));
             const viewModeBtn = document.getElementById('viewModeBtn');
             const tabItems = document.querySelectorAll('.tab-item');
-
             const mainEditor = document.getElementById('mainEditor');
             const outlineEditor = document.getElementById('outlineEditor');
             const characterEditor = document.getElementById('characterEditor');
-            
             const sceneContentDiv = document.getElementById('sceneContent');
             const pageContentDiv = document.getElementById('pageContent');
             const dialogueContentDiv = document.getElementById('dialogueContent');
-
             const outlineContentDiv = document.getElementById('outlineContent');
             const characterContentDiv = document.getElementById('characterContent');
             const mainEditorContentDiv = document.getElementById('mainEditorContent');
 
-            // --- 状態管理 ---
+            // --- 状態管理変数 ---
             let currentColumnIndex = 0;
             let currentFileName = '新規ネーム.txt';
             let currentFileHandle = null;
@@ -496,27 +240,18 @@
             const pageNodeIdToDomElementMap = new Map();
             const sceneNodeIdToFirstPageDomElementMap = new Map();
             const dialogueNodeIdToDomElementMap = new Map();
-            let activeSceneElement = null;
-            let activePageElement = null;
-            let activeDialogueElement = null;
+            let activeElement = { type: null, element: null };
+            let scrollTimeout;
 
             // --- UI制御 ---
             function showColumn(index, behavior = 'smooth') {
                 if (index < 0 || index >= columns.length) return;
                 currentColumnIndex = index;
-                saveState();
-
                 const targetScrollLeft = columns[index].offsetLeft;
-                columnsWrapper.scrollTo({
-                    left: targetScrollLeft,
-                    behavior: behavior
-                });
-                
-                if (document.body.classList.contains('mobile-view')) {
-                    updateActiveTab();
-                }
+                columnsWrapper.scrollTo({ left: targetScrollLeft, behavior: behavior });
+                if (document.body.classList.contains('mobile-view')) updateActiveTab();
             }
-            
+
             function updateActiveTab() {
                 tabItems.forEach(tab => tab.classList.remove('active'));
                 const activeTab = document.querySelector(`.tab-item[data-page='${currentColumnIndex}']`);
@@ -527,31 +262,13 @@
             function applyViewMode() {
                 const override = localStorage.getItem('viewModeOverride');
                 const isMobile = (override === 'mobile') || (override === null && window.innerWidth <= 768);
-                
-                if (isMobile) {
-                    bodyElement.classList.add('mobile-view');
-                } else {
-                    bodyElement.classList.remove('mobile-view');
-                }
-
+                bodyElement.classList.toggle('mobile-view', isMobile);
                 viewModeBtn.textContent = override ? '自動に戻す' : '表示切替';
                 viewModeBtn.title = override ? 'ウィンドウ幅に応じた自動表示に戻します' : '現在の表示をPC⇔スマホで切り替えます';
-                
-                showColumn(currentColumnIndex, 'auto'); // モード変更時はアニメーションなしで即時反映
+                showColumn(currentColumnIndex, 'auto');
                 autoResizeAllTextareas();
             }
 
-            viewModeBtn.addEventListener('click', () => {
-                const override = localStorage.getItem('viewModeOverride');
-                if (override) {
-                    localStorage.removeItem('viewModeOverride');
-                } else {
-                    const isCurrentlyMobile = bodyElement.classList.contains('mobile-view');
-                    localStorage.setItem('viewModeOverride', isCurrentlyMobile ? 'pc' : 'mobile');
-                }
-                applyViewMode();
-            });
-            
             // --- Undo/Redo & 履歴管理 ---
             function undo() {
                 if (historyIndex > 0) {
@@ -573,15 +290,10 @@
             }
             function addToHistory(content) {
                 if (history.length > 0 && history[historyIndex] === content) return;
-                if (historyIndex < history.length - 1) {
-                    history = history.slice(0, historyIndex + 1);
-                }
+                history.splice(historyIndex + 1);
                 history.push(content);
-                if (history.length > MAX_HISTORY) {
-                    history.shift();
-                } else {
-                    historyIndex++;
-                }
+                if (history.length > MAX_HISTORY) history.shift();
+                historyIndex = history.length - 1;
                 updateUndoRedoButtons();
             }
 
@@ -605,9 +317,9 @@
                 const savedState = localStorage.getItem('comicNameEditorState');
                 if (savedState) {
                     const state = JSON.parse(savedState);
-                    outlineEditor.value = state.outlineContent || '';
-                    characterEditor.value = state.characterContent || '';
-                    mainEditor.value = state.mainContent || '';
+                    Object.assign(outlineEditor, { value: state.outlineContent || '' });
+                    Object.assign(characterEditor, { value: state.characterContent || '' });
+                    Object.assign(mainEditor, { value: state.mainContent || '' });
                     currentFileName = state.fileName || '新規ネーム.txt';
                     history = state.history || [''];
                     historyIndex = state.historyIndex || 0;
@@ -616,20 +328,16 @@
                     setSectionVisibility(mainEditorContentDiv, state.mainEditorHidden || false);
                     currentColumnIndex = state.currentColumnIndex !== undefined ? state.currentColumnIndex : 0;
                 } else {
-                    clearAllEditors(false); // アラートなしで初期化
+                    clearAllEditors(false);
                 }
                 updateUIImmediate();
-                applyViewMode(); // 最後に表示モードを適用
+                applyViewMode();
             }
             function setSectionVisibility(contentDiv, isHidden) {
                 const toggleBtn = contentDiv.previousElementSibling.querySelector('.toggle-btn');
-                if (isHidden) {
-                    contentDiv.classList.add('hidden');
-                    if (toggleBtn) toggleBtn.textContent = '開く';
-                } else {
-                    contentDiv.classList.remove('hidden');
-                    if (toggleBtn) toggleBtn.textContent = '隠す';
-                }
+                contentDiv.classList.toggle('hidden', isHidden);
+                if (toggleBtn) toggleBtn.textContent = isHidden ? '開く' : '隠す';
+                if (!isHidden) autoResizeAllTextareas();
             }
             
             // --- ファイル操作 ---
@@ -642,9 +350,7 @@
                 history = [mainEditor.value];
                 historyIndex = 0;
                 localStorage.removeItem('comicNameEditorState');
-                setSectionVisibility(outlineContentDiv, false);
-                setSectionVisibility(characterContentDiv, false);
-                setSectionVisibility(mainEditorContentDiv, false);
+                [outlineContentDiv, characterContentDiv, mainEditorContentDiv].forEach(el => setSectionVisibility(el, false));
                 currentColumnIndex = 0;
                 updateUIImmediate();
                 if (showAlert) alert('新しいネームを開始しました。');
@@ -660,9 +366,7 @@
                     history = [mainEditor.value];
                     historyIndex = 0;
                     updateUIImmediate();
-                } catch (err) {
-                    if (err.name !== 'AbortError') console.error('Error opening file:', err);
-                }
+                } catch (err) { if (err.name !== 'AbortError') console.error('Error opening file:', err); }
             }
             async function saveFile(saveAs = false) {
                 const content = `[アウトライン:]\n${outlineEditor.value}\n\n[キャラクター:]\n${characterEditor.value}\n\n[ネーム本体(XML):]\n${mainEditor.value}\n\n`;
@@ -677,22 +381,17 @@
                     currentFileHandle = handleToSave;
                     currentFileName = handleToSave.name;
                     alert(`ファイルを保存しました: ${currentFileName}`);
-                } catch (err) {
-                    if (err.name !== 'AbortError') console.error('Error saving file:', err);
-                }
+                } catch (err) { if (err.name !== 'AbortError') console.error('Error saving file:', err); }
             }
             function handleDrop(e) {
                 e.preventDefault();
-                document.body.classList.remove('drag-over');
+                bodyElement.classList.remove('drag-over');
                 const file = e.dataTransfer.files[0];
                 if (file && file.type === 'text/plain') {
                     const reader = new FileReader();
                     reader.onload = (event) => {
                         extractAndSetSeparateContents(event.target.result);
-                        currentFileName = file.name;
-                        currentFileHandle = null;
-                        history = [mainEditor.value];
-                        historyIndex = 0;
+                        currentFileName = file.name; currentFileHandle = null; history = [mainEditor.value]; historyIndex = 0;
                         updateUIImmediate();
                     };
                     reader.readAsText(file);
@@ -703,23 +402,16 @@
                 const outlineMatch = fullText.match(/\[アウトライン:\]\n([\s\S]*?)(?=\n*\[(キャラクター|ネーム本体\(XML\)):\]|$)/);
                 const characterMatch = fullText.match(/\[キャラクター:\]\n([\s\S]*?)(?=\n*\[ネーム本体\(XML\):\]|$)/);
                 const mainXmlMatch = fullText.match(/\[ネーム本体\(XML\):\]\n([\s\S]*?)$/);
-                
                 extracted.outline = outlineMatch ? outlineMatch[1].trim() : '';
                 extracted.character = characterMatch ? characterMatch[1].trim() : '';
                 extracted.main = mainXmlMatch ? mainXmlMatch[1].trim() : (!outlineMatch && !characterMatch ? fullText : '');
-
-                outlineEditor.value = extracted.outline;
-                characterEditor.value = extracted.character;
-                mainEditor.value = extracted.main;
+                outlineEditor.value = extracted.outline; characterEditor.value = extracted.character; mainEditor.value = extracted.main;
             }
 
             // --- UI更新 & パース処理 ---
             function updateUI() {
                 clearTimeout(updateTimeout);
-                updateTimeout = setTimeout(() => {
-                    updateUIImmediate(false);
-                    saveState();
-                }, DEBOUNCE_DELAY);
+                updateTimeout = setTimeout(() => { updateUIImmediate(false); saveState(); }, DEBOUNCE_DELAY);
             }
             function updateUIImmediate(save = true) {
                 updateUndoRedoButtons();
@@ -729,187 +421,122 @@
             }
             function autoResizeAllTextareas() {
                 document.querySelectorAll('textarea').forEach(textarea => {
-                    if (!textarea || textarea.offsetParent === null) return;
+                    if (!textarea || !textarea.offsetParent) return;
                     textarea.style.height = 'auto';
                     textarea.style.height = (textarea.scrollHeight + 2) + 'px';
                 });
             }
 
-            function serializeXmlToCompactString(node) {
-                let result = '';
-                if (!node) return result;
-
+            function serializeXml(node) {
+                if (!node) return '';
                 if (node.nodeType === Node.ELEMENT_NODE) {
-                    result += `<${node.tagName}>`;
-                    for (let child of node.childNodes) result += serializeXmlToCompactString(child);
-                    result += `</${node.tagName}>`;
+                    let xml = `<${node.tagName}>`;
+                    for (let child of node.childNodes) xml += serializeXml(child);
+                    xml += `</${node.tagName}>`;
+                    return xml;
                 } else if (node.nodeType === Node.TEXT_NODE) {
-                    result += node.textContent
-                                .replace(/&/g, '&amp;')
-                                .replace(/</g, '&lt;')
-                                .replace(/>/g, '&gt;')
-                                .replace(/"/g, '&quot;')
-                                .replace(/'/g, '&apos;');
-                }
-                return result;
+                    return node.textContent.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"').replace(/'/g, ''');
+                } return '';
             }
             
             function syncColumnsFromMainEditor() {
-                sceneNodeIdToDomElementMap.clear();
-                pageNodeIdToDomElementMap.clear();
-                sceneNodeIdToFirstPageDomElementMap.clear();
-                dialogueNodeIdToDomElementMap.clear();
+                [sceneNodeIdToDomElementMap, pageNodeIdToDomElementMap, sceneNodeIdToFirstPageDomElementMap, dialogueNodeIdToDomElementMap].forEach(m => m.clear());
                 nodeIdCounter = 0;
 
-                let textToParse = mainEditor.value.trim();
-                if (textToParse && (!textToParse.startsWith('<root>') || !textToParse.endsWith('</root>'))) {
-                    textToParse = `<root>${textToParse}</root>`;
-                } else if (!textToParse) {
-                    textToParse = `<root></root>`;
-                }
-
-                currentXmlDoc = xmlParser.parseFromString(textToParse, 'application/xml');
+                let textToParse = mainEditor.value.trim() || '<root></root>';
+                if (!textToParse.startsWith('<root>')) textToParse = `<root>${textToParse}</root>`;
+                
+                currentXmlDoc = xmlParser.parseFromString(textToParse, "application/xml");
                 const parserError = currentXmlDoc.querySelector('parsererror');
                 if (parserError) {
-                    const errorMsg = '<p style="color: red;">XMLパースエラー</p>';
-                    sceneContentDiv.innerHTML = errorMsg;
-                    pageContentDiv.innerHTML = errorMsg;
-                    dialogueContentDiv.innerHTML = errorMsg;
-                    return;
+                    [sceneContentDiv, pageContentDiv, dialogueContentDiv].forEach(d => d.innerHTML = '<p style="color: red;">XMLパースエラー</p>'); return;
                 }
                 
-                sceneContentDiv.innerHTML = '';
-                pageContentDiv.innerHTML = '';
-                dialogueContentDiv.innerHTML = '';
-
+                [sceneContentDiv, pageContentDiv, dialogueContentDiv].forEach(d => d.innerHTML = '');
                 const scenes = currentXmlDoc.querySelectorAll('シーン');
                 if (scenes.length === 0) {
-                    sceneContentDiv.innerHTML = '<p>シーンがありません。</p>';
-                    pageContentDiv.innerHTML = '<p>シーンがありません。</p>';
-                    dialogueContentDiv.innerHTML = '<p>シーンがありません。</p>';
+                    [sceneContentDiv, pageContentDiv, dialogueContentDiv].forEach(d => d.innerHTML = '<p>シーンがありません。</p>');
                 }
 
                 let globalPageIndex = 1;
                 scenes.forEach((sceneElement, sceneIndex) => {
                     renderSceneItem(sceneElement, sceneIndex);
                     const pagesInScene = sceneElement.querySelectorAll('ページ');
-                    
                     pagesInScene.forEach((pageElement, pageIndexInScene) => {
                         renderPageItem(pageElement, sceneIndex, pageIndexInScene, globalPageIndex);
                         const dialoguesInPage = pageElement.querySelectorAll('セリフ');
-                        if (dialoguesInPage.length > 0) {
-                            renderDialogueGroup(dialoguesInPage, pageElement, sceneIndex, pageIndexInScene, globalPageIndex);
-                        }
+                        if (dialoguesInPage.length > 0) renderDialogueGroup(dialoguesInPage, sceneIndex, pageIndexInScene, globalPageIndex);
                         globalPageIndex++;
                     });
-                    
                     const addPageButton = document.createElement('button');
                     addPageButton.className = 'add-page-to-scene-btn';
                     addPageButton.textContent = `「シーン${sceneIndex + 1}」にページを追加`;
                     addPageButton.onclick = () => addPageToSpecificScene(sceneElement);
                     pageContentDiv.appendChild(addPageButton);
                 });
-
                 highlightActiveElements();
             }
 
-            // --- 動的要素のレンダリング関数群 ---
+            // --- 動的要素レンダリング ---
             function renderSceneItem(sceneElement, sceneIndex) {
                 const nodeId = `node-${nodeIdCounter++}`;
-                const sceneItemContainer = document.createElement('div');
-                sceneItemContainer.className = `scene-item-container scene-color-${sceneIndex % 5}`;
-                sceneItemContainer.dataset.nodeId = nodeId;
-                sceneItemContainer.dataset.sceneIndex = sceneIndex;
-                sceneItemContainer.onclick = () => {
-                    setActiveElement(sceneItemContainer, 'scene');
+                const container = document.createElement('div');
+                container.className = `scene-item-container scene-color-${sceneIndex % 5}`;
+                container.dataset.nodeId = nodeId;
+                container.onclick = () => {
+                    setActiveElement(container, 'scene');
                     const firstPageElement = sceneNodeIdToFirstPageDomElementMap.get(nodeId);
-                    if (firstPageElement) {
-                        setActiveElement(firstPageElement, 'page');
-                        showColumn(2);
-                    } else {
-                        showColumn(2);
-                    }
+                    showColumn(firstPageElement ? 2 : 1);
+                    if (firstPageElement) firstPageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 };
-                
                 const header = document.createElement('div');
                 header.className = 'scene-item-header';
-                header.innerHTML = `<span class="scene-title-badge">シーン${sceneIndex + 1}</span>`;
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'delete-scene-btn';
-                deleteBtn.textContent = '削除';
-                deleteBtn.onclick = (e) => { e.stopPropagation(); deleteScene(sceneElement); };
-                header.appendChild(deleteBtn);
-                
+                header.innerHTML = `<span class="scene-title-badge">シーン${sceneIndex + 1}</span><button class="delete-scene-btn">削除</button>`;
+                header.querySelector('.delete-scene-btn').onclick = (e) => { e.stopPropagation(); deleteScene(sceneElement); };
                 const textarea = document.createElement('textarea');
                 textarea.value = sceneElement.querySelector('シーン説明')?.textContent || '';
                 textarea.placeholder = 'シーンの説明';
                 textarea.oninput = (e) => { autoResizeTextArea(e.target); updateSceneContentInXml(sceneIndex, e.target.value); };
                 textarea.onchange = () => updateUIImmediate();
-                
-                sceneItemContainer.append(header, textarea);
-                sceneContentDiv.appendChild(sceneItemContainer);
-                sceneNodeIdToDomElementMap.set(nodeId, sceneItemContainer);
+                container.append(header, textarea);
+                sceneContentDiv.appendChild(container);
+                sceneNodeIdToDomElementMap.set(nodeId, container);
             }
 
             function renderPageItem(pageElement, sceneIndex, pageIndexInScene, globalPageIndex) {
                 const nodeId = `node-${nodeIdCounter++}`;
                 const parentSceneNodeId = [...sceneNodeIdToDomElementMap.keys()].find(key => sceneNodeIdToDomElementMap.get(key).dataset.sceneIndex == sceneIndex);
-
-                const pageItemContainer = document.createElement('div');
-                pageItemContainer.className = `page-item-container scene-color-${sceneIndex % 5}`;
-                pageItemContainer.dataset.nodeId = nodeId;
-                pageItemContainer.dataset.parentSceneId = parentSceneNodeId;
-                pageItemContainer.dataset.sceneIndex = sceneIndex;
-                pageItemContainer.dataset.pageIndexInScene = pageIndexInScene;
-                pageItemContainer.onclick = () => { setActiveElement(pageItemContainer, 'page'); showColumn(2); };
-                
+                const container = document.createElement('div');
+                container.className = `page-item-container scene-color-${sceneIndex % 5}`;
+                container.dataset.nodeId = nodeId; container.dataset.parentSceneId = parentSceneNodeId;
+                container.onclick = () => { setActiveElement(container, 'page'); showColumn(2); };
                 const header = document.createElement('div');
                 header.className = 'page-item-header';
-                header.innerHTML = `<span class="page-title-badge">ページ${globalPageIndex}</span>`;
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'delete-page-btn';
-                deleteBtn.textContent = '削除';
-                deleteBtn.onclick = (e) => { e.stopPropagation(); deletePage(pageElement); };
-                header.appendChild(deleteBtn);
-                
+                header.innerHTML = `<span class="page-title-badge">ページ${globalPageIndex}</span><button class="delete-page-btn">削除</button>`;
+                header.querySelector('.delete-page-btn').onclick = (e) => { e.stopPropagation(); deletePage(pageElement); };
                 const textarea = document.createElement('textarea');
-                let combinedText = '';
-                pageElement.childNodes.forEach(child => {
-                    if (child.nodeName === 'ページ説明') combinedText += child.textContent;
-                    else if (child.nodeName === 'セリフ') combinedText += `「${child.textContent}」`;
-                });
-                textarea.value = combinedText;
+                textarea.value = Array.from(pageElement.childNodes).map(child => child.nodeName === 'ページ説明' ? child.textContent : (child.nodeName === 'セリフ' ? `「${child.textContent}」` : '')).join('');
                 textarea.placeholder = 'ページの説明や「セリフ」';
                 textarea.oninput = (e) => { autoResizeTextArea(e.target); updatePageContentInXml(sceneIndex, pageIndexInScene, e.target.value); };
                 textarea.onchange = () => updateUIImmediate();
-                
-                pageItemContainer.append(header, textarea);
-                pageContentDiv.appendChild(pageItemContainer);
-                pageNodeIdToDomElementMap.set(nodeId, pageItemContainer);
-                if (!sceneNodeIdToFirstPageDomElementMap.has(parentSceneNodeId)) {
-                    sceneNodeIdToFirstPageDomElementMap.set(parentSceneNodeId, pageItemContainer);
-                }
+                container.append(header, textarea);
+                pageContentDiv.appendChild(container);
+                pageNodeIdToDomElementMap.set(nodeId, container);
+                if (!sceneNodeIdToFirstPageDomElementMap.has(parentSceneNodeId)) sceneNodeIdToFirstPageDomElementMap.set(parentSceneNodeId, container);
             }
 
-            function renderDialogueGroup(dialoguesInPage, pageElement, sceneIndex, pageIndexInScene, globalPageIndex) {
-                const parentPageNodeId = [...pageNodeIdToDomElementMap.keys()].find(key => pageNodeIdToDomElementMap.get(key).dataset.pageIndexInScene == pageIndexInScene && pageNodeIdToDomElementMap.get(key).dataset.sceneIndex == sceneIndex);
-                
+            function renderDialogueGroup(dialoguesInPage, sceneIndex, pageIndexInScene, globalPageIndex) {
+                const parentPageNodeId = [...pageNodeIdToDomElementMap.keys()].find(key => pageNodeIdToDomElementMap.get(key).dataset.sceneIndex == sceneIndex && pageNodeIdToDomElementMap.get(key).dataset.pageIndexInScene == pageIndexInScene);
                 const groupContainer = document.createElement('div');
                 groupContainer.className = 'serif-page-group-container';
                 groupContainer.innerHTML = `<p style="font-weight: bold; font-size: 0.9em; margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dashed #ccc;">ページ ${globalPageIndex}</p>`;
-                
                 dialoguesInPage.forEach((dialogueElement, dialogueIndexInPage) => {
                     const nodeId = `node-${nodeIdCounter++}`;
                     const dialogueDiv = document.createElement('div');
                     dialogueDiv.className = 'dialogue-content';
-                    dialogueDiv.dataset.nodeId = nodeId;
-                    dialogueDiv.dataset.parentPageId = parentPageNodeId;
-                    dialogueDiv.dataset.sceneIndex = sceneIndex;
-                    dialogueDiv.dataset.pageIndexInScene = pageIndexInScene;
-                    dialogueDiv.dataset.dialogueIndexInPage = dialogueIndexInPage;
+                    dialogueDiv.dataset.nodeId = nodeId; dialogueDiv.dataset.parentPageId = parentPageNodeId;
                     dialogueDiv.textContent = dialogueElement.textContent;
                     dialogueDiv.onclick = () => { setActiveElement(dialogueDiv, 'dialogue'); showColumn(3); };
-                    
                     groupContainer.appendChild(dialogueDiv);
                     dialogueNodeIdToDomElementMap.set(nodeId, dialogueDiv);
                 });
@@ -918,131 +545,58 @@
             
             function highlightActiveElements() {
                 document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
-                if (activeSceneElement) activeSceneElement.classList.add('active');
-                if (activePageElement) activePageElement.classList.add('active');
-                if (activeDialogueElement) activeDialogueElement.classList.add('active');
+                if (activeElement.element) activeElement.element.classList.add('active');
             }
 
             function setActiveElement(element, type) {
-                if (type === 'scene') {
-                    activeSceneElement = element;
-                    activePageElement = null; 
-                    activeDialogueElement = null;
-                } else if (type === 'page') {
-                    activePageElement = element;
-                    activeDialogueElement = null;
-                    const parentSceneId = element.dataset.parentSceneId;
-                    activeSceneElement = parentSceneId ? sceneNodeIdToDomElementMap.get(parentSceneId) : null;
-                } else if (type === 'dialogue') {
-                    activeDialogueElement = element;
-                    const parentPageId = element.dataset.parentPageId;
-                    activePageElement = parentPageId ? pageNodeIdToDomElementMap.get(parentPageId) : null;
-                    if (activePageElement) {
-                        const parentSceneId = activePageElement.dataset.parentSceneId;
-                        activeSceneElement = parentSceneId ? sceneNodeIdToDomElementMap.get(parentSceneId) : null;
-                    }
-                }
+                activeElement = { element, type };
                 highlightActiveElements();
             }
 
-            // --- XML更新関数 ---
+            // --- XML更新 ---
+            function updateXmlAndUI(updateFn) {
+                updateFn();
+                mainEditor.value = serializeXml(currentXmlDoc.documentElement);
+                addToHistory(mainEditor.value);
+                updateUIImmediate();
+            }
             function updateSceneContentInXml(sceneIndex, newText) {
-                const sceneElement = currentXmlDoc.querySelectorAll('シーン')[sceneIndex];
-                if (sceneElement) {
-                    let desc = sceneElement.querySelector('シーン説明');
-                    if (!desc) {
-                        desc = currentXmlDoc.createElement('シーン説明');
-                        sceneElement.insertBefore(desc, sceneElement.firstChild);
-                    }
+                const sceneEl = currentXmlDoc.querySelectorAll('シーン')[sceneIndex];
+                if (sceneEl) {
+                    let desc = sceneEl.querySelector('シーン説明');
+                    if (!desc) { desc = currentXmlDoc.createElement('シーン説明'); sceneEl.prepend(desc); }
                     desc.textContent = newText;
-                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
-                    addToHistory(mainEditor.value);
+                    mainEditor.value = serializeXml(currentXmlDoc.documentElement);
                 }
             }
             function updatePageContentInXml(sceneIndex, pageIndexInScene, fullPageText) {
-                const pageElement = currentXmlDoc.querySelectorAll('シーン')[sceneIndex]?.querySelectorAll('ページ')[pageIndexInScene];
-                if (pageElement) {
-                    while (pageElement.firstChild) pageElement.removeChild(pageElement.firstChild);
-                    
-                    const dialogueRegex = /「([\s\S]*?)」/g;
-                    let lastIndex = 0;
-                    let match;
-                    while ((match = dialogueRegex.exec(fullPageText)) !== null) {
-                        if (match.index > lastIndex) {
-                            const desc = currentXmlDoc.createElement('ページ説明');
-                            desc.textContent = fullPageText.substring(lastIndex, match.index);
-                            pageElement.appendChild(desc);
-                        }
-                        const dialogue = currentXmlDoc.createElement('セリフ');
-                        dialogue.textContent = match[1];
-                        pageElement.appendChild(dialogue);
-                        lastIndex = dialogueRegex.lastIndex;
+                const pageEl = currentXmlDoc.querySelectorAll('シーン')[sceneIndex]?.querySelectorAll('ページ')[pageIndexInScene];
+                if (pageEl) {
+                    while (pageEl.firstChild) pageEl.firstChild.remove();
+                    const regex = /「([\s\S]*?)」/g;
+                    let lastIndex = 0, match;
+                    while ((match = regex.exec(fullPageText))) {
+                        if (match.index > lastIndex) pageEl.append(Object.assign(currentXmlDoc.createElement('ページ説明'), { textContent: fullPageText.substring(lastIndex, match.index) }));
+                        pageEl.append(Object.assign(currentXmlDoc.createElement('セリフ'), { textContent: match[1] }));
+                        lastIndex = regex.lastIndex;
                     }
-                    if (lastIndex < fullPageText.length) {
-                        const desc = currentXmlDoc.createElement('ページ説明');
-                        desc.textContent = fullPageText.substring(lastIndex);
-                        pageElement.appendChild(desc);
-                    }
-                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
-                    addToHistory(mainEditor.value);
+                    if (lastIndex < fullPageText.length) pageEl.append(Object.assign(currentXmlDoc.createElement('ページ説明'), { textContent: fullPageText.substring(lastIndex) }));
+                    mainEditor.value = serializeXml(currentXmlDoc.documentElement);
                 }
             }
-            function addScene() {
-                const root = currentXmlDoc.querySelector('root');
-                if (root) {
-                    const scene = currentXmlDoc.createElement('シーン');
-                    const desc = currentXmlDoc.createElement('シーン説明');
-                    desc.textContent = '新しいシーン';
-                    scene.appendChild(desc);
-                    root.appendChild(scene);
-                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
-                    updateUIImmediate();
-                    mainEditor.focus();
-                }
-            }
-            function addPageToSpecificScene(sceneElement) {
-                if (sceneElement) {
-                    const page = currentXmlDoc.createElement('ページ');
-                    const desc = currentXmlDoc.createElement('ページ説明');
-                    desc.textContent = '新しいページ';
-                    page.appendChild(desc);
-                    sceneElement.appendChild(page);
-                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
-                    updateUIImmediate();
-                    mainEditor.focus();
-                }
-            }
-            function deleteScene(sceneElement) {
-                if (confirm('このシーンを削除しますか？')) {
-                    sceneElement.remove();
-                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
-                    updateUIImmediate();
-                }
-            }
-            function deletePage(pageElement) {
-                if (confirm('このページを削除しますか？')) {
-                    pageElement.remove();
-                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
-                    updateUIImmediate();
-                }
-            }
+            function addScene() { updateXmlAndUI(() => currentXmlDoc.querySelector('root')?.append(Object.assign(currentXmlDoc.createElement('シーン'), { innerHTML: '<シーン説明>新しいシーン</シーン説明>' }))); }
+            function addPageToSpecificScene(sceneElement) { updateXmlAndUI(() => sceneElement.append(Object.assign(currentXmlDoc.createElement('ページ'), { innerHTML: '<ページ説明>新しいページ</ページ説明>' }))); }
+            function deleteScene(sceneElement) { if (confirm('このシーンを削除しますか？')) updateXmlAndUI(() => sceneElement.remove()); }
+            function deletePage(pageElement) { if (confirm('このページを削除しますか？')) updateXmlAndUI(() => pageElement.remove()); }
             function exportDialogues() {
-                const allDialogues = Array.from(dialogueContentDiv.querySelectorAll('.serif-page-group-container')).map(group => {
-                    return Array.from(group.querySelectorAll('.dialogue-content')).map(d => d.textContent).join('\n\n');
-                }).join('\n\n\n');
-                
-                if (!allDialogues) {
-                    alert('エクスポートするセリフがありません。');
-                    return;
-                }
-                
+                const allDialogues = Array.from(dialogueContentDiv.querySelectorAll('.serif-page-group-container')).map(group => Array.from(group.querySelectorAll('.dialogue-content')).map(d => d.textContent).join('\n\n')).join('\n\n\n');
+                if (!allDialogues) return alert('エクスポートするセリフがありません。');
                 const blob = new Blob([allDialogues], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url;
+                a.href = URL.createObjectURL(blob);
                 a.download = `セリフ_${new Date().toISOString().slice(0,19).replace(/[-T:]/g,"")}.txt`;
                 a.click();
-                URL.revokeObjectURL(url);
+                URL.revokeObjectURL(a.href);
             }
 
             // --- イベントリスナー設定 ---
@@ -1054,55 +608,33 @@
             document.getElementById('redoBtn').onclick = redo;
             document.getElementById('addSceneBtn').onclick = addScene;
             document.getElementById('exportDialogueBtn').onclick = exportDialogues;
-            document.getElementById('addCharacterBtn').onclick = () => {
-                characterEditor.value += `\n\n――――――――――\n*新しいキャラクター`;
-                autoResizeTextArea(characterEditor);
-            };
+            document.getElementById('addCharacterBtn').onclick = () => { characterEditor.value += `\n\n――――――――――\n*新しいキャラクター`; autoResizeTextArea(characterEditor); };
             mainEditor.oninput = () => { autoResizeTextArea(mainEditor); updateUI(); };
             mainEditor.onchange = () => { addToHistory(mainEditor.value); updateUIImmediate(); };
-            outlineEditor.onchange = saveState;
-            characterEditor.onchange = saveState;
+            outlineEditor.onchange = saveState; characterEditor.onchange = saveState;
             document.querySelectorAll('.toggle-btn').forEach(btn => btn.onclick = (e) => setSectionVisibility(document.getElementById(e.target.dataset.target), !document.getElementById(e.target.dataset.target).classList.contains('hidden')));
-            document.body.ondragover = (e) => { e.preventDefault(); document.body.classList.add('drag-over'); };
-            document.body.ondragleave = () => document.body.classList.remove('drag-over');
-            document.body.ondrop = handleDrop;
+            bodyElement.ondragover = (e) => { e.preventDefault(); bodyElement.classList.add('drag-over'); };
+            bodyElement.ondragleave = () => bodyElement.classList.remove('drag-over');
+            bodyElement.ondrop = handleDrop;
             
-            tabItems.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const pageIndex = parseInt(tab.dataset.page, 10);
-                    showColumn(pageIndex);
-                });
-            });
+            tabItems.forEach(tab => tab.addEventListener('click', () => showColumn(parseInt(tab.dataset.page, 10))));
 
-            // スマホ表示時のスワイプ完了検知
-            let scrollTimeout;
             columnsWrapper.addEventListener('scroll', () => {
                 if (!bodyElement.classList.contains('mobile-view')) return;
                 clearTimeout(scrollTimeout);
                 scrollTimeout = setTimeout(() => {
-                    const columnWidth = columnsWrapper.offsetWidth;
-                    const newIndex = Math.round(columnsWrapper.scrollLeft / columnWidth);
-                    if (newIndex !== currentColumnIndex) {
-                        currentColumnIndex = newIndex;
-                        updateActiveTab();
-                        saveState();
-                    }
+                    const newIndex = Math.round(columnsWrapper.scrollLeft / columnsWrapper.offsetWidth);
+                    if (newIndex !== currentColumnIndex) { currentColumnIndex = newIndex; updateActiveTab(); saveState(); }
                 }, 150);
             });
             
             // --- 初期化 ---
-            function adjustHeight() {
-                const vh = window.innerHeight;
-                bodyElement.style.height = `${vh}px`;
-            }
+            function adjustHeight() { bodyElement.style.height = `${window.innerHeight}px`; }
             window.addEventListener('resize', () => { adjustHeight(); applyViewMode(); });
             window.addEventListener('orientationchange', adjustHeight);
             
-            // Service Workerの登録
             if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/MNE/sw.js').catch(err => console.log('ServiceWorker registration failed: ', err));
-                });
+                window.addEventListener('load', () => navigator.serviceWorker.register('/MNE/sw.js').catch(err => console.log('SW reg failed: ', err)));
             }
 
             adjustHeight();
