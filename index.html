@@ -570,9 +570,10 @@
         }
 
         body.mobile-view .columns-wrapper {
-            width: 400vw;
-            transform: translateX(0vw);
-            transition: transform 0.3s ease-in-out;
+            width: 400vw; /* 4カラム分の幅 */
+            /* transform を使わず margin-left でスライドさせる */
+            margin-left: 0; 
+            transition: margin-left 0.3s ease-in-out; /* transitionの対象を変更 */
             padding-top: 0;
             padding-bottom: 0;
             box-sizing: border-box;
@@ -880,7 +881,7 @@
             let currentColumnIndex = 0; // 0:メイン, 1:シーン, 2:ページ, 3:セリフ
             const columns = document.querySelectorAll('.column');
             let startX = 0;
-            let currentTranslateX = 0;
+            let currentMarginLeft = 0;
             let isDragging = false;
 
             function showColumn(index) {
@@ -888,10 +889,9 @@
                 currentColumnIndex = index;
                 saveState(); // カラム移動時にも状態を保存
 
-                // ★★★ 判定条件をウィンドウ幅から、bodyのクラスの有無に変更 ★★★
                 if (document.body.classList.contains('mobile-view')) {
-                    // スマホ表示の時の動作
-                    columnsWrapper.style.transform = `translateX(-${index * 100}vw)`;
+                    // スマホ表示の時の動作 (transformからmargin-leftに変更)
+                    columnsWrapper.style.marginLeft = `-${index * 100}vw`;
                     
                     const tabs = document.querySelectorAll('.tab-item');
                     tabs.forEach(tab => tab.classList.remove('active'));
@@ -901,7 +901,7 @@
                     }
                 } else {
                     // PC表示の時の動作
-                    columnsWrapper.style.transform = `translateX(0)`;
+                    columnsWrapper.style.marginLeft = '0'; // margin-leftをリセット
                     columnsWrapper.style.scrollBehavior = 'smooth';
                     columnsWrapper.scrollLeft = columns[index].offsetLeft;
                 }
@@ -1969,7 +1969,6 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             let isScrolling = false; // 縦スクロール中かどうかのフラグ
 
             columnsWrapper.addEventListener('touchstart', (e) => {
-                // ★判定をウィンドウ幅からbodyのクラスに変更
                 if (!document.body.classList.contains('mobile-view')) return;
 
                 touchStartX = e.touches[0].clientX;
@@ -1978,11 +1977,10 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 isSwiping = false;
                 isScrolling = false;
                 columnsWrapper.style.transition = 'none';
-                currentTranslateX = parseFloat(columnsWrapper.style.transform.replace('translateX(', '').replace('vw)', '') || '0');
+                currentMarginLeft = parseFloat(columnsWrapper.style.marginLeft.replace('vw', '') || '0');
             }, { passive: true });
 
             columnsWrapper.addEventListener('touchmove', (e) => {
-                // ★判定をウィンドウ幅からbodyのクラスに変更
                 if (!document.body.classList.contains('mobile-view') || isScrolling) return;
 
                 const moveX = e.touches[0].clientX;
@@ -2002,17 +2000,16 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 if (isSwiping) {
                     e.preventDefault();
                     touchEndX = moveX;
-                    const transformDiff = (diffX / window.innerWidth) * 100;
-                    columnsWrapper.style.transform = `translateX(${currentTranslateX + transformDiff}vw)`;
+                    const marginDiff = (diffX / window.innerWidth) * 100;
+                    columnsWrapper.style.marginLeft = `${currentMarginLeft + marginDiff}vw`;
                 }
             }, { passive: false });
 
             columnsWrapper.addEventListener('touchend', (e) => {
-                // ★判定をウィンドウ幅からbodyのクラスに変更
                 if (!document.body.classList.contains('mobile-view')) return;
 
                 if (!isSwiping) {
-                    columnsWrapper.style.transition = 'transform 0.3s ease-out';
+                    columnsWrapper.style.transition = 'margin-left 0.3s ease-out';
                     showColumn(currentColumnIndex);
                     return;
                 }
@@ -2026,7 +2023,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     newColumnIndex = Math.max(0, currentColumnIndex - 1);
                 }
                 
-                columnsWrapper.style.transition = 'transform 0.3s ease-out';
+                columnsWrapper.style.transition = 'margin-left 0.3s ease-out';
                 showColumn(newColumnIndex);
                 isSwiping = false;
                 isScrolling = false;
