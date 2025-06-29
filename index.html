@@ -1293,7 +1293,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                 .replace(/</g, '<')
                                 .replace(/>/g, '>')
                                 .replace(/"/g, '"')
-                                .replace(/'/g, "'");
+                                .replace(/'/g, '&apos;');
                 } else if (node.nodeType === Node.CDATA_SECTION_NODE) {
                     result += `<![CDATA[${node.textContent}]]>`;
                 } else if (node.nodeType === Node.COMMENT_NODE) {
