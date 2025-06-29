@@ -29,14 +29,20 @@
             display: flex;
             flex-direction: column;
             background-color: #e0e0e0;
-            overflow: hidden;
-            touch-action: pan-y; /* 縦スクロールを優先 */
+            /* overflow: hidden; を削除またはコメントアウト */
+        }
+        /* 2. 新しいラッパー用のスタイルを追加 */
+        .main-content {
+            flex-grow: 1; /* 残りの高さをすべて取る */
+            display: flex; /* 中のcolumns-wrapperを伸縮させるため */
+            overflow: hidden; /* ★★★ここでスクロールをコンテナ内に封じ込める */
         }
         .columns-wrapper {
             flex-grow: 1;
             display: flex;
             width: 100%;
-            height: 0; /* flex-growを正しく機能させるためのハック */
+            /* height: 0; を削除しても良い（main-contentで制御するため） */
+            height: 100%; /* ★★★高さを100%に指定 */
             overflow-x: auto;
             transition: none;
         }
@@ -353,85 +359,87 @@
     </style>
 </head>
 <body>
-    <div class="columns-wrapper" id="columnsWrapper">
-        <div class="column main-column" data-column-id="main">
-            <div class="column-header">
-                <span class="header-title">メイン</span>
-                <div class="controls">
-                    <button id="viewModeBtn" title="表示モードを切り替えます">表示切替</button>
-                    <button id="newBtn">新規</button>
-                    <button id="openBtn">開く</button>
-                    <input type="file" id="fileInput" style="display: none;">
-                    <button id="saveBtn">保存</button>
-                    <button id="saveAsBtn">別名保存</button>
-                    <button id="undoBtn">↶</button>
-                    <button id="redoBtn">↷</button>
-                </div>
-            </div>
-            <div class="column-content">
-                <div class="section-container" id="outlineSection">
-                    <div class="section-header">
-                        <h3>アウトライン</h3>
-                        <button class="toggle-btn" data-target="outlineContent">隠す</button>
-                    </div>
-                    <div class="section-content" id="outlineContent">
-                        <textarea id="outlineEditor" class="outline-textarea" placeholder="ここに物語のアウトラインを記述してください。"></textarea>
+    <!-- ★★★ この main-content ラッパーを追加 ★★★ -->
+    <div class="main-content">
+        <div class="columns-wrapper" id="columnsWrapper">
+            <div class="column main-column" data-column-id="main">
+                <div class="column-header">
+                    <span class="header-title">メイン</span>
+                    <div class="controls">
+                        <button id="viewModeBtn" title="表示モードを切り替えます">表示切替</button>
+                        <button id="newBtn">新規</button>
+                        <button id="openBtn">開く</button>
+                        <input type="file" id="fileInput" style="display: none;">
+                        <button id="saveBtn">保存</button>
+                        <button id="saveAsBtn">別名保存</button>
+                        <button id="undoBtn">↶</button>
+                        <button id="redoBtn">↷</button>
                     </div>
                 </div>
-                
-                <div class="section-container" id="characterSection">
-                    <div class="section-header">
-                        <h3>キャラクター</h3>
-                        <div class="controls">
-                            <button class="add-character-btn" id="addCharacterBtn">追加</button>
-                            <button class="toggle-btn" data-target="characterContent">隠す</button>
+                <div class="column-content">
+                    <div class="section-container" id="outlineSection">
+                        <div class="section-header">
+                            <h3>アウトライン</h3>
+                            <button class="toggle-btn" data-target="outlineContent">隠す</button>
+                        </div>
+                        <div class="section-content" id="outlineContent">
+                            <textarea id="outlineEditor" class="outline-textarea" placeholder="ここに物語のアウトラインを記述してください。"></textarea>
                         </div>
                     </div>
-                    <div class="section-content" id="characterContent">
-                        <textarea id="characterEditor" class="character-textarea"></textarea>
+                    
+                    <div class="section-container" id="characterSection">
+                        <div class="section-header">
+                            <h3>キャラクター</h3>
+                            <div class="controls">
+                                <button class="add-character-btn" id="addCharacterBtn">追加</button>
+                                <button class="toggle-btn" data-target="characterContent">隠す</button>
+                            </div>
+                        </div>
+                        <div class="section-content" id="characterContent">
+                            <textarea id="characterEditor" class="character-textarea"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="section-container" id="mainEditorSection">
+                        <div class="section-header">
+                            <h3>ネーム本体 (XML)</h3>
+                            <button class="toggle-btn" data-target="mainEditorContent">隠す</button>
+                        </div>
+                        <div class="section-content" id="mainEditorContent">
+                            <textarea id="mainEditor" class="main-textarea" placeholder="XML形式でネームを記述してください。例：<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明><セリフ>セリフA</セリフ></ページ></シーン></root>"></textarea>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="section-container" id="mainEditorSection">
-                    <div class="section-header">
-                        <h3>ネーム本体 (XML)</h3>
-                        <button class="toggle-btn" data-target="mainEditorContent">隠す</button>
+            <div class="column scene-column" data-column-id="scene">
+                <div class="column-header">
+                    <span class="header-title">シーン</span>
+                    <div class="controls">
+                        <button id="addSceneBtn">シーン追加</button>
                     </div>
-                    <div class="section-content" id="mainEditorContent">
-                        <textarea id="mainEditor" class="main-textarea" placeholder="XML形式でネームを記述してください。例：<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明><セリフ>セリフA</セリフ></ページ></シーン></root>"></textarea>
+                </div>
+                <div class="column-content" id="sceneContent"></div>
+            </div>
+
+            <div class="column page-column" data-column-id="page">
+                <div class="column-header">
+                    <span class="header-title">ページ</span>
+                </div>
+                <div class="column-content" id="pageContent"></div>
+            </div>
+
+            <div class="column serif-column" data-column-id="serif">
+                <div class="column-header">
+                    <span class="header-title">セリフ</span>
+                    <div class="controls">
+                        <button id="exportDialogueBtn">エクスポート</button>
                     </div>
                 </div>
+                <div class="column-content" id="dialogueContent"></div>
             </div>
-        </div>
-
-        <div class="column scene-column" data-column-id="scene">
-            <div class="column-header">
-                <span class="header-title">シーン</span>
-                <div class="controls">
-                    <button id="addSceneBtn">シーン追加</button>
-                </div>
-            </div>
-            <div class="column-content" id="sceneContent"></div>
-        </div>
-
-        <div class="column page-column" data-column-id="page">
-            <div class="column-header">
-                <span class="header-title">ページ</span>
-            </div>
-            <div class="column-content" id="pageContent"></div>
-        </div>
-
-        <div class="column serif-column" data-column-id="serif">
-            <div class="column-header">
-                <span class="header-title">セリフ</span>
-                <div class="controls">
-                    <button id="exportDialogueBtn">エクスポート</button>
-                </div>
-            </div>
-            <div class="column-content" id="dialogueContent"></div>
         </div>
     </div>
-
     <!-- タブバー（モバイル用） -->
     <div class="tab-bar">
         <div class="tab-item active" data-page="0">
