@@ -745,11 +745,11 @@
                     result += `</${node.tagName}>`;
                 } else if (node.nodeType === Node.TEXT_NODE) {
                     result += node.textContent
-                                .replace(/&/g, '&')
-                                .replace(/</g, '<')
-                                .replace(/>/g, '>')
-                                .replace(/"/g, '"')
-                                .replace(/'/g, ''');
+                                .replace(/&/g, '&amp;')
+                                .replace(/</g, '&lt;')
+                                .replace(/>/g, '&gt;')
+                                .replace(/"/g, '&quot;')
+                                .replace(/'/g, '&apos;');
                 }
                 return result;
             }
