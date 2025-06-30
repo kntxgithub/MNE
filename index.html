@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -1417,37 +1416,25 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageItemContainer.appendChild(pageHeader);
 
                             const itemTextArea = document.createElement('textarea');
-                            // <ページ説明>と<セリフ>の内容を結合してtextareaに表示
-                            let combinedText = '';
-                            pageElement.childNodes.forEach(child => {
-                                if (child.nodeType === Node.ELEMENT_NODE) {
-                                    if (child.tagName === 'ページ説明') {
-                                        combinedText += child.textContent;
-                                    } else if (child.tagName === 'セリフ') {
-                                        combinedText += `「${child.textContent}」`;
-                                    }
-                                } else if (child.nodeType === Node.TEXT_NODE && child.textContent.trim().length > 0) {
-                                    // 要素間のテキストノードも考慮（ただし、今回のXML構造ではあまり発生しないはず）
-                                    combinedText += child.textContent;
-                                }
-                            });
-                            itemTextArea.value = combinedText;
-
-                            itemTextArea.classList.add('page-text'); 
-                            itemTextArea.placeholder = 'ページ内の説明やセリフ';
+                            itemTextArea.value = item.text;
+                            itemTextArea.classList.add('scene-text'); 
+                            itemTextArea.placeholder = 'シーンの説明';
                             itemTextArea.addEventListener('input', (e) => {
                                 autoResizeTextArea(e.target);
-                                // updatePageContentInXmlに、DOM要素の参照とテキスト、そしてシーンとページインデックスを渡す
-                                updatePageContentInXml(
-                                    pageItemContainer.getAttribute('data-scene-index'),
-                                    pageItemContainer.getAttribute('data-page-index-in-scene'),
-                                    e.target.value // 入力されたテキスト全体を渡す
-                                );
+                                // updateSceneContentInXmlにシーンのインデックスとテキストを渡す
+                                updateSceneContentInXml(sceneItemContainer.getAttribute('data-scene-index'), e.target.value); 
                             });
                             itemTextArea.addEventListener('change', () => { 
                                 updateUIImmediate(); 
                             });
-                            pageItemContainer.appendChild(itemTextArea);
+
+                            // ★★★★★★★★★★★ ここを追加 ★★★★★★★★★★★
+                            itemTextArea.addEventListener('click', (e) => {
+                                e.stopPropagation(); // 親要素へのクリックイベント伝播を阻止
+                            });
+                            // ★★★★★★★★★★★ ここまで ★★★★★★★★★★★
+
+                            sceneItemContainer.appendChild(itemTextArea);
                             autoResizeTextArea(itemTextArea); 
                             
                             pageContentDiv.appendChild(pageItemContainer);
