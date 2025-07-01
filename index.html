@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/MNE/icon180.png">
     <link rel="apple-touch-icon" sizes="152x152" href="/MNE/icon152.png">
     <link rel="apple-touch-icon" sizes="120x120" href="/MNE/icon120.png">
-        <!-- ファビコン -->
+        <!-- ファビコン --> 
     <link rel="icon" type="image/png" sizes="32x32" href="/MNE/icon32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/MNE/icon16.png">
     <meta charset="UTF-8">
@@ -18,7 +18,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>漫画ネームエディタver.2.1</title>
+    <title>漫画ネームエディタver.2.2</title>
     <!--8fb4037-->
     <style>
         html{
@@ -1416,27 +1416,46 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageHeader.appendChild(deleteButton);
                             pageItemContainer.appendChild(pageHeader);
 
-                            const itemTextArea = document.createElement('textarea');
-                            itemTextArea.value = item.text;
-                            itemTextArea.classList.add('scene-text'); 
-                            itemTextArea.placeholder = 'シーンの説明';
-                            itemTextArea.addEventListener('input', (e) => {
-                                autoResizeTextArea(e.target);
-                                // updateSceneContentInXmlにシーンのインデックスとテキストを渡す
-                                updateSceneContentInXml(sceneItemContainer.getAttribute('data-scene-index'), e.target.value); 
+                            const pageContentTextArea = document.createElement('textarea');
+                            
+                            // ページ内のテキストを再構築
+                            let fullPageText = '';
+                            pageElement.childNodes.forEach(childNode => {
+                                if (childNode.nodeName === 'ページ説明') {
+                                    fullPageText += childNode.textContent;
+                                } else if (childNode.nodeName === 'セリフ') {
+                                    fullPageText += `「${childNode.textContent}」`;
+                                }
                             });
-                            itemTextArea.addEventListener('change', () => { 
+                            
+                            pageContentTextArea.value = fullPageText;
+                            pageContentTextArea.classList.add('page-text'); // 適切なクラス名に変更
+                            pageContentTextArea.placeholder = 'ページの説明やセリフ「」を入力'; // 適切なプレースホルダに変更
+                            
+                            // テキストエリアが編集されたら、XMLを更新する
+                            pageContentTextArea.addEventListener('input', (e) => {
+                                autoResizeTextArea(e.target);
+                                // updatePageContentInXmlを呼び出すように修正
+                                updatePageContentInXml(
+                                    pageItemContainer.getAttribute('data-scene-index'),
+                                    pageItemContainer.getAttribute('data-page-index-in-scene'),
+                                    e.target.value
+                                );
+                            });
+
+                            pageContentTextArea.addEventListener('change', () => { 
                                 updateUIImmediate(); 
                             });
 
-                            // ★★★★★★★★★★★ ここを追加 ★★★★★★★★★★★
-                            itemTextArea.addEventListener('click', (e) => {
-                                e.stopPropagation(); // 親要素へのクリックイベント伝播を阻止
+                            // 親要素へのクリックイベント伝播を阻止 (これはOK)
+                            pageContentTextArea.addEventListener('click', (e) => {
+                                e.stopPropagation();
                             });
-                            // ★★★★★★★★★★★ ここまで ★★★★★★★★★★★
+                            
+                            // pageItemContainerにテキストエリアを追加する
+                            pageItemContainer.appendChild(pageContentTextArea);
+                            autoResizeTextArea(pageContentTextArea);
 
-                            sceneItemContainer.appendChild(itemTextArea);
-                            autoResizeTextArea(itemTextArea); 
                             
                             pageContentDiv.appendChild(pageItemContainer);
                             pageNodeIdToDomElementMap.set(nodeId, pageItemContainer);
@@ -1586,7 +1605,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     itemTextArea.addEventListener('click', (e) => {
                         e.stopPropagation();
                     });
-                    
+
                     sceneItemContainer.appendChild(itemTextArea);
                     autoResizeTextArea(itemTextArea); 
 
