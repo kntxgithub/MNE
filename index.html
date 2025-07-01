@@ -18,7 +18,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>漫画ネームエディタver.2</title>
+    <title>漫画ネームエディタver.2.1</title>
     <!--8fb4037-->
     <style>
         html{
@@ -1366,6 +1366,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         const sceneNodeIdForDom = [...sceneNodeIdToDomElementMap.keys()].find(key => sceneNodeIdToDomElementMap.get(key).xmlNode === sceneElement);
                         const sceneTitle = `シーン${sceneIndex + 1}`;
                         const sceneColorClass = `scene-color-${sceneIndex % 5}`; 
+                        
 
                         const pagesInScene = sceneElement.querySelectorAll('ページ');
                         
@@ -1579,6 +1580,13 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     itemTextArea.addEventListener('change', () => { 
                         updateUIImmediate(); 
                     });
+
+                    // テキストエリア自身がクリックされた場合は、親要素へのイベント伝播を停止する
+                    // これにより、画面が意図せずページカラムに切り替わるのを防ぐ
+                    itemTextArea.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                    
                     sceneItemContainer.appendChild(itemTextArea);
                     autoResizeTextArea(itemTextArea); 
 
