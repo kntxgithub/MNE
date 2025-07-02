@@ -18,7 +18,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>漫画ネームエディタver.2.4</title>
+    <title>漫画ネームエディタver.2.4.1</title>
     <!--8fb4037-->
     <style>
         html{
@@ -1084,11 +1084,18 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             }
 
             function updateUndoRedoButtons() {
-                undoBtn.disabled = historyIndex === 0;
-                redoBtn.disabled = historyIndex === history.length - 1;
+                // canUndo と canRedo の変数をここで定義します。
+                const canUndo = historyIndex > 0;
+                const canRedo = historyIndex < history.length - 1;
+
+                // メインカラムのボタン
+                undoBtn.disabled = !canUndo;
+                redoBtn.disabled = !canRedo;
+                
                 // シーンカラムのボタン
                 undoBtnScene.disabled = !canUndo;
                 redoBtnScene.disabled = !canRedo;
+
                 // ページカラムのボタン
                 undoBtnPage.disabled = !canUndo;
                 redoBtnPage.disabled = !canRedo;
