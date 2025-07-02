@@ -18,7 +18,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>漫画ネームエディタver.2.2</title>
+    <title>漫画ネームエディタver.2.3</title>
     <!--8fb4037-->
     <style>
         html{
@@ -1567,7 +1567,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     sceneItemContainer.classList.add(`scene-color-${item.sceneIndex % 5}`); 
                     sceneItemContainer.setAttribute('data-node-id', item.nodeId); 
                     sceneItemContainer.xmlNode = item.rawNode; 
-                    sceneItemContainer.setAttribute('data-scene-index', item.sceneIndex); // シーンのインデックスをDOMに保持
+                    sceneItemContainer.setAttribute('data-scene-index', item.sceneIndex);
                     
                     const header = document.createElement('div');
                     header.classList.add('scene-item-header');
@@ -1593,15 +1593,12 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     itemTextArea.placeholder = 'シーンの説明';
                     itemTextArea.addEventListener('input', (e) => {
                         autoResizeTextArea(e.target);
-                        // updateSceneContentInXmlにシーンのインデックスとテキストを渡す
                         updateSceneContentInXml(sceneItemContainer.getAttribute('data-scene-index'), e.target.value); 
                     });
                     itemTextArea.addEventListener('change', () => { 
                         updateUIImmediate(); 
                     });
 
-                    // テキストエリア自身がクリックされた場合は、親要素へのイベント伝播を停止する
-                    // これにより、画面が意図せずページカラムに切り替わるのを防ぐ
                     itemTextArea.addEventListener('click', (e) => {
                         e.stopPropagation();
                     });
@@ -1609,21 +1606,26 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     sceneItemContainer.appendChild(itemTextArea);
                     autoResizeTextArea(itemTextArea); 
 
+                    // ★★★★★★★★★★★ ここからが変更点 ★★★★★★★★★★★
+
+                    // sceneItemContainer 全体にクリックイベントを設定します。
+                    // このイベントは、カラム移動は行わず、アクティブな要素の更新のみを行います。
                     sceneItemContainer.addEventListener('click', () => {
+                        // このシーンをアクティブ状態に設定します。
                         setActiveElement(sceneItemContainer, 'scene');
+
+                        // このシーンに紐づく最初のページも内部的にアクティブにしておきます。
+                        // これにより、ユーザーが手動でページカラムに移動した際に、
+                        // 選択したシーンのページが表示される準備が整います。
                         const firstPageElement = sceneNodeIdToFirstPageDomElementMap.get(item.nodeId); 
                         if (firstPageElement) {
+                            // pageのactive状態も更新しますが、画面遷移はしません。
                             setActiveElement(firstPageElement, 'page');
-                            showColumn(2); 
-                            if (window.innerWidth > 768) { 
-                                setTimeout(() => {
-                                    firstPageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                }, 300); 
-                            }
-                        } else {
-                            showColumn(2);
                         }
+                        // ここで showColumn() は呼び出しません。
                     });
+                    
+                    // ★★★★★★★★★★★ ここまでが変更点 ★★★★★★★★★★★
                     
                     container.appendChild(sceneItemContainer);
                     sceneNodeIdToDomElementMap.set(item.nodeId, sceneItemContainer);
