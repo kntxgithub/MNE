@@ -18,7 +18,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>漫画ネームエディタver.2.4.1</title>
+    <title>漫画ネームエディタver.2.4.2</title>
     <!--8fb4037-->
     <style>
         html{
@@ -613,6 +613,7 @@
 
             /* シーンとセリフカラムのヘッダーを1行にレイアウト */
             .scene-column .column-header,
+            .page-column .column-header,
             .serif-column .column-header {
                 flex-direction: row; /* 横並びに戻す */
                 justify-content: space-between; /* 両端揃え */
@@ -621,18 +622,21 @@
 
             /* 上記カラムのタイトル下のマージンを削除 */
             .scene-column .column-header .header-title,
+            .page-column .column-header .header-title,
             .serif-column .column-header .header-title {
                 margin-bottom: 0;
             }
 
             /* 上記カラムのコントロール部分の幅を自動に */
             .scene-column .column-header .controls,
+            .page-column .column-header .controls,
             .serif-column .column-header .controls {
                 width: auto;
             }
 
             /* 上記カラムのボタンが幅いっぱいに広がるのを防ぐ */
             .scene-column .column-header .controls button,
+            .page-column .column-header .controls buttn,
             .serif-column .column-header .controls button {
                 flex-grow: 0; /* 幅を自動にする */
                 padding: 6px 12px; /* パディングを少し調整して見栄えを良くする */
@@ -735,9 +739,10 @@
             <div class="column-header">
                 <span class="header-title">シーン</span>
                 <div class="controls">
+                    <button id="addSceneBtn">シーン追加</button>
                     <button id="undoBtnScene">↶</button>
                     <button id="redoBtnScene">↷</button>
-                    <button id="addSceneBtn">シーン追加</button>
+
                 </div>
             </div>
             <div class="column-content" id="sceneContent">
