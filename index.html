@@ -18,7 +18,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>漫画ネームエディタver.2.3</title>
+    <title>漫画ネームエディタver.2.4</title>
     <!--8fb4037-->
     <style>
         html{
@@ -735,6 +735,8 @@
             <div class="column-header">
                 <span class="header-title">シーン</span>
                 <div class="controls">
+                    <button id="undoBtnScene">↶</button>
+                    <button id="redoBtnScene">↷</button>
                     <button id="addSceneBtn">シーン追加</button>
                 </div>
             </div>
@@ -746,6 +748,10 @@
         <div class="column page-column" data-column-id="page">
             <div class="column-header">
                 <span class="header-title">ページ</span>
+                <div class="controls">
+                    <button id="undoBtnPage">↶</button>
+                    <button id="redoBtnPage">↷</button>
+                </div>
             </div>
             <div class="column-content" id="pageContent">
                 <p>メインエディタの内容からページを抽出します。</p>
@@ -844,6 +850,10 @@
             const fileInput = document.getElementById('fileInput');
             const undoBtn = document.getElementById('undoBtn');
             const redoBtn = document.getElementById('redoBtn');
+            const undoBtnScene = document.getElementById('undoBtnScene');
+            const redoBtnScene = document.getElementById('redoBtnScene');
+            const undoBtnPage = document.getElementById('undoBtnPage');
+            const redoBtnPage = document.getElementById('redoBtnPage');
 
             const outlineContentDiv = document.getElementById('outlineContent');
             const characterContentDiv = document.getElementById('characterContent');
@@ -1076,6 +1086,12 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             function updateUndoRedoButtons() {
                 undoBtn.disabled = historyIndex === 0;
                 redoBtn.disabled = historyIndex === history.length - 1;
+                // シーンカラムのボタン
+                undoBtnScene.disabled = !canUndo;
+                redoBtnScene.disabled = !canRedo;
+                // ページカラムのボタン
+                undoBtnPage.disabled = !canUndo;
+                redoBtnPage.disabled = !canRedo;
             }
 
             function addToHistory(content) {
@@ -1838,6 +1854,13 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             undoBtn.addEventListener('click', undo);
             redoBtn.addEventListener('click', redo);
+            
+            undoBtnScene.addEventListener('click', undo);
+            redoBtnScene.addEventListener('click', redo);
+
+            undoBtnPage.addEventListener('click', undo);
+            redoBtnPage.addEventListener('click', redo);
+    
 
             mainEditor.addEventListener('input', () => {
                 autoResizeTextArea(mainEditor);
