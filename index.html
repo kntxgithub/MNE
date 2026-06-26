@@ -721,6 +721,16 @@
                     </div>
                 </div>
 
+                <div class="section-container" id="keywordSection">
+                    <div class="section-header">
+                        <h3>キーワード</h3>
+                        <button class="toggle-btn" data-target="keywordContent">隠す</button>
+                    </div>
+                    <div class="section-content" id="keywordContent">
+                        <textarea id="keywordEditor" class="outline-textarea" placeholder="作品のキーワードやテーマを記述してください。"></textarea>
+                    </div>
+                </div>
+
                 <div class="section-container" id="mainEditorSection">
                     <div class="section-header">
                         <h3>ネーム本体 (XML)</h3>
@@ -842,6 +852,7 @@
 
             const outlineEditor = document.getElementById('outlineEditor');
             const characterEditor = document.getElementById('characterEditor');
+            const keywordEditor = document.getElementById('keywordEditor');
             const mainEditor = document.getElementById('mainEditor');
 
             const sceneContentDiv = document.getElementById('sceneContent');
@@ -862,6 +873,7 @@
 
             const outlineContentDiv = document.getElementById('outlineContent');
             const characterContentDiv = document.getElementById('characterContent');
+            const keywordContentDiv = document.getElementById('keywordContent');
             const mainEditorContentDiv = document.getElementById('mainEditorContent');
 
             const toggleButtons = document.querySelectorAll('.toggle-btn');
@@ -948,14 +960,16 @@
                 const state = {
                     outlineContent: outlineEditor.value,
                     characterContent: characterEditor.value,
+                    keywordContent: keywordEditor.value,
                     mainContent: mainEditor.value,
                     fileName: currentFileName,
                     history: history,
                     historyIndex: historyIndex,
                     outlineHidden: outlineContentDiv.classList.contains('hidden'),
                     characterHidden: characterContentDiv.classList.contains('hidden'),
+                    keywordHidden: keywordContentDiv.classList.contains('hidden'),
                     mainEditorHidden: mainEditorContentDiv.classList.contains('hidden'),
-                    currentColumnIndex: currentColumnIndex 
+                    currentColumnIndex: currentColumnIndex
                 };
                 localStorage.setItem('comicNameEditorState', JSON.stringify(state));
                 console.log('State saved.');
@@ -989,12 +1003,14 @@
                 historyIndex = 0;
                 localStorage.removeItem('comicNameEditorState');
                 
+                keywordEditor.value = '';
                 setSectionVisibility(outlineContentDiv, false);
                 setSectionVisibility(characterContentDiv, false);
+                setSectionVisibility(keywordContentDiv, false);
                 setSectionVisibility(mainEditorContentDiv, true);
 
-                currentColumnIndex = 0; 
-                showColumn(currentColumnIndex); 
+                currentColumnIndex = 0;
+                showColumn(currentColumnIndex);
                 updateUIImmediate();
                 alert('新しいネームを開始しました。');
             }
@@ -1006,6 +1022,7 @@
                     const state = JSON.parse(savedState);
                     outlineEditor.value = state.outlineContent || '';
                     characterEditor.value = state.characterContent || '';
+                    keywordEditor.value = state.keywordContent || '';
                     mainEditor.value = state.mainContent || '';
                     currentFileName = state.fileName || '新規ネーム.txt';
                     history = state.history || [''];
@@ -1013,6 +1030,7 @@
 
                     setSectionVisibility(outlineContentDiv, state.outlineHidden || false);
                     setSectionVisibility(characterContentDiv, state.characterHidden || false);
+                    setSectionVisibility(keywordContentDiv, state.keywordHidden || false);
                     setSectionVisibility(mainEditorContentDiv, state.mainEditorHidden || false);
                     
                     currentColumnIndex = state.currentColumnIndex !== undefined ? state.currentColumnIndex : 0; 
@@ -1162,6 +1180,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 const xmlContent = mainEditor.value;
                 const fullContentToSave = `[アウトライン:]\n${outlineEditor.value}\n\n` +
                                           `[キャラクター:]\n${characterEditor.value}\n\n` +
+                                          `[キーワード:]\n${keywordEditor.value}\n\n` +
                                           `[ネーム本体(XML):]\n${xmlContent}\n\n` +
                                           `[セリフ一覧(今後廃止):]\n`;
 
@@ -1278,25 +1297,29 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             function extractAndSetSeparateContents(fullText) {
                 const extracted = { outline: '', character: '', main: '' };
 
-                const outlineMatch = fullText.match(/\[アウトライン:\]\n([\s\S]*?)(?=\n*\[キャラクター:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
+                const outlineMatch = fullText.match(/\[アウトライン:\]\n([\s\S]*?)(?=\n*\[キャラクター:\]|\n*\[キーワード:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
                 if (outlineMatch) extracted.outline = outlineMatch[1].trim();
-                else if (fullText.includes('[アウトライン:]')) extracted.outline = ''; // タグはあるが内容がない場合
+                else if (fullText.includes('[アウトライン:]')) extracted.outline = '';
 
-                const characterMatch = fullText.match(/\[キャラクター:\]\n([\s\S]*?)(?=\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
+                const characterMatch = fullText.match(/\[キャラクター:\]\n([\s\S]*?)(?=\n*\[キーワード:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
                 if (characterMatch) extracted.character = characterMatch[1].trim();
-                else if (fullText.includes('[キャラクター:]')) extracted.character = ''; // タグはあるが内容がない場合
+                else if (fullText.includes('[キャラクター:]')) extracted.character = '';
+
+                const keywordMatch = fullText.match(/\[キーワード:\]\n([\s\S]*?)(?=\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
+                if (keywordMatch) extracted.keyword = keywordMatch[1].trim();
+                else if (fullText.includes('[キーワード:]')) extracted.keyword = '';
 
                 const mainXmlMatch = fullText.match(/\[ネーム本体\(XML\):\]\n([\s\S]*?)(?=\n*\[セリフ一覧\(今後廃止\):\]|$)/);
                 if (mainXmlMatch) extracted.main = mainXmlMatch[1].trim();
-                else if (fullText.includes('[ネーム本体(XML):]')) extracted.main = ''; // タグはあるが内容がない場合
-                
-                // どのセクションタグも見つからなかった場合は、mainEditorに全て入れる
-                if (!outlineMatch && !characterMatch && !mainXmlMatch) {
+                else if (fullText.includes('[ネーム本体(XML):]')) extracted.main = '';
+
+                if (!outlineMatch && !characterMatch && !keywordMatch && !mainXmlMatch) {
                     extracted.main = fullText;
                 }
 
                 outlineEditor.value = extracted.outline;
                 characterEditor.value = extracted.character;
+                keywordEditor.value = extracted.keyword || '';
                 mainEditor.value = extracted.main;
             }
 
@@ -1893,8 +1916,15 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             characterEditor.addEventListener('input', () => {
                 autoResizeTextArea(characterEditor);
             });
-            characterEditor.addEventListener('change', () => { 
-                updateUIImmediate(); 
+            characterEditor.addEventListener('change', () => {
+                updateUIImmediate();
+            });
+
+            keywordEditor.addEventListener('input', () => {
+                autoResizeTextArea(keywordEditor);
+            });
+            keywordEditor.addEventListener('change', () => {
+                updateUIImmediate();
             });
 
             addCharacterBtn.addEventListener('click', () => {
