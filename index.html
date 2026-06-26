@@ -510,6 +510,53 @@
             min-height: 150px;
         }
 
+        /* ページメモ欄 */
+        .page-memo-area {
+            border-top: 1px dashed #ccc;
+            padding: 4px 6px;
+            background-color: #fffde7;
+            display: none;
+        }
+
+        .page-memo-area.open {
+            display: block;
+        }
+
+        .page-memo-area textarea {
+            width: 100%;
+            min-height: 48px;
+            font-size: 0.88em;
+            color: #555;
+            background: transparent;
+            border: none;
+            resize: none;
+            padding: 2px;
+            box-sizing: border-box;
+            font-family: 'Meiryo', 'Hiragino Kaku Gothic ProN', 'BIZ UDPGothic', sans-serif;
+        }
+
+        .page-memo-label {
+            font-size: 0.75em;
+            color: #aaa;
+            margin-bottom: 2px;
+        }
+
+        .memo-toggle-btn {
+            background: none;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 11px;
+            color: #888;
+            padding: 2px 6px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .memo-toggle-btn.has-memo {
+            color: #e67e22;
+            border-color: #e67e22;
+        }
+
         /* ページカラムのシーングループ */
         .page-scene-group {
             margin-bottom: 12px;
@@ -1643,15 +1690,50 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                             pageHeader.appendChild(leftGroup);
 
+                            const memoKey = getMemoKey(sceneIndex, pageIndexInScene);
+                            const savedMemo = memoData[memoKey] || '';
+
+                            const memoToggleBtn = document.createElement('button');
+                            memoToggleBtn.classList.add('memo-toggle-btn');
+                            memoToggleBtn.textContent = 'メモ';
+                            memoToggleBtn.title = 'メモを開閉（エクスポートされません）';
+                            if (savedMemo) memoToggleBtn.classList.add('has-memo');
+                            memoToggleBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                memoArea.classList.toggle('open');
+                                if (memoArea.classList.contains('open')) memoTextarea.focus();
+                            });
+                            pageHeader.appendChild(memoToggleBtn);
+
                             const deleteButton = document.createElement('button');
                             deleteButton.classList.add('delete-page-btn');
                             deleteButton.textContent = '削除';
                             deleteButton.addEventListener('click', (e) => {
-                                e.stopPropagation(); 
+                                e.stopPropagation();
                                 deletePage(pageItemContainer.xmlNode, `ページ${globalPageIndex}`);
                             });
                             pageHeader.appendChild(deleteButton);
                             pageItemContainer.appendChild(pageHeader);
+
+                            // メモ欄
+                            const memoArea = document.createElement('div');
+                            memoArea.classList.add('page-memo-area');
+
+                            const memoLabel = document.createElement('div');
+                            memoLabel.classList.add('page-memo-label');
+                            memoLabel.textContent = '📝 メモ（非公開）';
+                            memoArea.appendChild(memoLabel);
+
+                            const memoTextarea = document.createElement('textarea');
+                            memoTextarea.value = savedMemo;
+                            memoTextarea.placeholder = 'このページ用のメモ（保存されますがエクスポートには含まれません）';
+                            memoTextarea.addEventListener('input', (e) => {
+                                autoResizeTextArea(e.target);
+                                saveMemo(memoKey, e.target.value);
+                                memoToggleBtn.classList.toggle('has-memo', !!e.target.value.trim());
+                            });
+                            memoTextarea.addEventListener('click', (e) => e.stopPropagation());
+                            memoArea.appendChild(memoTextarea);
 
                             const pageContentTextArea = document.createElement('textarea');
                             
@@ -1711,6 +1793,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             // pageItemContainerにテキストエリアを追加する
                             pageItemContainer.appendChild(pageContentTextArea);
                             autoResizeTextArea(pageContentTextArea);
+                            pageItemContainer.appendChild(memoArea);
+                            autoResizeTextArea(memoTextarea);
 
                             
                             sceneGroupContent.appendChild(pageItemContainer);
@@ -2294,6 +2378,22 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
             });
 
+
+            // --- ページメモ管理 ---
+            let memoData = JSON.parse(localStorage.getItem('pageMemoData') || '{}');
+
+            function getMemoKey(sceneIndex, pageIndexInScene) {
+                return `s${sceneIndex}_p${pageIndexInScene}`;
+            }
+
+            function saveMemo(key, text) {
+                if (text.trim()) {
+                    memoData[key] = text;
+                } else {
+                    delete memoData[key];
+                }
+                localStorage.setItem('pageMemoData', JSON.stringify(memoData));
+            }
 
             // --- ページ検索 ---
             const pageSearchInput = document.getElementById('pageSearchInput');
