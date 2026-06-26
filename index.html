@@ -774,8 +774,13 @@
         </div>
 
         <div class="column serif-column" data-column-id="serif">
-            <div class="column-header">
+            <div class="column-header" style="justify-content:space-between;">
                 <span class="header-title">セリフ</span>
+                <select id="fontSizeSelect" style="padding:5px 8px;border-radius:3px;border:none;background:#6c757d;color:white;cursor:pointer;font-size:13px;position:absolute;left:50%;transform:translateX(-50%);">
+                    <option value="0">文字サイズ 小</option>
+                    <option value="1">文字サイズ 中</option>
+                    <option value="2">文字サイズ 大</option>
+                </select>
                 <div class="controls">
                     <button id="exportDialogueBtn">エクスポート</button>
                 </div>
@@ -1475,7 +1480,13 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                 if (childNode.nodeName === 'ページ説明') {
                                     fullPageText += childNode.textContent;
                                 } else if (childNode.nodeName === 'セリフ') {
-                                    fullPageText += `「${childNode.textContent}」`;
+                                    const serifContent = childNode.textContent;
+                                    const charMatch = serifContent.match(/^（([^）]*)）([\s\S]*)/);
+                                    if (charMatch) {
+                                        fullPageText += `（${charMatch[1]}）「${charMatch[2]}」`;
+                                    } else {
+                                        fullPageText += `「${serifContent}」`;
+                                    }
                                 }
                             });
                             
@@ -1483,6 +1494,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageContentTextArea.classList.add('page-text'); // 適切なクラス名に変更
                             pageContentTextArea.placeholder = 'ページの説明やセリフ「」を入力'; // 適切なプレースホルダに変更
                             
+                            addAutocompleteToTextarea(pageContentTextArea);
+
                             // テキストエリアが編集されたら、XMLを更新する
                             pageContentTextArea.addEventListener('input', (e) => {
                                 autoResizeTextArea(e.target);
@@ -1576,10 +1589,26 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                     dialogueContentDivItem.setAttribute('data-page-index-in-scene', pageIndexInScene);
                                     dialogueContentDivItem.setAttribute('data-dialogue-index-in-page', dialogueIndexInPage);
 
-                                    dialogueContentDivItem.textContent = dialogueElement.textContent; // divのtextContentに設定
-                                    dialogueContentDivItem.style.minHeight = '1.6em'; // 最小の高さを確保
-                                    dialogueContentDivItem.style.whiteSpace = 'pre-wrap'; // 改行を反映
-                                    dialogueContentDivItem.style.wordWrap = 'break-word'; // 長い単語の折り返し
+                                    const serifRaw = dialogueElement.textContent;
+                                    // （名前）セリフ 形式を解析。名前内に（）が入り込んだ壊れた形式にも対応
+                                    const charMatch = serifRaw.match(/^（([\s\S]*?)）(?!」)([\s\S]*)/);
+                                    if (charMatch) {
+                                        // 名前部分から余分な（）を除去して純粋な名前だけ取り出す
+                                        let displayName = charMatch[1].replace(/（[^）]*）?/g, '').trim() || charMatch[1].trim();
+                                        let serifBody = charMatch[2];
+                                        // 壊れた形式で余分な）が先頭に残る場合は除去
+                                        serifBody = serifBody.replace(/^）/, '');
+                                        const charLabel = document.createElement('span');
+                                        charLabel.textContent = displayName;
+                                        charLabel.style.cssText = 'font-weight:bold;color:#1a73e8;font-style:normal;font-size:0.85em;display:block;margin-bottom:2px;';
+                                        dialogueContentDivItem.appendChild(charLabel);
+                                        dialogueContentDivItem.appendChild(document.createTextNode(serifBody));
+                                    } else {
+                                        dialogueContentDivItem.textContent = serifRaw;
+                                    }
+                                    dialogueContentDivItem.style.minHeight = '1.6em';
+                                    dialogueContentDivItem.style.whiteSpace = 'pre-wrap';
+                                    dialogueContentDivItem.style.wordWrap = 'break-word';
 
                                     dialogueContentDivItem.addEventListener('click', (event) => {
                                         setActiveElement(dialogueContentDivItem, 'dialogue');
@@ -1601,6 +1630,11 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     });
                 }
                 highlightActiveElements();
+
+                // 再描画後にフォントサイズを再適用
+                const size = fontSizes[currentFontSizeIndex];
+                document.querySelectorAll('textarea').forEach(el => el.style.fontSize = size);
+                document.querySelectorAll('.dialogue-content').forEach(el => el.style.fontSize = size);
             }
 
             function renderSceneColumnContent(container, sceneItems) {
@@ -1735,7 +1769,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                     // 正規表現で「」で囲まれたセリフを抽出
                     // 変更点: 改行を含む任意のアウトラインテキストを考慮できるよう「[^」]*」を「([\s\S]*?)」に変更
-                    const dialogueRegex = /「([\s\S]*?)」/g;
+                    const dialogueRegex = /(（[^）]*）)?「([\s\S]*?)」/g;
                     let lastIndex = 0;
                     let contentParts = []; // ページ説明とセリフの順序を保持する配列
 
@@ -1746,9 +1780,10 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             contentParts.push({ type: 'desc', text: fullPageText.substring(lastIndex, match.index) });
                         }
 
-                        // セリフ本体（「」の中身）
-                        const dialogueText = match[1]; 
-                        contentParts.push({ type: 'dialogue', text: dialogueText });
+                        // （キャラ名）＋セリフ本体
+                        const charPrefix = match[1] || '';
+                        const dialogueText = match[2];
+                        contentParts.push({ type: 'dialogue', text: charPrefix + dialogueText });
 
                         lastIndex = dialogueRegex.lastIndex;
                     }
@@ -1884,6 +1919,27 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 // セリフはtextareaではないので、textareaのみを対象とする
                 document.querySelectorAll('textarea').forEach(autoResizeTextArea);
             }
+
+            // フォントサイズ変更
+            const fontSizes = ['1em', '1.2em', '1.45em'];
+            let currentFontSizeIndex = 0;
+            const fontSizeSelect = document.getElementById('fontSizeSelect');
+
+            function applyFontSize(index) {
+                currentFontSizeIndex = index;
+                const size = fontSizes[index];
+                document.querySelectorAll('textarea').forEach(el => el.style.fontSize = size);
+                document.querySelectorAll('.dialogue-content').forEach(el => el.style.fontSize = size);
+                fontSizeSelect.value = String(index);
+                autoResizeAllTextareas();
+                localStorage.setItem('fontSizeIndex', index);
+            }
+
+            fontSizeSelect.addEventListener('change', () => applyFontSize(parseInt(fontSizeSelect.value, 10)));
+
+            // 保存済みフォントサイズを復元
+            const savedFontSizeIndex = parseInt(localStorage.getItem('fontSizeIndex') || '0', 10);
+            applyFontSize(savedFontSizeIndex);
 
             newBtn.addEventListener('click', clearAllEditors);
 
@@ -2046,6 +2102,82 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
             });
 
+
+            // --- キャラクター名オートコンプリート ---
+            function getCharacterNames() {
+                const names = [];
+                // 「名前：」タグの後、「（」「、」「,」「　」「 」改行までを名前として抽出
+                const regex = /名前：([^（、,　 \n]+)/gm;
+                let match;
+                while ((match = regex.exec(characterEditor.value)) !== null) {
+                    const name = match[1].trim();
+                    if (name) names.push(name);
+                }
+                return names;
+            }
+
+            const autocompleteDiv = document.createElement('div');
+            autocompleteDiv.style.cssText = 'position:fixed;background:white;border:1px solid #ccc;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.2);z-index:1000;display:none;max-height:160px;overflow-y:auto;min-width:120px;';
+            document.body.appendChild(autocompleteDiv);
+
+            function showAutocomplete(textarea) {
+                const names = getCharacterNames();
+                autocompleteDiv.innerHTML = '';
+                if (names.length === 0) { hideAutocomplete(); return; }
+                const rect = textarea.getBoundingClientRect();
+                autocompleteDiv.style.left = rect.left + 'px';
+                autocompleteDiv.style.top = (rect.bottom + 2) + 'px';
+                names.forEach(name => {
+                    const item = document.createElement('div');
+                    item.textContent = name;
+                    item.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:14px;font-family:Meiryo,sans-serif;';
+                    item.addEventListener('mouseenter', () => item.style.backgroundColor = '#e8f0fe');
+                    item.addEventListener('mouseleave', () => item.style.backgroundColor = '');
+                    item.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        insertCharacterName(textarea, name);
+                        hideAutocomplete();
+                    });
+                    autocompleteDiv.appendChild(item);
+                });
+                autocompleteDiv.style.display = 'block';
+            }
+
+            function hideAutocomplete() {
+                autocompleteDiv.style.display = 'none';
+            }
+
+            function insertCharacterName(textarea, name) {
+                const pos = textarea.selectionStart;
+                const val = textarea.value;
+                const before = val.substring(0, pos);
+                const lastParen = before.lastIndexOf('（');
+                if (lastParen === -1) return;
+                const newVal = val.substring(0, lastParen) + `（${name}）「」` + val.substring(pos);
+                textarea.value = newVal;
+                const newPos = lastParen + `（${name}）「`.length;
+                textarea.setSelectionRange(newPos, newPos);
+                textarea.dispatchEvent(new Event('input'));
+            }
+
+            function addAutocompleteToTextarea(textarea) {
+                textarea.addEventListener('input', (e) => {
+                    const pos = e.target.selectionStart;
+                    const before = e.target.value.substring(0, pos);
+                    if (before.endsWith('（')) {
+                        showAutocomplete(e.target);
+                    } else {
+                        hideAutocomplete();
+                    }
+                });
+                textarea.addEventListener('blur', () => {
+                    setTimeout(hideAutocomplete, 150);
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (!autocompleteDiv.contains(e.target)) hideAutocomplete();
+            });
 
             loadState();
             // autoResizeAllTextareas(); // これはupdateUIImmediate内でsetTimeoutで呼び出す
