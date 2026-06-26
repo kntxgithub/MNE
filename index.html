@@ -510,6 +510,58 @@
             min-height: 150px;
         }
 
+        /* ページカラムのシーングループ */
+        .page-scene-group {
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .page-scene-group-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .page-scene-group-header .scene-desc-preview {
+            flex: 1 1 0;
+            min-width: 0;
+            font-size: 0.85em;
+            color: #555;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .page-scene-group-header .collapse-btn {
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            color: #666;
+            padding: 2px 4px;
+            transition: transform 0.2s;
+        }
+
+        .page-scene-group-header .collapse-btn.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .page-scene-group-content {
+            padding: 6px;
+            border-top: 1px solid #ddd;
+        }
+
+        .page-scene-group-content.collapsed {
+            display: none;
+        }
+
         /* 個別のシーン内でページを追加するためのボタン */
         .add-page-to-scene-btn {
             background-color: #34495e;
@@ -934,6 +986,7 @@
             let activeSceneElement = null;
             let activePageElement = null;
             let activeDialogueElement = null; // 個別のセリフ要素
+            const sceneCollapseState = new Map(); // シーンごとの折りたたみ状態
 
             // --- カラム表示制御用の変数 ---            
             let currentColumnIndex = 0; // 0:メイン, 1:シーン, 2:ページ, 3:セリフ
@@ -1444,22 +1497,61 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     scenes.forEach((sceneElement, sceneIndex) => {
                         const sceneNodeIdForDom = [...sceneNodeIdToDomElementMap.keys()].find(key => sceneNodeIdToDomElementMap.get(key).xmlNode === sceneElement);
                         const sceneTitle = `シーン${sceneIndex + 1}`;
-                        const sceneColorClass = `scene-color-${sceneIndex % 5}`; 
-                        
+                        const sceneColorClass = `scene-color-${sceneIndex % 5}`;
+                        const sceneDesc = sceneElement.querySelector('シーン説明')?.textContent || '';
+
+                        // シーングループ
+                        const sceneGroup = document.createElement('div');
+                        sceneGroup.classList.add('page-scene-group');
+
+                        const sceneGroupHeader = document.createElement('div');
+                        sceneGroupHeader.classList.add('page-scene-group-header', sceneColorClass);
+
+                        const sceneBadge = document.createElement('span');
+                        sceneBadge.classList.add('scene-title-badge');
+                        sceneBadge.textContent = sceneTitle;
+                        sceneGroupHeader.appendChild(sceneBadge);
+
+                        const sceneDescPreview = document.createElement('span');
+                        sceneDescPreview.classList.add('scene-desc-preview');
+                        sceneDescPreview.textContent = sceneDesc;
+                        sceneGroupHeader.appendChild(sceneDescPreview);
+
+                        const collapseBtn = document.createElement('button');
+                        collapseBtn.classList.add('collapse-btn');
+                        collapseBtn.textContent = '▼';
+                        sceneGroupHeader.appendChild(collapseBtn);
+
+                        const sceneGroupContent = document.createElement('div');
+                        sceneGroupContent.classList.add('page-scene-group-content');
+
+                        // 折りたたみ状態の復元
+                        const isCollapsed = sceneCollapseState.get(sceneIndex) || false;
+                        if (isCollapsed) {
+                            sceneGroupContent.classList.add('collapsed');
+                            collapseBtn.classList.add('collapsed');
+                        }
+
+                        sceneGroupHeader.addEventListener('click', () => {
+                            const collapsed = sceneGroupContent.classList.toggle('collapsed');
+                            collapseBtn.classList.toggle('collapsed', collapsed);
+                            sceneCollapseState.set(sceneIndex, collapsed);
+                        });
+
+                        sceneGroup.appendChild(sceneGroupHeader);
+                        sceneGroup.appendChild(sceneGroupContent);
+                        pageContentDiv.appendChild(sceneGroup);
 
                         const pagesInScene = sceneElement.querySelectorAll('ページ');
-                        
+
                         if (pagesInScene.length === 0) {
                             const p = document.createElement('p');
                             p.textContent = `このシーンにはページがありません。`;
-                            p.style.fontSize = '0.9em';
-                            p.style.color = '#777';
-                            p.style.marginLeft = '10px';
-                            p.style.marginBottom = '10px';
-                            pageContentDiv.appendChild(p);
-                        } 
-                        
-                        pagesInScene.forEach((pageElement, pageIndexInScene) => { // pageIndexInSceneを追加
+                            p.style.cssText = 'font-size:0.9em;color:#777;margin:8px;';
+                            sceneGroupContent.appendChild(p);
+                        }
+
+                        pagesInScene.forEach((pageElement, pageIndexInScene) => {
                             const nodeId = `node-${nodeIdCounter++}`;
                             const pageItemContainer = document.createElement('div');
                             pageItemContainer.classList.add('page-item-container');
@@ -1616,7 +1708,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             autoResizeTextArea(pageContentTextArea);
 
                             
-                            pageContentDiv.appendChild(pageItemContainer);
+                            sceneGroupContent.appendChild(pageItemContainer);
                             pageNodeIdToDomElementMap.set(nodeId, pageItemContainer);
 
                             if (!sceneNodeIdToFirstPageDomElementMap.has(sceneNodeIdForDom)) {
@@ -1634,7 +1726,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             e.stopPropagation(); 
                             addPageToSpecificScene(sceneElement); 
                         });
-                        pageContentDiv.appendChild(addPageButtonForScene);
+                        sceneGroupContent.appendChild(addPageButtonForScene);
                     });
                 }
                 
