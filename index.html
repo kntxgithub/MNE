@@ -884,6 +884,7 @@
         <div class="column page-column" data-column-id="page">
             <div class="column-header" style="flex-wrap:wrap; gap:6px;">
                 <span class="header-title">ページ</span>
+                <span id="pageCountBanner" style="flex:1;text-align:center;font-size:0.82em;color:#cde;"></span>
                 <div class="controls">
                     <button id="undoBtnPage">↶</button>
                     <button id="redoBtnPage">↷</button>
@@ -1537,6 +1538,11 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     });
                 });
                 renderSceneColumnContent(sceneContentDiv, sceneItems);
+
+                // --- ページカウンター更新 ---
+                const totalPages = currentXmlDoc.querySelectorAll('ページ').length;
+                const pageCountBanner = document.getElementById('pageCountBanner');
+                pageCountBanner.textContent = totalPages > 0 ? `総ページ数：${totalPages} ページ` : '';
 
                 // --- ページカラムの描画 ---
                 pageContentDiv.innerHTML = '';
