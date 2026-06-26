@@ -835,11 +835,16 @@
         </div>
 
         <div class="column page-column" data-column-id="page">
-            <div class="column-header">
+            <div class="column-header" style="flex-wrap:wrap; gap:6px;">
                 <span class="header-title">ページ</span>
                 <div class="controls">
                     <button id="undoBtnPage">↶</button>
                     <button id="redoBtnPage">↷</button>
+                </div>
+                <div style="display:flex;align-items:center;gap:4px;width:100%;">
+                    <input type="text" id="pageSearchInput" placeholder="🔍 検索…"
+                        style="flex:1;padding:5px 8px;border:none;border-radius:3px;font-size:13px;min-width:0;">
+                    <button id="pageSearchClearBtn" style="padding:5px 8px;font-size:12px;display:none;">✕</button>
                 </div>
             </div>
             <div class="column-content" id="pageContent">
@@ -2289,6 +2294,66 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
             });
 
+
+            // --- ページ検索 ---
+            const pageSearchInput = document.getElementById('pageSearchInput');
+            const pageSearchClearBtn = document.getElementById('pageSearchClearBtn');
+
+            function filterPageColumn(query) {
+                const q = query.trim().toLowerCase();
+                const sceneGroups = pageContentDiv.querySelectorAll('.page-scene-group');
+
+                sceneGroups.forEach(group => {
+                    const header = group.querySelector('.page-scene-group-header');
+                    const content = group.querySelector('.page-scene-group-content');
+                    const sceneDescText = (header.querySelector('.scene-desc-preview')?.textContent || '').toLowerCase();
+                    const sceneTitle = (header.querySelector('.scene-title-badge')?.textContent || '').toLowerCase();
+
+                    const pageItems = content.querySelectorAll('.page-item-container');
+                    let anyVisible = false;
+
+                    pageItems.forEach(item => {
+                        const text = (item.querySelector('textarea')?.value || '').toLowerCase();
+                        const matches = !q || text.includes(q) || sceneDescText.includes(q) || sceneTitle.includes(q);
+                        item.style.display = matches ? '' : 'none';
+                        if (matches) anyVisible = true;
+                    });
+
+                    // マッチするページがあればシーングループを表示＆展開
+                    if (!q) {
+                        group.style.display = '';
+                        // 検索クリア時は折りたたみ状態を復元
+                        const collapseBtn = header.querySelector('.collapse-btn');
+                        const sceneIndex = [...pageContentDiv.querySelectorAll('.page-scene-group')].indexOf(group);
+                        const isCollapsed = sceneCollapseState.get(sceneIndex) || false;
+                        content.classList.toggle('collapsed', isCollapsed);
+                        collapseBtn.classList.toggle('collapsed', isCollapsed);
+                    } else if (anyVisible) {
+                        group.style.display = '';
+                        content.classList.remove('collapsed');
+                        header.querySelector('.collapse-btn').classList.remove('collapsed');
+                    } else {
+                        group.style.display = 'none';
+                    }
+
+                    // ページ追加ボタンは検索中は非表示
+                    const addBtn = content.querySelector('.add-page-to-scene-btn');
+                    if (addBtn) addBtn.style.display = q ? 'none' : '';
+                });
+            }
+
+            pageSearchInput.addEventListener('input', () => {
+                const q = pageSearchInput.value;
+                pageSearchClearBtn.style.display = q ? '' : 'none';
+                filterPageColumn(q);
+            });
+
+            pageSearchClearBtn.addEventListener('click', () => {
+                pageSearchInput.value = '';
+                pageSearchClearBtn.style.display = 'none';
+                filterPageColumn('');
+                pageSearchInput.focus();
+            });
 
             // --- キャラクター名オートコンプリート ---
             function getCharacterNames() {
