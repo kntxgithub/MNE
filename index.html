@@ -322,6 +322,28 @@
             transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
 
+        .page-item-container.dragging {
+            opacity: 0.4;
+        }
+
+        .page-item-container.drag-over-top {
+            border-top: 3px solid #007bff;
+            margin-top: -2px;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: #aaa;
+            font-size: 16px;
+            padding: 0 6px;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
         /* シーンの背景色ローテーション用クラス */
         .scene-color-0 { background-color: #e0f7fa; }
         .scene-color-1 { background-color: #f0f4c3; }
@@ -982,19 +1004,19 @@
 
             function clearAllEditors() {
                 outlineEditor.value = '';
-                characterEditor.value = `*主人公（名前：読み方、愛称）男女、歳
+                characterEditor.value = `*主人公（名前：表記、読み方、愛称）男女、歳
 *関係性
 *見た目、身体的特徴、服装
 *性格・裏性格
 *環境・生い立ち
 ――――――――――
-*ヒロイン（名前：読み方、愛称）男女、歳
+*ヒロイン（名前：表記、読み方、愛称）男女、歳
 *関係性
 *見た目、身体的特徴、服装
 *性格・裏性格
 *環境・生い立ち
 ――――――――――
-*ライバル（名前：読み方、愛称）男女、歳
+*ライバル（名前：表記、読み方、愛称）男女、歳
 *関係性
 *見た目、身体的特徴、服装
 *性格・裏性格
@@ -1042,19 +1064,19 @@
                     console.log('State loaded.');
                 } else {
                     outlineEditor.value = '';
-                    characterEditor.value = `*主人公（名前：読み方、愛称）男女、歳
+                    characterEditor.value = `*主人公（名前：表記、読み方、愛称）男女、歳
 *関係性
 *見た目、身体的特徴、服装
 *性格・裏性格
 *環境・生い立ち
 ――――――――――
-*ヒロイン（名前：読み方、愛称）男女、歳
+*ヒロイン（名前：表記、読み方、愛称）男女、歳
 *関係性
 *見た目、身体的特徴、服装
 *性格・裏性格
 *環境・生い立ち
 ――――――――――
-*ライバル（名前：読み方、愛称）男女、歳
+*ライバル（名前：表記、読み方、愛称）男女、歳
 *関係性
 *見た目、身体的特徴、服装
 *性格・裏性格
@@ -1264,7 +1286,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             document.body.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (window.innerWidth > 768) {
+                // ファイルドロップ時のみ drag-over クラスを付ける（ページ並び替えドラッグでは付けない）
+                if (window.innerWidth > 768 && e.dataTransfer.types.includes('Files')) {
                     document.body.classList.add('drag-over');
                 }
             });
@@ -1455,12 +1478,73 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                 }
                             });
 
+                            // ドラッグ設定
+                            pageItemContainer.setAttribute('draggable', 'true');
+
+                            pageItemContainer.addEventListener('dragstart', (e) => {
+                                e.dataTransfer.setData('text/plain', nodeId);
+                                e.dataTransfer.effectAllowed = 'move';
+                                setTimeout(() => pageItemContainer.classList.add('dragging'), 0);
+                            });
+
+                            pageItemContainer.addEventListener('dragend', () => {
+                                pageItemContainer.classList.remove('dragging');
+                                document.querySelectorAll('.drag-over-top').forEach(el => el.classList.remove('drag-over-top'));
+                            });
+
+                            pageItemContainer.addEventListener('dragover', (e) => {
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = 'move';
+                                pageItemContainer.classList.add('drag-over-top');
+                            });
+
+                            pageItemContainer.addEventListener('dragleave', (e) => {
+                                if (!pageItemContainer.contains(e.relatedTarget)) {
+                                    pageItemContainer.classList.remove('drag-over-top');
+                                }
+                            });
+
+                            pageItemContainer.addEventListener('drop', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                pageItemContainer.classList.remove('drag-over-top');
+
+                                const draggedNodeId = e.dataTransfer.getData('text/plain');
+                                if (draggedNodeId === nodeId) return;
+
+                                const draggedElement = pageNodeIdToDomElementMap.get(draggedNodeId);
+                                if (!draggedElement) return;
+
+                                const draggedXmlNode = draggedElement.xmlNode;
+                                const targetXmlNode = pageItemContainer.xmlNode;
+                                if (!draggedXmlNode || !targetXmlNode || draggedXmlNode === targetXmlNode) return;
+
+                                // ドラッグ元をターゲットの直前に挿入（シーンをまたいでもOK）
+                                targetXmlNode.parentNode.insertBefore(draggedXmlNode, targetXmlNode);
+
+                                mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
+                                addToHistory(mainEditor.value);
+                                updateUIImmediate();
+                            });
+
                             const pageHeader = document.createElement('div');
                             pageHeader.classList.add('page-item-header');
+
+                            const leftGroup = document.createElement('div');
+                            leftGroup.style.cssText = 'display:flex;align-items:center;gap:8px;';
+
                             const pageTitleBadge = document.createElement('span');
                             pageTitleBadge.classList.add('page-title-badge');
                             pageTitleBadge.textContent = `ページ${globalPageIndex}`;
-                            pageHeader.appendChild(pageTitleBadge);
+                            leftGroup.appendChild(pageTitleBadge);
+
+                            const dragHandle = document.createElement('span');
+                            dragHandle.classList.add('drag-handle');
+                            dragHandle.textContent = '⠿';
+                            dragHandle.title = 'ドラッグして並び替え';
+                            leftGroup.appendChild(dragHandle);
+
+                            pageHeader.appendChild(leftGroup);
 
                             const deleteButton = document.createElement('button');
                             deleteButton.classList.add('delete-page-btn');
@@ -1511,9 +1595,20 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                 updateUIImmediate(); 
                             });
 
-                            // 親要素へのクリックイベント伝播を阻止 (これはOK)
+                            // 親要素へのクリックイベント伝播を阻止
                             pageContentTextArea.addEventListener('click', (e) => {
                                 e.stopPropagation();
+                            });
+
+                            // textareaでのドラッグはコンテナのドラッグより優先させない
+                            pageContentTextArea.addEventListener('mousedown', () => {
+                                pageItemContainer.setAttribute('draggable', 'false');
+                            });
+                            pageContentTextArea.addEventListener('mouseup', () => {
+                                pageItemContainer.setAttribute('draggable', 'true');
+                            });
+                            pageContentTextArea.addEventListener('blur', () => {
+                                pageItemContainer.setAttribute('draggable', 'true');
                             });
                             
                             // pageItemContainerにテキストエリアを追加する
@@ -1984,7 +2079,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             });
 
             addCharacterBtn.addEventListener('click', () => {
-                const newCharacterTemplate = `\n\n――――――――――\n*新しいキャラクター（名前：読み方、愛称）男女、歳\n*関係性\n*見た目、身体的特徴、服装\n*性格・裏性格\n*環境・生い立ち`;
+                const newCharacterTemplate = `\n\n――――――――――\n*新しいキャラクター（名前：表記、読み方、愛称）男女、歳\n*関係性\n*見た目、身体的特徴、服装\n*性格・裏性格\n*環境・生い立ち`;
                 characterEditor.value += newCharacterTemplate;
                 autoResizeTextArea(characterEditor);
                 characterEditor.focus();
