@@ -2072,13 +2072,31 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     header.appendChild(deleteButton);
                     sceneItemContainer.appendChild(header);
 
+                    // ※アノテーションプレビュー（シーン）
+                    const sceneAnnotationPreview = document.createElement('div');
+                    sceneAnnotationPreview.classList.add('page-annotation-preview');
+                    function updateSceneAnnotationPreview(text) {
+                        sceneAnnotationPreview.innerHTML = '';
+                        const lines = text.split('\n').filter(l => l.trimStart().startsWith('※'));
+                        lines.forEach(line => {
+                            const d = document.createElement('div');
+                            d.classList.add('page-annotation-line');
+                            d.textContent = line.trim();
+                            sceneAnnotationPreview.appendChild(d);
+                        });
+                        sceneAnnotationPreview.style.display = lines.length ? 'block' : 'none';
+                    }
+                    sceneItemContainer.appendChild(sceneAnnotationPreview);
+                    updateSceneAnnotationPreview(item.text);
+
                     const itemTextArea = document.createElement('textarea');
                     itemTextArea.value = item.text;
-                    itemTextArea.classList.add('scene-text'); 
+                    itemTextArea.classList.add('scene-text');
                     itemTextArea.placeholder = 'シーンの説明';
                     itemTextArea.addEventListener('input', (e) => {
                         autoResizeTextArea(e.target);
-                        updateSceneContentInXml(sceneItemContainer.getAttribute('data-scene-index'), e.target.value); 
+                        updateSceneAnnotationPreview(e.target.value);
+                        updateSceneContentInXml(sceneItemContainer.getAttribute('data-scene-index'), e.target.value);
                     });
                     itemTextArea.addEventListener('change', () => { 
                         updateUIImmediate(); 
