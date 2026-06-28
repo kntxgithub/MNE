@@ -2245,12 +2245,9 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             }
 
             function autoResizeTextArea(textarea) {
-                if (!textarea || textarea.offsetParent === null) { 
-                    return; 
-                }
-                textarea.style.height = 'auto'; 
-                // スクロール高さを取得し、少し余裕を持たせる（例: +2px）
-                textarea.style.height = (textarea.scrollHeight + 2) + 'px'; 
+                if (!textarea || textarea.offsetParent === null) return;
+                textarea.style.height = '0';
+                textarea.style.height = (textarea.scrollHeight + 4) + 'px';
             }
 
             function autoResizeAllTextareas() {
