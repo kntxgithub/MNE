@@ -938,7 +938,7 @@
             <div class="column-content" id="dialogueContent">
                 <p>メインエディタの内容からセリフを抽出します。</p>
             </div>
-            <div id="buildVersion" style="position:absolute;bottom:6px;right:8px;font-size:0.7em;color:#ccc;pointer-events:none;user-select:none;z-index:5;"></div>
+            <div id="buildVersion" style="position:absolute;bottom:6px;right:8px;font-size:0.72em;color:#888;pointer-events:none;user-select:none;z-index:5;letter-spacing:0.03em;"></div>
         </div>
     </div>
 
@@ -1041,7 +1041,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "12.38.48";
+            const BUILD_TIME = "2026.6.28_12.52.45";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1288,7 +1288,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 updateTimeout = setTimeout(() => {
                     updateUndoRedoButtons();
                     syncColumnsFromMainEditor();
-                    setTimeout(autoResizeAllTextareas, 50); // Small delay
+                    setTimeout(autoResizeAllTextareas, 50);
+                    setTimeout(autoResizeAllTextareas, 300);
                     saveState();
                     console.log('UI updated and State saved (debounced).');
                 }, DEBOUNCE_DELAY);
