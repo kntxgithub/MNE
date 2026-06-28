@@ -1043,7 +1043,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.6.28_16.52.36";
+            const BUILD_TIME = "2026.6.28_16.55.20";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1841,10 +1841,6 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                 );
                             });
 
-                            pageContentTextArea.addEventListener('change', () => { 
-                                updateUIImmediate(); 
-                            });
-
                             // 親要素へのクリックイベント伝播を阻止
                             pageContentTextArea.addEventListener('click', (e) => {
                                 e.stopPropagation();
@@ -2084,9 +2080,6 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     itemTextArea.addEventListener('input', (e) => {
                         autoResizeTextArea(e.target);
                         updateSceneContentInXml(sceneItemContainer.getAttribute('data-scene-index'), e.target.value);
-                    });
-                    itemTextArea.addEventListener('change', () => { 
-                        updateUIImmediate(); 
                     });
 
                     itemTextArea.addEventListener('click', (e) => {
