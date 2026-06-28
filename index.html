@@ -1043,7 +1043,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.6.28_16.46.27";
+            const BUILD_TIME = "2026.6.28_16.52.36";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1852,10 +1852,12 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageContentTextArea.addEventListener('keydown', (e) => {
                                 if (e.key === 'Tab') {
                                     e.preventDefault();
-                                    const all = [...document.querySelectorAll('#pageContent textarea:not(.page-memo-area textarea)')];
-                                    const idx = all.indexOf(e.target);
-                                    const next = all[idx + (e.shiftKey ? -1 : 1)];
-                                    if (next) next.focus();
+                                    const all = [...document.querySelectorAll('#pageContent textarea.page-text')];
+                                    const nextIdx = all.indexOf(e.target) + (e.shiftKey ? -1 : 1);
+                                    setTimeout(() => {
+                                        const newAll = [...document.querySelectorAll('#pageContent textarea.page-text')];
+                                        if (newAll[nextIdx]) newAll[nextIdx].focus();
+                                    }, 50);
                                 }
                             });
 
@@ -2094,9 +2096,11 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         if (e.key === 'Tab') {
                             e.preventDefault();
                             const all = [...document.querySelectorAll('#sceneContent textarea')];
-                            const idx = all.indexOf(e.target);
-                            const next = all[idx + (e.shiftKey ? -1 : 1)];
-                            if (next) next.focus();
+                            const nextIdx = all.indexOf(e.target) + (e.shiftKey ? -1 : 1);
+                            setTimeout(() => {
+                                const newAll = [...document.querySelectorAll('#sceneContent textarea')];
+                                if (newAll[nextIdx]) newAll[nextIdx].focus();
+                            }, 50);
                         }
                     });
 
