@@ -530,6 +530,32 @@
             min-height: 150px;
         }
 
+        /* ※アノテーション */
+        .page-annotation-preview {
+            padding: 3px 8px;
+            background: #f7f7f7;
+            border-bottom: 1px dashed #e0e0e0;
+            display: none;
+        }
+        .page-annotation-line {
+            color: #aaa;
+            font-size: 0.82em;
+            font-style: italic;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.5;
+        }
+        .serif-annotation {
+            color: #b0b0b0;
+            font-size: 0.82em;
+            font-style: italic;
+            padding: 2px 8px;
+            margin-bottom: 4px;
+            border-left: 2px solid #ddd;
+            line-height: 1.5;
+        }
+
         /* ページメモ欄 */
         .page-memo-area {
             border-top: 1px dashed #ccc;
@@ -1799,8 +1825,24 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             memoTextarea.addEventListener('click', (e) => e.stopPropagation());
                             memoArea.appendChild(memoTextarea);
 
+                            // ※アノテーションプレビュー
+                            const annotationPreview = document.createElement('div');
+                            annotationPreview.classList.add('page-annotation-preview');
+                            function updateAnnotationPreview(text) {
+                                annotationPreview.innerHTML = '';
+                                const lines = text.split('\n').filter(l => l.trimStart().startsWith('※'));
+                                lines.forEach(line => {
+                                    const d = document.createElement('div');
+                                    d.classList.add('page-annotation-line');
+                                    d.textContent = line.trim();
+                                    annotationPreview.appendChild(d);
+                                });
+                                annotationPreview.style.display = lines.length ? 'block' : 'none';
+                            }
+                            pageItemContainer.insertBefore(annotationPreview, memoArea);
+
                             const pageContentTextArea = document.createElement('textarea');
-                            
+
                             // ページ内のテキストを再構築
                             let fullPageText = '';
                             pageElement.childNodes.forEach(childNode => {
@@ -1818,15 +1860,16 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             });
                             
                             pageContentTextArea.value = fullPageText;
-                            pageContentTextArea.classList.add('page-text'); // 適切なクラス名に変更
-                            pageContentTextArea.placeholder = 'ページの説明やセリフ「」を入力'; // 適切なプレースホルダに変更
-                            
+                            pageContentTextArea.classList.add('page-text');
+                            pageContentTextArea.placeholder = 'ページの説明やセリフ「」を入力';
+                            updateAnnotationPreview(fullPageText);
+
                             addAutocompleteToTextarea(pageContentTextArea);
 
                             // テキストエリアが編集されたら、XMLを更新する
                             pageContentTextArea.addEventListener('input', (e) => {
                                 autoResizeTextArea(e.target);
-                                // updatePageContentInXmlを呼び出すように修正
+                                updateAnnotationPreview(e.target.value);
                                 updatePageContentInXml(
                                     pageItemContainer.getAttribute('data-scene-index'),
                                     pageItemContainer.getAttribute('data-page-index-in-scene'),
@@ -1916,7 +1959,24 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                 // ページカラムと一貫性を持たせるために、通し番号を使用
                                 pageHeader.textContent = `ページ ${globalPageIndexForDialogue}`;
                                 serifPageGroupContainer.appendChild(pageHeader);
-                                // ★★★ ここまでが追加・修正部分 ★★★
+
+                                // ※アノテーション行をセリフカラムに表示
+                                const annoLines = [];
+                                pageElement.querySelectorAll('ページ説明').forEach(node => {
+                                    node.textContent.split('\n').forEach(line => {
+                                        if (line.trimStart().startsWith('※')) annoLines.push(line.trim());
+                                    });
+                                });
+                                if (annoLines.length > 0) {
+                                    const annoDiv = document.createElement('div');
+                                    annoDiv.classList.add('serif-annotation');
+                                    annoLines.forEach(line => {
+                                        const d = document.createElement('div');
+                                        d.textContent = line;
+                                        annoDiv.appendChild(d);
+                                    });
+                                    serifPageGroupContainer.appendChild(annoDiv);
+                                }
 
                                 dialoguesInPage.forEach((dialogueElement, dialogueIndexInPage) => {
                                     const nodeId = `node-${nodeIdCounter++}`;
