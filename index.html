@@ -928,7 +928,7 @@
     </div>
 
 <!-- カラー設定パネル -->
-<div id="colorSettingsPanel" style="display:none;position:fixed;top:60px;right:10px;z-index:2000;background:white;border:1px solid #ccc;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.2);padding:16px;width:220px;">
+<div id="colorSettingsPanel" style="display:none;position:fixed;top:60px;right:10px;z-index:2000;background:white;border:1px solid #ccc;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.2);padding:16px;width:260px;max-height:80vh;overflow-y:auto;">
     <div style="font-weight:bold;margin-bottom:12px;font-size:14px;">🎨 カラーテーマ</div>
     <div id="colorPresets" style="display:flex;flex-direction:column;gap:8px;"></div>
     <button id="colorSettingsCloseBtn" style="width:100%;margin-top:14px;padding:7px;background:#6c757d;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px;">閉じる</button>
@@ -2403,14 +2403,29 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             // --- カラー設定 ---
             const colorPresets = [
-                { name: 'クラシック', headerBg: '#34495e', headerText: '#f0f4f8', appBg: '#dce2e8', contentBg: '#ffffff' },
-                { name: 'ウォーム',   headerBg: '#6d4c41', headerText: '#fff4ee', appBg: '#ede0d6', contentBg: '#fffaf7' },
-                { name: 'オーシャン', headerBg: '#2c6496', headerText: '#eaf4ff', appBg: '#cfe2f3', contentBg: '#f4f9ff' },
-                { name: 'フォレスト', headerBg: '#3a6b44', headerText: '#eef8f0', appBg: '#cde3d0', contentBg: '#f5fdf6' },
-                { name: 'モノクロ',   headerBg: '#424242', headerText: '#f5f5f5', appBg: '#cccccc', contentBg: '#fafafa' },
-                { name: 'ラベンダー', headerBg: '#5c4d8a', headerText: '#f3f0ff', appBg: '#ddd8f0', contentBg: '#f8f5ff' },
-                { name: 'ナイト',     headerBg: '#1e2233', headerText: '#d0d8f0', appBg: '#252a3a', contentBg: '#2d3347' },
-                { name: 'サンセット', headerBg: '#7a4f3a', headerText: '#fff5f0', appBg: '#f0ddd5', contentBg: '#fff9f7' },
+                // ニュートラル
+                { name: 'クラシック',   headerBg: '#34495e', headerText: '#f0f4f8', appBg: '#dce2e8', contentBg: '#ffffff' },
+                { name: 'スレート',     headerBg: '#4a5568', headerText: '#edf2f7', appBg: '#c8d0dc', contentBg: '#f7fafc' },
+                { name: 'モノクロ',     headerBg: '#424242', headerText: '#f5f5f5', appBg: '#c8c8c8', contentBg: '#fafafa' },
+                // ダーク
+                { name: 'ナイト',       headerBg: '#1e2233', headerText: '#d0d8f0', appBg: '#252a3a', contentBg: '#2d3347' },
+                { name: 'ミッドナイト', headerBg: '#1a1428', headerText: '#e0d0f8', appBg: '#13101e', contentBg: '#1e1830' },
+                // ブルー
+                { name: 'オーシャン',   headerBg: '#1a4971', headerText: '#dff0ff', appBg: '#b8d4ee', contentBg: '#f0f7ff' },
+                { name: 'スカイ',       headerBg: '#4a90c4', headerText: '#ffffff', appBg: '#d0e8f8', contentBg: '#f4faff' },
+                // グリーン
+                { name: 'フォレスト',   headerBg: '#2d5a3d', headerText: '#e4f5e8', appBg: '#b0d0bc', contentBg: '#f2faf4' },
+                { name: 'ミント',       headerBg: '#2a7f6f', headerText: '#e8faf7', appBg: '#a8dcd0', contentBg: '#f0fdfb' },
+                // ピンク・紫
+                { name: 'サクラ',       headerBg: '#a04060', headerText: '#fff0f5', appBg: '#e8c0cc', contentBg: '#fff5f8' },
+                { name: 'ラベンダー',   headerBg: '#5c4d8a', headerText: '#f0ecff', appBg: '#ccc4e8', contentBg: '#f8f5ff' },
+                // ウォーム
+                { name: 'サンセット',   headerBg: '#7a4f3a', headerText: '#fff4ee', appBg: '#e8cfc4', contentBg: '#fff9f7' },
+                { name: '秋',           headerBg: '#8b4010', headerText: '#fff3e8', appBg: '#e8c898', contentBg: '#fffaf4' },
+                { name: 'ワイン',       headerBg: '#6b1a2a', headerText: '#fff0f3', appBg: '#d8a8b4', contentBg: '#fff5f7' },
+                // アース
+                { name: 'ペーパー',     headerBg: '#6b5b45', headerText: '#fdf8f0', appBg: '#ddd0c0', contentBg: '#fdf8f0' },
+                { name: '砂漠',         headerBg: '#8b6914', headerText: '#fffbec', appBg: '#e0cc90', contentBg: '#fffef5' },
             ];
 
             let currentThemeName = 'クラシック';
