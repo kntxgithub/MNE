@@ -907,17 +907,17 @@
         </div>
 
         <div class="column serif-column" data-column-id="serif">
-            <div class="column-header" style="justify-content:space-between;">
-                <span class="header-title">セリフ</span>
-                <div style="position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;">
+            <div class="column-header" style="justify-content:space-between;gap:10px;">
+                <span class="header-title" style="flex-shrink:0;">セリフ</span>
+                <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:center;">
                     <select id="fontSizeSelect" style="padding:5px 8px;border-radius:3px;border:none;background:#6c757d;color:white;cursor:pointer;font-size:13px;">
                         <option value="0">文字・小</option>
                         <option value="1">文字・中</option>
                         <option value="2">文字・大</option>
                     </select>
-                    <button id="colorSettingsBtn" title="カラー設定" style="font-size:16px;background:none;border:none;cursor:pointer;padding:2px 4px;line-height:1;">🎨</button>
+                    <button id="colorSettingsBtn" title="カラー設定" style="font-size:16px;background:none;border:none;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0;">🎨</button>
                 </div>
-                <div class="controls">
+                <div class="controls" style="flex-shrink:0;">
                     <button id="exportDialogueBtn">エクスポート</button>
                 </div>
             </div>
@@ -928,32 +928,10 @@
     </div>
 
 <!-- カラー設定パネル -->
-<div id="colorSettingsPanel" style="display:none;position:fixed;top:60px;left:10px;z-index:2000;background:white;border:1px solid #ccc;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.2);padding:16px;min-width:280px;">
-    <div style="font-weight:bold;margin-bottom:12px;font-size:14px;">🎨 カラー設定</div>
-
-    <div style="margin-bottom:14px;">
-        <div style="font-size:12px;color:#666;margin-bottom:6px;">プリセット</div>
-        <div id="colorPresets" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-    </div>
-
-    <div style="margin-bottom:10px;">
-        <div style="font-size:12px;color:#666;margin-bottom:4px;">ヘッダー背景</div>
-        <input type="color" id="colorHeaderBg" style="width:48px;height:28px;border:none;cursor:pointer;">
-    </div>
-    <div style="margin-bottom:10px;">
-        <div style="font-size:12px;color:#666;margin-bottom:4px;">ヘッダー文字</div>
-        <input type="color" id="colorHeaderText" style="width:48px;height:28px;border:none;cursor:pointer;">
-    </div>
-    <div style="margin-bottom:10px;">
-        <div style="font-size:12px;color:#666;margin-bottom:4px;">アプリ背景</div>
-        <input type="color" id="colorAppBg" style="width:48px;height:28px;border:none;cursor:pointer;">
-    </div>
-    <div style="margin-bottom:14px;">
-        <div style="font-size:12px;color:#666;margin-bottom:4px;">コンテンツ背景</div>
-        <input type="color" id="colorContentBg" style="width:48px;height:28px;border:none;cursor:pointer;">
-    </div>
-
-    <button id="colorSettingsCloseBtn" style="width:100%;padding:6px;background:#6c757d;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px;">閉じる</button>
+<div id="colorSettingsPanel" style="display:none;position:fixed;top:60px;right:10px;z-index:2000;background:white;border:1px solid #ccc;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.2);padding:16px;width:220px;">
+    <div style="font-weight:bold;margin-bottom:12px;font-size:14px;">🎨 カラーテーマ</div>
+    <div id="colorPresets" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <button id="colorSettingsCloseBtn" style="width:100%;margin-top:14px;padding:7px;background:#6c757d;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px;">閉じる</button>
 </div>
 
 <!-- タブバー（モバイル用） -->
@@ -2425,47 +2403,44 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             // --- カラー設定 ---
             const colorPresets = [
-                { name: 'クラシック', headerBg: '#34495e', headerText: '#ffffff', appBg: '#e0e0e0', contentBg: '#ffffff' },
-                { name: 'ナイト',     headerBg: '#1a1a2e', headerText: '#e8e8e8', appBg: '#16213e', contentBg: '#0f3460' },
-                { name: 'ナチュラル', headerBg: '#4e342e', headerText: '#fff8e1', appBg: '#d7ccc8', contentBg: '#fdf6ee' },
-                { name: 'オーシャン', headerBg: '#01579b', headerText: '#e1f5fe', appBg: '#b3e5fc', contentBg: '#e1f5fe' },
-                { name: 'フォレスト', headerBg: '#2e7d32', headerText: '#f1f8e9', appBg: '#c8e6c9', contentBg: '#f1f8e9' },
+                { name: 'クラシック', headerBg: '#34495e', headerText: '#f0f4f8', appBg: '#dce2e8', contentBg: '#ffffff' },
+                { name: 'ウォーム',   headerBg: '#6d4c41', headerText: '#fff4ee', appBg: '#ede0d6', contentBg: '#fffaf7' },
+                { name: 'オーシャン', headerBg: '#2c6496', headerText: '#eaf4ff', appBg: '#cfe2f3', contentBg: '#f4f9ff' },
+                { name: 'フォレスト', headerBg: '#3a6b44', headerText: '#eef8f0', appBg: '#cde3d0', contentBg: '#f5fdf6' },
+                { name: 'モノクロ',   headerBg: '#424242', headerText: '#f5f5f5', appBg: '#cccccc', contentBg: '#fafafa' },
+                { name: 'ラベンダー', headerBg: '#5c4d8a', headerText: '#f3f0ff', appBg: '#ddd8f0', contentBg: '#f8f5ff' },
+                { name: 'ナイト',     headerBg: '#1e2233', headerText: '#d0d8f0', appBg: '#252a3a', contentBg: '#2d3347' },
+                { name: 'サンセット', headerBg: '#7a4f3a', headerText: '#fff5f0', appBg: '#f0ddd5', contentBg: '#fff9f7' },
             ];
+
+            let currentThemeName = 'クラシック';
 
             function applyColorTheme(theme) {
                 const r = document.documentElement.style;
-                r.setProperty('--header-bg',   theme.headerBg);
-                r.setProperty('--header-text',  theme.headerText);
-                r.setProperty('--app-bg',       theme.appBg);
-                r.setProperty('--content-bg',   theme.contentBg);
-                document.getElementById('colorHeaderBg').value   = theme.headerBg;
-                document.getElementById('colorHeaderText').value = theme.headerText;
-                document.getElementById('colorAppBg').value      = theme.appBg;
-                document.getElementById('colorContentBg').value  = theme.contentBg;
+                r.setProperty('--header-bg',  theme.headerBg);
+                r.setProperty('--header-text', theme.headerText);
+                r.setProperty('--app-bg',      theme.appBg);
+                r.setProperty('--content-bg',  theme.contentBg);
+                currentThemeName = theme.name;
+                // ボタンのアクティブ状態を更新
+                document.querySelectorAll('.preset-btn').forEach(b => {
+                    b.style.outline = b.dataset.name === theme.name ? '3px solid #fff' : 'none';
+                    b.style.boxShadow = b.dataset.name === theme.name ? '0 0 0 2px #555' : 'none';
+                });
                 localStorage.setItem('colorTheme', JSON.stringify(theme));
             }
 
-            // プリセットボタン生成
+            // プリセットボタン生成（横2列のグリッド）
             const presetsContainer = document.getElementById('colorPresets');
+            presetsContainer.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;';
             colorPresets.forEach(preset => {
                 const btn = document.createElement('button');
-                btn.title = preset.name;
-                btn.style.cssText = `width:44px;height:28px;border-radius:4px;border:2px solid #ccc;cursor:pointer;background:${preset.headerBg};color:${preset.headerText};font-size:10px;`;
+                btn.classList.add('preset-btn');
+                btn.dataset.name = preset.name;
+                btn.style.cssText = `padding:10px 8px;border-radius:6px;border:1px solid rgba(0,0,0,0.15);cursor:pointer;background:${preset.headerBg};color:${preset.headerText};font-size:12px;font-weight:bold;white-space:nowrap;text-align:center;`;
                 btn.textContent = preset.name;
                 btn.addEventListener('click', () => applyColorTheme(preset));
                 presetsContainer.appendChild(btn);
-            });
-
-            // カラーピッカー変更
-            ['colorHeaderBg','colorHeaderText','colorAppBg','colorContentBg'].forEach(id => {
-                document.getElementById(id).addEventListener('input', () => {
-                    applyColorTheme({
-                        headerBg:   document.getElementById('colorHeaderBg').value,
-                        headerText: document.getElementById('colorHeaderText').value,
-                        appBg:      document.getElementById('colorAppBg').value,
-                        contentBg:  document.getElementById('colorContentBg').value,
-                    });
-                });
             });
 
             // パネル開閉
