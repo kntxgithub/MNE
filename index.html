@@ -931,6 +931,17 @@
 <div id="colorSettingsPanel" style="display:none;position:fixed;top:60px;right:10px;z-index:2000;background:white;border:1px solid #ccc;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.2);padding:16px;width:260px;max-height:80vh;overflow-y:auto;">
     <div style="font-weight:bold;margin-bottom:12px;font-size:14px;">🎨 カラーテーマ</div>
     <div id="colorPresets" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+    <hr style="margin:14px 0;border:none;border-top:1px solid #eee;">
+    <div style="font-weight:bold;font-size:13px;margin-bottom:10px;">🖼 背景テクスチャ</div>
+    <label style="display:block;padding:7px;background:#6c757d;color:white;border-radius:4px;cursor:pointer;font-size:13px;text-align:center;margin-bottom:8px;">
+        画像を選択
+        <input type="file" id="bgImageInput" accept="image/*" style="display:none;">
+    </label>
+    <div style="font-size:12px;color:#666;margin-bottom:4px;">透明度</div>
+    <input type="range" id="bgOpacitySlider" min="5" max="60" value="20" style="width:100%;margin-bottom:8px;">
+    <button id="bgImageClearBtn" style="width:100%;padding:6px;background:#c0392b;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;display:none;">背景画像をクリア</button>
+
     <button id="colorSettingsCloseBtn" style="width:100%;margin-top:14px;padding:7px;background:#6c757d;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px;">閉じる</button>
 </div>
 
@@ -2457,6 +2468,71 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 btn.addEventListener('click', () => applyColorTheme(preset));
                 presetsContainer.appendChild(btn);
             });
+
+            // --- 背景テクスチャ ---
+            const bgImageInput = document.getElementById('bgImageInput');
+            const bgOpacitySlider = document.getElementById('bgOpacitySlider');
+            const bgImageClearBtn = document.getElementById('bgImageClearBtn');
+
+            function applyBgImage(base64, opacity) {
+                const targets = document.querySelectorAll('.column-content');
+                if (base64) {
+                    targets.forEach(el => {
+                        el.style.backgroundImage = `url(${base64})`;
+                        el.style.backgroundRepeat = 'repeat';
+                        el.style.backgroundSize = 'auto';
+                        el.style.backgroundBlendMode = 'multiply';
+                    });
+                    document.documentElement.style.setProperty('--bg-texture-opacity', opacity / 100);
+                    bgImageClearBtn.style.display = 'block';
+                } else {
+                    targets.forEach(el => {
+                        el.style.backgroundImage = '';
+                    });
+                    bgImageClearBtn.style.display = 'none';
+                }
+            }
+
+            function loadSavedBgImage() {
+                const saved = localStorage.getItem('bgImageBase64');
+                const opacity = parseInt(localStorage.getItem('bgOpacity') || '20');
+                bgOpacitySlider.value = opacity;
+                if (saved) applyBgImage(saved, opacity);
+            }
+
+            bgImageInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 3 * 1024 * 1024) {
+                    alert('画像サイズが大きすぎます（3MB以下を推奨）');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const base64 = ev.target.result;
+                    const opacity = parseInt(bgOpacitySlider.value);
+                    localStorage.setItem('bgImageBase64', base64);
+                    localStorage.setItem('bgOpacity', opacity);
+                    applyBgImage(base64, opacity);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            bgOpacitySlider.addEventListener('input', () => {
+                const base64 = localStorage.getItem('bgImageBase64');
+                const opacity = parseInt(bgOpacitySlider.value);
+                localStorage.setItem('bgOpacity', opacity);
+                if (base64) applyBgImage(base64, opacity);
+            });
+
+            bgImageClearBtn.addEventListener('click', () => {
+                localStorage.removeItem('bgImageBase64');
+                applyBgImage(null, 20);
+                bgOpacitySlider.value = 20;
+                bgImageInput.value = '';
+            });
+
+            loadSavedBgImage();
 
             // パネル開閉
             const colorSettingsPanel = document.getElementById('colorSettingsPanel');
