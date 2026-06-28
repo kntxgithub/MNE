@@ -1043,7 +1043,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.6.28_14.12.36";
+            const BUILD_TIME = "2026.6.28_16.46.27";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1849,6 +1849,15 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageContentTextArea.addEventListener('click', (e) => {
                                 e.stopPropagation();
                             });
+                            pageContentTextArea.addEventListener('keydown', (e) => {
+                                if (e.key === 'Tab') {
+                                    e.preventDefault();
+                                    const all = [...document.querySelectorAll('#pageContent textarea:not(.page-memo-area textarea)')];
+                                    const idx = all.indexOf(e.target);
+                                    const next = all[idx + (e.shiftKey ? -1 : 1)];
+                                    if (next) next.focus();
+                                }
+                            });
 
                             // textareaでのドラッグはコンテナのドラッグより優先させない
                             pageContentTextArea.addEventListener('mousedown', () => {
@@ -2080,6 +2089,15 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                     itemTextArea.addEventListener('click', (e) => {
                         e.stopPropagation();
+                    });
+                    itemTextArea.addEventListener('keydown', (e) => {
+                        if (e.key === 'Tab') {
+                            e.preventDefault();
+                            const all = [...document.querySelectorAll('#sceneContent textarea')];
+                            const idx = all.indexOf(e.target);
+                            const next = all[idx + (e.shiftKey ? -1 : 1)];
+                            if (next) next.focus();
+                        }
                     });
 
                     sceneItemContainer.appendChild(itemTextArea);
