@@ -154,7 +154,7 @@
             background-image: var(--bg-image-url, none);
             background-repeat: var(--bg-repeat, repeat);
             background-size: var(--bg-size, auto);
-            background-position: center;
+            background-position: var(--bg-position, center);
             opacity: var(--bg-opacity, 0);
         }
 
@@ -957,14 +957,19 @@
 
     <div style="font-size:12px;color:#666;margin-bottom:4px;">サイズ・配置</div>
     <select id="bgSizeSelect" style="width:100%;padding:5px;border:1px solid #ccc;border-radius:4px;font-size:13px;margin-bottom:8px;">
-        <option value="repeat|auto">リピート（元サイズ）</option>
-        <option value="repeat-x|auto">横方向のみリピート</option>
-        <option value="repeat-y|auto">縦方向のみリピート</option>
-        <option value="no-repeat|100% auto">幅に合わせる</option>
-        <option value="no-repeat|auto 100%">高さに合わせる</option>
-        <option value="no-repeat|cover">全体に広げる</option>
-        <option value="no-repeat|contain">全体を収める</option>
-        <option value="no-repeat|auto">中央配置（リピートなし）</option>
+        <option value="repeat|auto|center">リピート（元サイズ）</option>
+        <option value="repeat-x|auto|center">横方向のみリピート</option>
+        <option value="repeat-y|auto|center">縦方向のみリピート</option>
+        <option value="no-repeat|100% auto|center top">幅に合わせる（上寄せ）</option>
+        <option value="repeat-y|100% auto|center top">幅に合わせて縦リピート</option>
+        <option value="no-repeat|auto 100%|center">高さに合わせる（中央）</option>
+        <option value="no-repeat|cover|center">全体に広げる</option>
+        <option value="no-repeat|contain|center">全体を収める（中央）</option>
+        <option value="no-repeat|auto|center">中央配置（リピートなし）</option>
+        <option value="no-repeat|100% auto|right bottom">右下・幅に合わせる</option>
+        <option value="no-repeat|auto 100%|right bottom">右下・高さに合わせる</option>
+        <option value="no-repeat|100% auto|left bottom">左下・幅に合わせる</option>
+        <option value="no-repeat|auto 100%|left bottom">左下・高さに合わせる</option>
     </select>
     <button id="bgImageClearBtn" style="width:100%;padding:6px;background:#c0392b;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;display:none;">背景画像をクリア</button>
 
@@ -2504,11 +2509,12 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             function applyBgImage(base64, opacity, sizeVal) {
                 const r = document.documentElement.style;
                 if (base64) {
-                    const [repeat, size] = sizeVal.split('|');
+                    const [repeat, size, position] = sizeVal.split('|');
                     r.setProperty('--bg-image-url', `url(${base64})`);
                     r.setProperty('--bg-opacity',   opacity / 100);
                     r.setProperty('--bg-repeat',    repeat);
                     r.setProperty('--bg-size',      size);
+                    r.setProperty('--bg-position',  position || 'center');
                     bgImageClearBtn.style.display = 'block';
                 } else {
                     r.setProperty('--bg-image-url', 'none');
