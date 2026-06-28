@@ -341,11 +341,13 @@
             transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
 
-        .page-item-container.dragging {
+        .page-item-container.dragging,
+        .scene-item-container.dragging {
             opacity: 0.4;
         }
 
-        .page-item-container.drag-over-top {
+        .page-item-container.drag-over-top,
+        .scene-item-container.drag-over-top {
             border-top: 3px solid #007bff;
             margin-top: -2px;
         }
@@ -1041,7 +1043,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.6.28_12.52.45";
+            const BUILD_TIME = "2026.6.28_14.9.19";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2001,20 +2003,71 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     const header = document.createElement('div');
                     header.classList.add('scene-item-header');
 
+                    const sceneLeftGroup = document.createElement('div');
+                    sceneLeftGroup.style.cssText = 'display:flex;align-items:center;gap:8px;';
+
                     const titleBadge = document.createElement('span');
                     titleBadge.classList.add('scene-title-badge');
                     titleBadge.textContent = item.title;
-                    header.appendChild(titleBadge);
+                    sceneLeftGroup.appendChild(titleBadge);
+
+                    const sceneDragHandle = document.createElement('span');
+                    sceneDragHandle.classList.add('drag-handle');
+                    sceneDragHandle.textContent = '⠿';
+                    sceneDragHandle.title = 'ドラッグして並び替え';
+                    sceneLeftGroup.appendChild(sceneDragHandle);
+
+                    header.appendChild(sceneLeftGroup);
 
                     const deleteButton = document.createElement('button');
                     deleteButton.classList.add('delete-scene-btn');
                     deleteButton.textContent = '削除';
                     deleteButton.addEventListener('click', (e) => {
-                        e.stopPropagation(); 
-                        deleteScene(sceneItemContainer.xmlNode); 
+                        e.stopPropagation();
+                        deleteScene(sceneItemContainer.xmlNode);
                     });
                     header.appendChild(deleteButton);
                     sceneItemContainer.appendChild(header);
+
+                    // ドラッグ設定
+                    sceneItemContainer.setAttribute('draggable', 'true');
+                    sceneItemContainer.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', item.nodeId);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setTimeout(() => sceneItemContainer.classList.add('dragging'), 0);
+                    });
+                    sceneItemContainer.addEventListener('dragend', () => {
+                        sceneItemContainer.classList.remove('dragging');
+                        document.querySelectorAll('.scene-item-container.drag-over-top').forEach(el => el.classList.remove('drag-over-top'));
+                    });
+                    sceneItemContainer.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        sceneItemContainer.classList.add('drag-over-top');
+                    });
+                    sceneItemContainer.addEventListener('dragleave', (e) => {
+                        if (!sceneItemContainer.contains(e.relatedTarget)) {
+                            sceneItemContainer.classList.remove('drag-over-top');
+                        }
+                    });
+                    sceneItemContainer.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        sceneItemContainer.classList.remove('drag-over-top');
+                        const draggedNodeId = e.dataTransfer.getData('text/plain');
+                        if (draggedNodeId === item.nodeId) return;
+                        const draggedEl = sceneNodeIdToDomElementMap.get(draggedNodeId);
+                        if (!draggedEl) return;
+                        const draggedXmlNode = draggedEl.xmlNode;
+                        const targetXmlNode = sceneItemContainer.xmlNode;
+                        if (!draggedXmlNode || !targetXmlNode || draggedXmlNode === targetXmlNode) return;
+                        targetXmlNode.parentNode.insertBefore(draggedXmlNode, targetXmlNode);
+                        mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
+                        addToHistory(mainEditor.value);
+                        updateUIImmediate();
+                    });
+                    itemTextArea.addEventListener('mousedown', () => sceneItemContainer.setAttribute('draggable', 'false'));
+                    itemTextArea.addEventListener('mouseup', () => sceneItemContainer.setAttribute('draggable', 'true'));
 
                     const itemTextArea = document.createElement('textarea');
                     itemTextArea.value = item.text;
