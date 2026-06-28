@@ -1916,24 +1916,6 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                 pageHeader.textContent = `ページ ${globalPageIndexForDialogue}`;
                                 serifPageGroupContainer.appendChild(pageHeader);
 
-                                // ※アノテーション行をセリフカラムに表示
-                                const annoLines = [];
-                                pageElement.querySelectorAll('ページ説明').forEach(node => {
-                                    node.textContent.split('\n').forEach(line => {
-                                        if (line.trimStart().startsWith('※')) annoLines.push(line.trim());
-                                    });
-                                });
-                                if (annoLines.length > 0) {
-                                    const annoDiv = document.createElement('div');
-                                    annoDiv.classList.add('serif-annotation');
-                                    annoLines.forEach(line => {
-                                        const d = document.createElement('div');
-                                        d.textContent = line;
-                                        annoDiv.appendChild(d);
-                                    });
-                                    serifPageGroupContainer.appendChild(annoDiv);
-                                }
-
                                 dialoguesInPage.forEach((dialogueElement, dialogueIndexInPage) => {
                                     const nodeId = `node-${nodeIdCounter++}`;
                                     const dialogueContentDivItem = document.createElement('div');
