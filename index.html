@@ -1839,7 +1839,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                 });
                                 annotationPreview.style.display = lines.length ? 'block' : 'none';
                             }
-                            pageItemContainer.insertBefore(annotationPreview, memoArea);
+                            pageItemContainer.appendChild(annotationPreview);
 
                             const pageContentTextArea = document.createElement('textarea');
 
