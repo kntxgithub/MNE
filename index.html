@@ -1068,7 +1068,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.6.29_15.46.31";
+            const BUILD_TIME = "2026.6.29_15.54.2";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1796,8 +1796,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                             pageHeader.appendChild(leftGroup);
 
-                            const memoKey = getMemoKey(sceneIndex, pageIndexInScene);
-                            const savedMemo = memoData[memoKey] || '';
+                            const savedMemo = pageElement.querySelector('メモ')?.textContent || '';
 
                             const memoToggleBtn = document.createElement('button');
                             memoToggleBtn.classList.add('memo-toggle-btn');
@@ -1835,7 +1834,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             memoTextarea.placeholder = 'このページ用のメモ（保存されますがエクスポートには含まれません）';
                             memoTextarea.addEventListener('input', (e) => {
                                 autoResizeTextArea(e.target);
-                                saveMemo(memoKey, e.target.value);
+                                saveMemo(pageElement, e.target.value);
                                 memoToggleBtn.classList.toggle('has-memo', !!e.target.value.trim());
                             });
                             memoTextarea.addEventListener('click', (e) => e.stopPropagation());
@@ -2706,20 +2705,19 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             const savedTheme = JSON.parse(localStorage.getItem('colorTheme') || 'null');
             applyColorTheme(savedTheme || colorPresets[0]);
 
-            // --- ページメモ管理 ---
-            let memoData = JSON.parse(localStorage.getItem('pageMemoData') || '{}');
-
-            function getMemoKey(sceneIndex, pageIndexInScene) {
-                return `s${sceneIndex}_p${pageIndexInScene}`;
-            }
-
-            function saveMemo(key, text) {
+            // --- ページメモ管理（XMLに埋め込み） ---
+            function saveMemo(pageElement, text) {
+                let memoEl = pageElement.querySelector('メモ');
                 if (text.trim()) {
-                    memoData[key] = text;
+                    if (!memoEl) {
+                        memoEl = currentXmlDoc.createElement('メモ');
+                        pageElement.appendChild(memoEl);
+                    }
+                    memoEl.textContent = text;
                 } else {
-                    delete memoData[key];
+                    if (memoEl) pageElement.removeChild(memoEl);
                 }
-                localStorage.setItem('pageMemoData', JSON.stringify(memoData));
+                mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
             }
 
             // --- ページ検索 ---
