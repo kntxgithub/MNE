@@ -186,18 +186,18 @@
             overflow-y: auto;
         }
 
-        #outlineIdeaSection {
+        #outlineIdeaSection, #outlineKeywordSection {
             margin-top: 6px;
             border-top: 1px dashed #ddd;
             padding-top: 4px;
         }
-        #outlineIdeaHeader {
+        #outlineIdeaHeader, #outlineKeywordHeader {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 2px 0;
         }
-        #outlineIdeaContent {
+        #outlineIdeaContent, #outlineKeywordContent {
             margin-top: 4px;
         }
 
@@ -873,6 +873,15 @@
                                 <textarea id="outlineIdeaEditor" placeholder="アイデアの走り書き…" style="width:100%;min-height:80px;resize:vertical;box-sizing:border-box;font-family:inherit;font-size:0.9em;padding:6px;border:1px dashed #ccc;border-radius:3px;background:#fffde7;color:#555;"></textarea>
                             </div>
                         </div>
+                        <div id="outlineKeywordSection">
+                            <div id="outlineKeywordHeader">
+                                <span style="font-size:0.82em;color:#888;">🏷️ キーワード</span>
+                                <button id="outlineKeywordToggle" style="font-size:0.78em;padding:2px 8px;background:#e0e0e0;border:none;border-radius:3px;cursor:pointer;color:#555;">開く</button>
+                            </div>
+                            <div id="outlineKeywordContent" style="display:none;">
+                                <textarea id="keywordEditor" class="outline-textarea" placeholder="作品のキーワードやテーマを記述してください。" style="background:#f0f8ff;"></textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -889,15 +898,6 @@
                     </div>
                 </div>
 
-                <div class="section-container" id="keywordSection">
-                    <div class="section-header">
-                        <h3>キーワード</h3>
-                        <button class="toggle-btn" data-target="keywordContent">隠す</button>
-                    </div>
-                    <div class="section-content" id="keywordContent">
-                        <textarea id="keywordEditor" class="outline-textarea" placeholder="作品のキーワードやテーマを記述してください。"></textarea>
-                    </div>
-                </div>
 
                 <div class="section-container" id="mainEditorSection">
                     <div class="section-header">
@@ -1068,7 +1068,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.6.29_15.54.2";
+            const BUILD_TIME = "2026.6.29_16.5.18";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1095,7 +1095,7 @@
 
             const outlineContentDiv = document.getElementById('outlineContent');
             const characterContentDiv = document.getElementById('characterContent');
-            const keywordContentDiv = document.getElementById('keywordContent');
+            const keywordContentDiv = document.getElementById('outlineKeywordContent');
             const mainEditorContentDiv = document.getElementById('mainEditorContent');
 
             const toggleButtons = document.querySelectorAll('.toggle-btn');
@@ -1190,7 +1190,7 @@
                     historyIndex: historyIndex,
                     outlineHidden: outlineContentDiv.classList.contains('hidden'),
                     characterHidden: characterContentDiv.classList.contains('hidden'),
-                    keywordHidden: keywordContentDiv.classList.contains('hidden'),
+                    keywordHidden: keywordContentDiv.style.display === 'none',
                     mainEditorHidden: mainEditorContentDiv.classList.contains('hidden'),
                     currentColumnIndex: currentColumnIndex
                 };
@@ -1229,7 +1229,8 @@
                 keywordEditor.value = '';
                 setSectionVisibility(outlineContentDiv, false);
                 setSectionVisibility(characterContentDiv, false);
-                setSectionVisibility(keywordContentDiv, false);
+                keywordContentDiv.style.display = 'none';
+                document.getElementById('outlineKeywordToggle').textContent = '開く';
                 setSectionVisibility(mainEditorContentDiv, true);
 
                 currentColumnIndex = 0;
@@ -1253,7 +1254,9 @@
 
                     setSectionVisibility(outlineContentDiv, state.outlineHidden || false);
                     setSectionVisibility(characterContentDiv, state.characterHidden || false);
-                    setSectionVisibility(keywordContentDiv, state.keywordHidden || false);
+                    const kwHidden = state.keywordHidden !== undefined ? state.keywordHidden : true;
+                    keywordContentDiv.style.display = kwHidden ? 'none' : 'block';
+                    document.getElementById('outlineKeywordToggle').textContent = kwHidden ? '開く' : '閉じる';
                     setSectionVisibility(mainEditorContentDiv, state.mainEditorHidden || false);
                     
                     currentColumnIndex = state.currentColumnIndex !== undefined ? state.currentColumnIndex : 0; 
@@ -1554,6 +1557,10 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
                 characterEditor.value = extracted.character;
                 keywordEditor.value = extracted.keyword || '';
+                if (extracted.keyword) {
+                    keywordContentDiv.style.display = 'block';
+                    document.getElementById('outlineKeywordToggle').textContent = '閉じる';
+                }
                 mainEditor.value = extracted.main;
             }
 
@@ -2415,6 +2422,14 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 const isOpen = outlineIdeaContent.style.display !== 'none';
                 outlineIdeaContent.style.display = isOpen ? 'none' : 'block';
                 outlineIdeaToggle.textContent = isOpen ? '開く' : '閉じる';
+            });
+
+            const outlineKeywordToggle = document.getElementById('outlineKeywordToggle');
+            outlineKeywordToggle.addEventListener('click', () => {
+                const isOpen = keywordContentDiv.style.display !== 'none';
+                keywordContentDiv.style.display = isOpen ? 'none' : 'block';
+                outlineKeywordToggle.textContent = isOpen ? '開く' : '閉じる';
+                if (!isOpen) setTimeout(() => autoResizeTextArea(keywordEditor), 50);
             });
 
             characterEditor.addEventListener('input', () => {
