@@ -180,9 +180,25 @@
         }
 
         .outline-textarea {
-            min-height: 50px;
-            max-height: none; /* max-heightを削除 (自動で伸びる) */
-            resize: vertical; 
+            min-height: 120px;
+            max-height: none;
+            resize: vertical;
+            overflow-y: auto;
+        }
+
+        #outlineIdeaSection {
+            margin-top: 6px;
+            border-top: 1px dashed #ddd;
+            padding-top: 4px;
+        }
+        #outlineIdeaHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2px 0;
+        }
+        #outlineIdeaContent {
+            margin-top: 4px;
         }
 
         .character-textarea { 
@@ -848,6 +864,15 @@
                     </div>
                     <div class="section-content" id="outlineContent">
                         <textarea id="outlineEditor" class="outline-textarea" placeholder="ここに物語のアウトラインを記述してください。"></textarea>
+                        <div id="outlineIdeaSection">
+                            <div id="outlineIdeaHeader">
+                                <span style="font-size:0.82em;color:#888;">💡 アイデアメモ（エクスポートされません）</span>
+                                <button id="outlineIdeaToggle" style="font-size:0.78em;padding:2px 8px;background:#e0e0e0;border:none;border-radius:3px;cursor:pointer;color:#555;">開く</button>
+                            </div>
+                            <div id="outlineIdeaContent" style="display:none;">
+                                <textarea id="outlineIdeaEditor" placeholder="アイデアの走り書き…" style="width:100%;min-height:80px;resize:vertical;box-sizing:border-box;font-family:inherit;font-size:0.9em;padding:6px;border:1px dashed #ccc;border-radius:3px;background:#fffde7;color:#555;"></textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -1043,7 +1068,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.6.28_16.55.20";
+            const BUILD_TIME = "2026.6.29_15.39.3";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2371,10 +2396,26 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             });
 
             outlineEditor.addEventListener('input', () => {
-                autoResizeTextArea(outlineEditor);
+                saveState();
             });
-            outlineEditor.addEventListener('change', () => { 
-                updateUIImmediate(); 
+
+            // アウトライン アイデアメモ
+            const outlineIdeaToggle = document.getElementById('outlineIdeaToggle');
+            const outlineIdeaContent = document.getElementById('outlineIdeaContent');
+            const outlineIdeaEditor = document.getElementById('outlineIdeaEditor');
+            const savedIdeaMemo = localStorage.getItem('outlineIdeaMemo') || '';
+            outlineIdeaEditor.value = savedIdeaMemo;
+            if (savedIdeaMemo) {
+                outlineIdeaToggle.textContent = '閉じる';
+                outlineIdeaContent.style.display = 'block';
+            }
+            outlineIdeaToggle.addEventListener('click', () => {
+                const isOpen = outlineIdeaContent.style.display !== 'none';
+                outlineIdeaContent.style.display = isOpen ? 'none' : 'block';
+                outlineIdeaToggle.textContent = isOpen ? '開く' : '閉じる';
+            });
+            outlineIdeaEditor.addEventListener('input', () => {
+                localStorage.setItem('outlineIdeaMemo', outlineIdeaEditor.value);
             });
 
             characterEditor.addEventListener('input', () => {
