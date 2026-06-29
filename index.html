@@ -866,7 +866,7 @@
                         <textarea id="outlineEditor" class="outline-textarea" placeholder="ここに物語のアウトラインを記述してください。"></textarea>
                         <div id="outlineIdeaSection">
                             <div id="outlineIdeaHeader">
-                                <span style="font-size:0.82em;color:#888;">💡 アイデアメモ（エクスポートされません）</span>
+                                <span style="font-size:0.82em;color:#888;">💡 アイデアメモ</span>
                                 <button id="outlineIdeaToggle" style="font-size:0.78em;padding:2px 8px;background:#e0e0e0;border:none;border-radius:3px;cursor:pointer;color:#555;">開く</button>
                             </div>
                             <div id="outlineIdeaContent" style="display:none;">
@@ -1068,7 +1068,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.6.29_16.5.18";
+            const BUILD_TIME = "2026.6.29_16.11.3";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1407,8 +1407,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 const xmlContent = mainEditor.value;
                 const fullContentToSave = `[アウトライン:]\n${outlineEditor.value}\n\n` +
                                           `[アイデア:]\n${outlineIdeaEditor.value}\n\n` +
-                                          `[キャラクター:]\n${characterEditor.value}\n\n` +
                                           `[キーワード:]\n${keywordEditor.value}\n\n` +
+                                          `[キャラクター:]\n${characterEditor.value}\n\n` +
                                           `[ネーム本体(XML):]\n${xmlContent}\n\n` +
                                           `[セリフ一覧(今後廃止):]\n`;
 
@@ -1530,16 +1530,16 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 if (outlineMatch) extracted.outline = outlineMatch[1].trim();
                 else if (fullText.includes('[アウトライン:]')) extracted.outline = '';
 
-                const ideaMatch = fullText.match(/\[アイデア:\]\n([\s\S]*?)(?=\n*\[キャラクター:\]|\n*\[キーワード:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
+                const ideaMatch = fullText.match(/\[アイデア:\]\n([\s\S]*?)(?=\n*\[キーワード:\]|\n*\[キャラクター:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
                 if (ideaMatch) extracted.idea = ideaMatch[1].trim();
 
-                const characterMatch = fullText.match(/\[キャラクター:\]\n([\s\S]*?)(?=\n*\[キーワード:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
-                if (characterMatch) extracted.character = characterMatch[1].trim();
-                else if (fullText.includes('[キャラクター:]')) extracted.character = '';
-
-                const keywordMatch = fullText.match(/\[キーワード:\]\n([\s\S]*?)(?=\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
+                const keywordMatch = fullText.match(/\[キーワード:\]\n([\s\S]*?)(?=\n*\[キャラクター:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
                 if (keywordMatch) extracted.keyword = keywordMatch[1].trim();
                 else if (fullText.includes('[キーワード:]')) extracted.keyword = '';
+
+                const characterMatch = fullText.match(/\[キャラクター:\]\n([\s\S]*?)(?=\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
+                if (characterMatch) extracted.character = characterMatch[1].trim();
+                else if (fullText.includes('[キャラクター:]')) extracted.character = '';
 
                 const mainXmlMatch = fullText.match(/\[ネーム本体\(XML\):\]\n([\s\S]*?)(?=\n*\[セリフ一覧\(今後廃止\):\]|$)/);
                 if (mainXmlMatch) extracted.main = mainXmlMatch[1].trim();
