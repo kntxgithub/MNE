@@ -1068,7 +1068,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.6.29_15.39.3";
+            const BUILD_TIME = "2026.6.29_15.46.31";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1403,6 +1403,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             async function saveContentToDisk(handle = null, silent = false) { // silent引数を追加
                 const xmlContent = mainEditor.value;
                 const fullContentToSave = `[アウトライン:]\n${outlineEditor.value}\n\n` +
+                                          `[アイデア:]\n${outlineIdeaEditor.value}\n\n` +
                                           `[キャラクター:]\n${characterEditor.value}\n\n` +
                                           `[キーワード:]\n${keywordEditor.value}\n\n` +
                                           `[ネーム本体(XML):]\n${xmlContent}\n\n` +
@@ -1520,11 +1521,14 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             });
 
             function extractAndSetSeparateContents(fullText) {
-                const extracted = { outline: '', character: '', main: '' };
+                const extracted = { outline: '', idea: '', character: '', keyword: '', main: '' };
 
-                const outlineMatch = fullText.match(/\[アウトライン:\]\n([\s\S]*?)(?=\n*\[キャラクター:\]|\n*\[キーワード:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
+                const outlineMatch = fullText.match(/\[アウトライン:\]\n([\s\S]*?)(?=\n*\[アイデア:\]|\n*\[キャラクター:\]|\n*\[キーワード:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
                 if (outlineMatch) extracted.outline = outlineMatch[1].trim();
                 else if (fullText.includes('[アウトライン:]')) extracted.outline = '';
+
+                const ideaMatch = fullText.match(/\[アイデア:\]\n([\s\S]*?)(?=\n*\[キャラクター:\]|\n*\[キーワード:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
+                if (ideaMatch) extracted.idea = ideaMatch[1].trim();
 
                 const characterMatch = fullText.match(/\[キャラクター:\]\n([\s\S]*?)(?=\n*\[キーワード:\]|\n*\[ネーム本体\(XML\):\]|\n*\[セリフ一覧\(今後廃止\):\]|$)/);
                 if (characterMatch) extracted.character = characterMatch[1].trim();
@@ -1543,6 +1547,11 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
 
                 outlineEditor.value = extracted.outline;
+                outlineIdeaEditor.value = extracted.idea;
+                if (extracted.idea) {
+                    outlineIdeaContent.style.display = 'block';
+                    outlineIdeaToggle.textContent = '閉じる';
+                }
                 characterEditor.value = extracted.character;
                 keywordEditor.value = extracted.keyword || '';
                 mainEditor.value = extracted.main;
@@ -2403,19 +2412,10 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             const outlineIdeaToggle = document.getElementById('outlineIdeaToggle');
             const outlineIdeaContent = document.getElementById('outlineIdeaContent');
             const outlineIdeaEditor = document.getElementById('outlineIdeaEditor');
-            const savedIdeaMemo = localStorage.getItem('outlineIdeaMemo') || '';
-            outlineIdeaEditor.value = savedIdeaMemo;
-            if (savedIdeaMemo) {
-                outlineIdeaToggle.textContent = '閉じる';
-                outlineIdeaContent.style.display = 'block';
-            }
             outlineIdeaToggle.addEventListener('click', () => {
                 const isOpen = outlineIdeaContent.style.display !== 'none';
                 outlineIdeaContent.style.display = isOpen ? 'none' : 'block';
                 outlineIdeaToggle.textContent = isOpen ? '開く' : '閉じる';
-            });
-            outlineIdeaEditor.addEventListener('input', () => {
-                localStorage.setItem('outlineIdeaMemo', outlineIdeaEditor.value);
             });
 
             characterEditor.addEventListener('input', () => {
