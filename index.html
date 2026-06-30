@@ -846,6 +846,7 @@
         <div class="column main-column" data-column-id="main">
             <div class="column-header">
                 <span class="header-title">メイン</span>
+                <span id="fileNameDisplay" style="flex:1;text-align:center;font-size:0.78em;color:rgba(255,255,255,0.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;"></span>
                 <div class="controls">
                     <button id="newBtn">新規</button>
                     <button id="openBtn">開く</button>
@@ -1068,7 +1069,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.6.29_16.11.3";
+            const BUILD_TIME = "2026.6.30_20.43.47";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1107,6 +1108,10 @@
             const columnsWrapper = document.getElementById('columnsWrapper');
             
             let currentFileName = '新規ネーム.txt';
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            function updateFileNameDisplay() {
+                fileNameDisplay.textContent = currentFileName;
+            }
             let history = [''];
             let historyIndex = 0;
             const MAX_HISTORY = 100;
@@ -1221,6 +1226,7 @@
                 // 新規作成時のXML初期値に、空のセリフ要素も含むように変更
                 mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明></ページ></シーン></root>`; 
                 currentFileName = '新規ネーム.txt';
+                updateFileNameDisplay();
                 currentFileHandle = null;
                 history = [mainEditor.value];
                 historyIndex = 0;
@@ -1249,6 +1255,7 @@
                     keywordEditor.value = state.keywordContent || '';
                     mainEditor.value = state.mainContent || '';
                     currentFileName = state.fileName || '新規ネーム.txt';
+                    updateFileNameDisplay();
                     history = state.history || [''];
                     historyIndex = state.historyIndex || 0;
 
@@ -1384,6 +1391,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     reader.onload = (event) => {
                         extractAndSetSeparateContents(event.target.result);
                         currentFileName = file.name;
+                        updateFileNameDisplay();
                         currentFileHandle = fileHandle;
                         history = [mainEditor.value];
                         historyIndex = 0;
@@ -1423,6 +1431,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             }
                             currentFileHandle = handle; // 成功したハンドルを現在のハンドルとして保持
                             currentFileName = handle.name;
+                            updateFileNameDisplay();
                             return true; // 成功したらtrueを返す
                         } catch (writeError) {
                             console.warn('簡易保存に失敗しました。別名保存を試みます:', writeError); // ファイルが移動されたなどで上書き保存できない場合は、フォールバックで別名保存
@@ -1448,7 +1457,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         alert(`ファイルを保存しました: ${newHandle.name}`);
                     }
                     currentFileHandle = newHandle; // 新しいファイルハンドルを保存
-                    currentFileName = newHandle.name; // 新しいファイル名を保存
+                    currentFileName = newHandle.name;
+                    updateFileNameDisplay();
                     return true; // 成功したらtrueを返す
                 } catch (err) {
                     if (err.name === 'AbortError') {
@@ -1511,6 +1521,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     reader.onload = (event) => {
                         extractAndSetSeparateContents(event.target.result);
                         currentFileName = file.name;
+                        updateFileNameDisplay();
                         currentFileHandle = null; // ドラッグ＆ドロップで開いた場合はハンドルをリセット
                         history = [mainEditor.value];
                         historyIndex = 0;
@@ -2872,6 +2883,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             });
 
             loadState();
+            updateFileNameDisplay();
             // autoResizeAllTextareas(); // これはupdateUIImmediate内でsetTimeoutで呼び出す
 
             let touchStartX = 0;
