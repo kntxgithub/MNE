@@ -846,7 +846,6 @@
         <div class="column main-column" data-column-id="main">
             <div class="column-header">
                 <span class="header-title">メイン</span>
-                <span id="fileNameDisplay" style="flex:1;text-align:center;font-size:0.78em;color:rgba(255,255,255,0.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;"></span>
                 <div class="controls">
                     <button id="newBtn">新規</button>
                     <button id="openBtn">開く</button>
@@ -858,6 +857,7 @@
                 </div>
             </div>
             <div class="column-content">
+                <div id="fileNameDisplay" style="font-size:0.8em;color:#999;padding:4px 10px 2px;border-left:3px solid #ccc;margin:8px 8px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
                 <div class="section-container" id="outlineSection">
                     <div class="section-header">
                         <h3>アウトライン</h3>
@@ -1069,7 +1069,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.6.30_20.43.47";
+            const BUILD_TIME = "2026.6.30_20.52.41";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
