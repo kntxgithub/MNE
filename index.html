@@ -248,7 +248,7 @@
             border-radius: 0;
             padding: 5px;
             overflow: hidden; 
-            min-height: 40px; /* シーン説明の最小の高さ */
+            min-height: 60px; /* シーン説明の最小の高さ（約3行分） */
             max-height: none; 
             resize: none; 
             height: auto; 
@@ -263,7 +263,7 @@
             background-color: white;
             border-radius: 0;
             overflow: hidden; 
-            min-height: 40px; /* ページ説明・セリフの最小の高さ */
+            min-height: 60px; /* ページ説明・セリフの最小の高さ（約3行分） */
             max-height: none; 
             resize: none; 
             height: auto; 
@@ -1084,7 +1084,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.7.2_21.39.8";
+            const BUILD_TIME = "2026.7.2_23.47.42";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2163,15 +2163,6 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     const sceneFooter = document.createElement('div');
                     sceneFooter.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:4px 8px 6px;';
 
-                    const deleteButton = document.createElement('button');
-                    deleteButton.classList.add('delete-scene-btn');
-                    deleteButton.textContent = '削除';
-                    deleteButton.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        deleteScene(sceneItemContainer.xmlNode);
-                    });
-                    sceneFooter.appendChild(deleteButton);
-
                     const insertBelowButton = document.createElement('button');
                     insertBelowButton.classList.add('insert-scene-btn');
                     insertBelowButton.textContent = '＋ シーンを下に挿入';
@@ -2186,12 +2177,33 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         newPageDescElement.textContent = '新しいページ';
                         newPageElement.appendChild(newPageDescElement);
                         newSceneElement.appendChild(newPageElement);
-                        sceneItemContainer.xmlNode.parentNode.insertBefore(newSceneElement, sceneItemContainer.xmlNode.nextSibling);
+                        const insertRef = sceneItemContainer.xmlNode.nextSibling;
+                        sceneItemContainer.xmlNode.parentNode.insertBefore(newSceneElement, insertRef);
                         mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
                         addToHistory(mainEditor.value);
                         updateUIImmediate();
+                        setTimeout(() => {
+                            const all = [...document.querySelectorAll('#sceneContent textarea.scene-text')];
+                            const idx = all.indexOf(document.querySelector('#sceneContent .scene-item-container[data-node-id="' + item.nodeId + '"]')?.nextElementSibling?.querySelector('textarea.scene-text'));
+                            const containers = [...document.querySelectorAll('#sceneContent .scene-item-container')];
+                            const currentIdx = containers.findIndex(c => c.getAttribute('data-node-id') === item.nodeId);
+                            const nextContainer = containers[currentIdx + 1];
+                            if (nextContainer) {
+                                const ta = nextContainer.querySelector('textarea.scene-text');
+                                if (ta) { ta.focus(); ta.select(); }
+                            }
+                        }, 50);
                     });
                     sceneFooter.appendChild(insertBelowButton);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.classList.add('delete-scene-btn');
+                    deleteButton.textContent = '削除';
+                    deleteButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteScene(sceneItemContainer.xmlNode);
+                    });
+                    sceneFooter.appendChild(deleteButton);
                     sceneItemContainer.appendChild(sceneFooter);
 
                     // ★★★★★★★★★★★ ここからが変更点 ★★★★★★★★★★★
@@ -2541,10 +2553,13 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                     sceneElement.appendChild(newPageElement); 
 
-                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement); // カスタムシリアライザを使用
+                    mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
                     addToHistory(mainEditor.value);
-                    updateUIImmediate(); 
-                    mainEditor.focus();
+                    updateUIImmediate();
+                    setTimeout(() => {
+                        const all = [...document.querySelectorAll('#pageContent textarea.page-text')];
+                        if (all.length > 0) { const ta = all[all.length - 1]; ta.focus(); ta.select(); }
+                    }, 50);
                 } else {
                     alert('選択されたシーンがXML内で見つかりません。');
                 }
