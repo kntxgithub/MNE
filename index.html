@@ -457,7 +457,7 @@
             display: inline-block;
         }
 
-        .scene-item-header .delete-scene-btn, .page-item-header .delete-page-btn {
+        .scene-item-header .delete-scene-btn, .page-item-header .delete-page-btn, .delete-scene-btn {
             background-color: #dc3545;
             color: white;
             border: none;
@@ -468,8 +468,23 @@
             transition: background-color 0.2s;
         }
 
-        .scene-item-header .delete-scene-btn:hover, .page-item-header .delete-page-btn:hover {
+        .scene-item-header .delete-scene-btn:hover, .page-item-header .delete-page-btn:hover, .delete-scene-btn:hover {
             background-color: #c82333;
+        }
+
+        .insert-scene-btn {
+            background: none;
+            border: 1px solid #aaa;
+            border-radius: 3px;
+            padding: 3px 10px;
+            font-size: 0.8em;
+            cursor: pointer;
+            color: #555;
+            transition: background-color 0.2s;
+        }
+
+        .insert-scene-btn:hover {
+            background-color: #f0f0f0;
         }
 
         .section-container {
@@ -1069,7 +1084,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.6.30_20.55.53";
+            const BUILD_TIME = "2026.7.2_21.39.8";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2077,14 +2092,6 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                     header.appendChild(sceneLeftGroup);
 
-                    const deleteButton = document.createElement('button');
-                    deleteButton.classList.add('delete-scene-btn');
-                    deleteButton.textContent = '削除';
-                    deleteButton.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        deleteScene(sceneItemContainer.xmlNode);
-                    });
-                    header.appendChild(deleteButton);
                     sceneItemContainer.appendChild(header);
 
                     // ドラッグ設定
@@ -2152,6 +2159,40 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     requestAnimationFrame(() => autoResizeTextArea(itemTextArea));
                     itemTextArea.addEventListener('mousedown', () => sceneItemContainer.setAttribute('draggable', 'false'));
                     itemTextArea.addEventListener('mouseup', () => sceneItemContainer.setAttribute('draggable', 'true'));
+
+                    const sceneFooter = document.createElement('div');
+                    sceneFooter.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:4px 8px 6px;';
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.classList.add('delete-scene-btn');
+                    deleteButton.textContent = '削除';
+                    deleteButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteScene(sceneItemContainer.xmlNode);
+                    });
+                    sceneFooter.appendChild(deleteButton);
+
+                    const insertBelowButton = document.createElement('button');
+                    insertBelowButton.classList.add('insert-scene-btn');
+                    insertBelowButton.textContent = '＋ シーンを下に挿入';
+                    insertBelowButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const newSceneElement = currentXmlDoc.createElement('シーン');
+                        const newSceneDescElement = currentXmlDoc.createElement('シーン説明');
+                        newSceneDescElement.textContent = '新しいシーン';
+                        newSceneElement.appendChild(newSceneDescElement);
+                        const newPageElement = currentXmlDoc.createElement('ページ');
+                        const newPageDescElement = currentXmlDoc.createElement('ページ説明');
+                        newPageDescElement.textContent = '新しいページ';
+                        newPageElement.appendChild(newPageDescElement);
+                        newSceneElement.appendChild(newPageElement);
+                        sceneItemContainer.xmlNode.parentNode.insertBefore(newSceneElement, sceneItemContainer.xmlNode.nextSibling);
+                        mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
+                        addToHistory(mainEditor.value);
+                        updateUIImmediate();
+                    });
+                    sceneFooter.appendChild(insertBelowButton);
+                    sceneItemContainer.appendChild(sceneFooter);
 
                     // ★★★★★★★★★★★ ここからが変更点 ★★★★★★★★★★★
 
