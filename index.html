@@ -1084,7 +1084,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.7.2_23.47.42";
+            const BUILD_TIME = "2026.7.3_19.6.3";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1932,6 +1932,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             });
                             pageContentTextArea.addEventListener('blur', () => {
                                 pageItemContainer.setAttribute('draggable', 'true');
+                                updateUIImmediate();
                             });
                             
                             // pageItemContainerにテキストエリアを追加する
