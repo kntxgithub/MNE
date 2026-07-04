@@ -73,6 +73,12 @@
 
 
         /* 各カラムヘッダ内のボタンのスタイルを定義 */
+        .column-sticky-top {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            flex-shrink: 0;
+        }
         .column-header {
             background-color: var(--header-bg);
             color: var(--header-text);
@@ -80,9 +86,6 @@
             font-weight: bold;
             text-align: center;
             flex-shrink: 0;
-            position: sticky; /* カラム内でスクロールしても固定 */
-            top: 0;
-            z-index: 10;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
@@ -957,6 +960,7 @@
         </div>
 
         <div class="column scene-column" data-column-id="scene">
+            <div class="column-sticky-top">
             <div class="column-header">
                 <span class="header-title">シーン</span>
                 <div class="controls">
@@ -976,12 +980,14 @@
                     <button id="frSceneClose" class="fr-btn">✕</button>
                 </div>
             </div>
+            </div><!-- /.column-sticky-top -->
             <div class="column-content" id="sceneContent">
                 <p>メインエディタの内容からシーンを抽出します。</p>
             </div>
         </div>
 
         <div class="column page-column" data-column-id="page">
+            <div class="column-sticky-top">
             <div class="column-header" style="flex-wrap:wrap; gap:6px;">
                 <span class="header-title">ページ</span>
                 <span id="pageCountBanner" style="flex:1;text-align:center;font-size:0.82em;color:#cde;"></span>
@@ -1006,6 +1012,7 @@
                     <button id="frPageClose" class="fr-btn">✕</button>
                 </div>
             </div>
+            </div><!-- /.column-sticky-top -->
             <div class="column-content" id="pageContent">
                 <p>メインエディタの内容からページを抽出します。</p>
             </div>
@@ -1132,7 +1139,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.05_00.05.54";
+            const BUILD_TIME = "2026.07.05_00.37.51";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
