@@ -1132,7 +1132,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.04_23.53.11";
+            const BUILD_TIME = "2026.07.04_23.58.02";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3139,11 +3139,19 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             function frEl(id) { return frBars[frColumn][id]; }
 
+            const isMobile = navigator.maxTouchPoints > 0;
+
             function openFindReplace(column) {
-                // 別カラムが開いていたら閉じる
                 if (frColumn && frColumn !== column) closeFindReplace();
                 frColumn = column;
-                frBars[column].bar.classList.add('open');
+                const bar = frBars[column].bar;
+                bar.classList.add('open');
+                if (isMobile) {
+                    bar.style.cssText = 'display:flex;position:fixed;top:0;left:0;right:0;z-index:500;';
+                    const colContent = document.getElementById(column === 'scene' ? 'sceneContent' : 'pageContent');
+                    colContent.dataset.frPad = colContent.style.paddingTop || '';
+                    colContent.style.paddingTop = bar.offsetHeight + 'px';
+                }
                 frBars[column].search.focus();
                 frBars[column].search.select();
                 frSearch();
@@ -3151,7 +3159,13 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             function closeFindReplace() {
                 if (!frColumn) return;
-                frBars[frColumn].bar.classList.remove('open');
+                const bar = frBars[frColumn].bar;
+                bar.classList.remove('open');
+                if (isMobile) {
+                    bar.style.cssText = '';
+                    const colContent = document.getElementById(frColumn === 'scene' ? 'sceneContent' : 'pageContent');
+                    colContent.style.paddingTop = colContent.dataset.frPad || '';
+                }
                 frBars[frColumn].search.value = '';
                 frBars[frColumn].replace.value = '';
                 frBars[frColumn].count.textContent = '';
