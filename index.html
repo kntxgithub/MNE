@@ -487,42 +487,32 @@
             background-color: #f0f0f0;
         }
 
-        /* 置換モーダル */
-        #findReplaceOverlay {
+        /* 置換バー */
+        .replace-bar {
             display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 2000;
-            background: rgba(0,0,0,0.25);
+            flex-direction: column;
+            gap: 5px;
+            padding: 8px 10px;
+            background: #f0f4f0;
+            border-bottom: 1px solid #bbb;
         }
-        #findReplaceDialog {
-            position: fixed;
-            top: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #fff;
-            border-radius: 8px;
-            padding: 18px 20px 14px;
-            min-width: 300px;
-            max-width: 92vw;
-            box-shadow: 0 6px 24px rgba(0,0,0,0.28);
-            z-index: 2001;
-        }
-        #findReplaceDialog label { font-size: 12px; color: #666; display: block; margin-bottom: 3px; }
-        #findReplaceDialog input[type=text] {
+        .replace-bar.open { display: flex; }
+        .replace-bar input[type=text] {
             width: 100%; box-sizing: border-box;
-            padding: 6px 8px; border: 1px solid #ccc;
-            border-radius: 4px; font-size: 14px; margin-bottom: 10px;
+            padding: 5px 8px; border: 1px solid #ccc;
+            border-radius: 4px; font-size: 13px;
         }
-        #findReplaceDialog input[type=text]:focus { outline: none; border-color: #4a8; }
+        .replace-bar input[type=text]:focus { outline: none; border-color: #4a8; }
+        .replace-bar-row { display: flex; align-items: center; gap: 6px; }
         .fr-btn {
-            padding: 5px 14px; border: 1px solid #bbb;
+            padding: 4px 12px; border: 1px solid #bbb;
             border-radius: 4px; background: #f7f7f7;
-            cursor: pointer; font-size: 13px;
+            cursor: pointer; font-size: 12px; white-space: nowrap;
         }
         .fr-btn:hover { background: #eee; }
         .fr-btn.primary { background: #4a8; color: #fff; border-color: #3a7; }
         .fr-btn.primary:hover { background: #3a7; }
+        .fr-count { font-size: 12px; color: #666; flex: 1; text-align: right; }
 
         .section-container {
             border: 1px solid #ccc;
@@ -976,6 +966,16 @@
                     <button id="redoBtnScene">↷</button>
                 </div>
             </div>
+            <div id="sceneReplaceBar" class="replace-bar">
+                <input id="frSceneSearch" type="text" placeholder="検索">
+                <input id="frSceneReplace" type="text" placeholder="置換後">
+                <div class="replace-bar-row">
+                    <button id="frSceneNext" class="fr-btn">次へ</button>
+                    <button id="frSceneRepl" class="fr-btn primary">置換</button>
+                    <span id="frSceneCount" class="fr-count"></span>
+                    <button id="frSceneClose" class="fr-btn">✕</button>
+                </div>
+            </div>
             <div class="column-content" id="sceneContent">
                 <p>メインエディタの内容からシーンを抽出します。</p>
             </div>
@@ -994,6 +994,16 @@
                     <input type="text" id="pageSearchInput" placeholder="🔍 検索…"
                         style="flex:1;padding:5px 8px;border:none;border-radius:3px;font-size:13px;min-width:0;">
                     <button id="pageSearchClearBtn" style="padding:5px 8px;font-size:12px;display:none;">✕</button>
+                </div>
+            </div>
+            <div id="pageReplaceBar" class="replace-bar">
+                <input id="frPageSearch" type="text" placeholder="検索">
+                <input id="frPageReplace" type="text" placeholder="置換後">
+                <div class="replace-bar-row">
+                    <button id="frPageNext" class="fr-btn">次へ</button>
+                    <button id="frPageRepl" class="fr-btn primary">置換</button>
+                    <span id="frPageCount" class="fr-count"></span>
+                    <button id="frPageClose" class="fr-btn">✕</button>
                 </div>
             </div>
             <div class="column-content" id="pageContent">
@@ -1122,7 +1132,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.04_23.15.20";
+            const BUILD_TIME = "2026.07.04_23.25.39";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3104,21 +3114,50 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             let frColumn = null;
             let frMatches = [];
             let frIdx = -1;
+            let frComposing = false;
+
+            const frBars = {
+                scene: {
+                    bar: document.getElementById('sceneReplaceBar'),
+                    search: document.getElementById('frSceneSearch'),
+                    replace: document.getElementById('frSceneReplace'),
+                    count: document.getElementById('frSceneCount'),
+                    next: document.getElementById('frSceneNext'),
+                    repl: document.getElementById('frSceneRepl'),
+                    close: document.getElementById('frSceneClose'),
+                },
+                page: {
+                    bar: document.getElementById('pageReplaceBar'),
+                    search: document.getElementById('frPageSearch'),
+                    replace: document.getElementById('frPageReplace'),
+                    count: document.getElementById('frPageCount'),
+                    next: document.getElementById('frPageNext'),
+                    repl: document.getElementById('frPageRepl'),
+                    close: document.getElementById('frPageClose'),
+                }
+            };
+
+            function frEl(id) { return frBars[frColumn][id]; }
 
             function openFindReplace(column) {
+                // 別カラムが開いていたら閉じる
+                if (frColumn && frColumn !== column) closeFindReplace();
                 frColumn = column;
-                document.getElementById('frTitle').textContent = column === 'scene' ? 'シーン列：置換' : 'ページ列：置換';
-                document.getElementById('findReplaceOverlay').style.display = 'block';
-                document.getElementById('frSearchInput').focus();
-                document.getElementById('frSearchInput').select();
+                frBars[column].bar.classList.add('open');
+                frBars[column].search.focus();
+                frBars[column].search.select();
                 frSearch();
             }
 
             function closeFindReplace() {
-                document.getElementById('findReplaceOverlay').style.display = 'none';
-                frClearHighlights();
+                if (!frColumn) return;
+                frBars[frColumn].bar.classList.remove('open');
+                frBars[frColumn].search.value = '';
+                frBars[frColumn].replace.value = '';
+                frBars[frColumn].count.textContent = '';
                 frMatches = [];
                 frIdx = -1;
+                frColumn = null;
             }
 
             function frGetTextareas() {
@@ -3127,7 +3166,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             }
 
             function frSearch() {
-                const q = document.getElementById('frSearchInput').value;
+                const q = frEl('search').value;
                 frMatches = [];
                 frIdx = -1;
                 if (!q) { frUpdateCount(); return; }
@@ -3149,19 +3188,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 const { ta, start, end } = frMatches[frIdx];
                 ta.focus();
                 ta.setSelectionRange(start, end);
-                // ダイアログの下端 + 余白を確保してスクロール
-                const dialog = document.getElementById('findReplaceDialog');
-                const dialogBottom = dialog.getBoundingClientRect().bottom + 16;
-                const colContent = ta.closest('.column-content');
-                if (colContent) {
-                    ta.scrollIntoView({ block: 'nearest' });
-                    const taRect = ta.getBoundingClientRect();
-                    if (taRect.top < dialogBottom) {
-                        colContent.scrollTop += (dialogBottom - taRect.top) + 8;
-                    }
-                } else {
-                    ta.scrollIntoView({ block: 'center' });
-                }
+                ta.scrollIntoView({ block: 'nearest' });
                 frUpdateCount();
             }
 
@@ -3174,7 +3201,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             function frReplace() {
                 if (frIdx < 0 || frIdx >= frMatches.length) return;
                 const { ta, start, end } = frMatches[frIdx];
-                const rep = document.getElementById('frReplaceInput').value;
+                const rep = frEl('replace').value;
                 ta.value = ta.value.slice(0, start) + rep + ta.value.slice(end);
                 autoResizeTextArea(ta);
                 if (frColumn === 'scene') {
@@ -3189,63 +3216,45 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             }
 
             function frUpdateCount() {
-                const el = document.getElementById('frCount');
-                if (!document.getElementById('frSearchInput').value) { el.textContent = ''; return; }
+                const el = frEl('count');
+                const q = frEl('search').value;
+                if (!q) { el.textContent = ''; return; }
                 if (frMatches.length === 0) { el.textContent = '見つかりません'; return; }
                 el.textContent = `${frIdx + 1} / ${frMatches.length}`;
             }
 
+            ['scene', 'page'].forEach(col => {
+                const b = frBars[col];
+                b.close.addEventListener('click', closeFindReplace);
+                b.next.addEventListener('click', frNext);
+                b.repl.addEventListener('click', frReplace);
+                b.search.addEventListener('compositionstart', () => { frComposing = true; });
+                b.search.addEventListener('compositionend', () => { frComposing = false; frSearch(); });
+                b.search.addEventListener('input', () => { if (!frComposing) frSearch(); });
+                b.search.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); frNext(); }
+                    if (e.key === 'Escape') closeFindReplace();
+                });
+                b.replace.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); frReplace(); }
+                    if (e.key === 'Escape') closeFindReplace();
+                });
+            });
+
             document.getElementById('sceneReplaceBtn').addEventListener('click', () => openFindReplace('scene'));
             document.getElementById('pageReplaceBtn').addEventListener('click', () => openFindReplace('page'));
-            document.getElementById('frCloseBtn').addEventListener('click', closeFindReplace);
-            document.getElementById('findReplaceOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeFindReplace(); });
-            let frComposing = false;
-            document.getElementById('frSearchInput').addEventListener('compositionstart', () => { frComposing = true; });
-            document.getElementById('frSearchInput').addEventListener('compositionend', () => { frComposing = false; frSearch(); });
-            document.getElementById('frSearchInput').addEventListener('input', () => { if (!frComposing) frSearch(); });
-            document.getElementById('frNextBtn').addEventListener('click', frNext);
-            document.getElementById('frReplaceBtn').addEventListener('click', frReplace);
-            document.getElementById('frSearchInput').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') { e.preventDefault(); frNext(); }
-                if (e.key === 'Escape') closeFindReplace();
-            });
-            document.getElementById('frReplaceInput').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') { e.preventDefault(); frReplace(); }
-                if (e.key === 'Escape') closeFindReplace();
-            });
 
             document.addEventListener('keydown', (e) => {
                 if (e.ctrlKey && e.key === 'h') {
                     e.preventDefault();
-                    const active = document.querySelector('.column.active') || document.querySelector('.column[data-column-id="scene"]');
-                    const id = active ? active.getAttribute('data-column-id') : 'scene';
-                    if (id === 'scene' || id === 'page') openFindReplace(id);
+                    const visible = document.querySelector('.column:not([style*="display: none"]):not([style*="display:none"])[data-column-id="scene"], .column:not([style*="display: none"]):not([style*="display:none"])[data-column-id="page"]');
+                    const col = currentColumnIndex === 1 ? 'scene' : currentColumnIndex === 2 ? 'page' : 'scene';
+                    openFindReplace(col);
                 }
             });
 
         });
 
     </script>
-
-<!-- 置換モーダル -->
-<div id="findReplaceOverlay">
-    <div id="findReplaceDialog">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-            <span id="frTitle" style="font-weight:bold;font-size:14px;"></span>
-            <button id="frCloseBtn" style="background:none;border:none;font-size:20px;cursor:pointer;line-height:1;padding:0 2px;color:#666;">✕</button>
-        </div>
-        <label>検索</label>
-        <input id="frSearchInput" type="text" placeholder="検索するテキスト">
-        <label>置換後</label>
-        <input id="frReplaceInput" type="text" placeholder="置換するテキスト">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
-            <span id="frCount" style="font-size:12px;color:#666;"></span>
-            <div style="display:flex;gap:8px;">
-                <button id="frNextBtn" class="fr-btn">次へ</button>
-                <button id="frReplaceBtn" class="fr-btn primary">置換</button>
-            </div>
-        </div>
-    </div>
-</div>
 </body>
 </html>
