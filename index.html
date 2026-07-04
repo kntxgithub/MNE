@@ -1132,7 +1132,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.04_23.25.39";
+            const BUILD_TIME = "2026.07.04_23.32.35";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1980,7 +1980,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             });
                             pageContentTextArea.addEventListener('blur', () => {
                                 pageItemContainer.setAttribute('draggable', 'true');
-                                updateUIImmediate();
+                                if (!frColumn) updateUIImmediate();
                             });
                             
                             // pageItemContainerにテキストエリアを追加する
@@ -3202,6 +3202,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 if (frIdx < 0 || frIdx >= frMatches.length) return;
                 const { ta, start, end } = frMatches[frIdx];
                 const rep = frEl('replace').value;
+                const afterPos = start + rep.length;
                 ta.value = ta.value.slice(0, start) + rep + ta.value.slice(end);
                 autoResizeTextArea(ta);
                 if (frColumn === 'scene') {
@@ -3212,6 +3213,20 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     updatePageContentInXml(c.getAttribute('data-scene-index'), c.getAttribute('data-page-index-in-scene'), ta.value);
                 }
                 frSearch();
+                // 置換した位置より後の最初のマッチに移動
+                const allTas = frGetTextareas();
+                const taIdx = allTas.indexOf(ta);
+                let found = false;
+                for (let i = 0; i < frMatches.length; i++) {
+                    const m = frMatches[i];
+                    const mTaIdx = allTas.indexOf(m.ta);
+                    if (mTaIdx > taIdx || (mTaIdx === taIdx && m.start >= afterPos)) {
+                        frIdx = i;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) frIdx = frMatches.length > 0 ? 0 : -1;
                 frHighlight();
             }
 
