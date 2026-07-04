@@ -1132,7 +1132,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.04_23.42.04";
+            const BUILD_TIME = "2026.07.04_23.46.39";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3203,8 +3203,6 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     }
                 }
 
-                // スマホではキーボードを表示しない
-                if (navigator.maxTouchPoints > 0) ta.blur();
 
                 frUpdateCount();
             }
