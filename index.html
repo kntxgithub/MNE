@@ -1120,7 +1120,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.04_22.55.31";
+            const BUILD_TIME = "2026.07.04_23.00.19";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3144,9 +3144,10 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             function frHighlight() {
                 if (frIdx < 0 || frIdx >= frMatches.length) return;
                 const { ta, start, end } = frMatches[frIdx];
+                ta.scrollIntoView({ block: 'center', behavior: 'smooth' });
                 ta.focus();
                 ta.setSelectionRange(start, end);
-                ta.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                document.getElementById('frSearchInput').focus();
                 frUpdateCount();
             }
 
