@@ -487,6 +487,41 @@
             background-color: #f0f0f0;
         }
 
+        /* 置換モーダル */
+        #findReplaceOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2000;
+            background: rgba(0,0,0,0.25);
+        }
+        #findReplaceDialog {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            border-radius: 8px;
+            padding: 18px 20px 14px;
+            min-width: 300px;
+            max-width: 90vw;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.28);
+        }
+        #findReplaceDialog label { font-size: 12px; color: #666; display: block; margin-bottom: 3px; }
+        #findReplaceDialog input[type=text] {
+            width: 100%; box-sizing: border-box;
+            padding: 6px 8px; border: 1px solid #ccc;
+            border-radius: 4px; font-size: 14px; margin-bottom: 10px;
+        }
+        #findReplaceDialog input[type=text]:focus { outline: none; border-color: #4a8; }
+        .fr-btn {
+            padding: 5px 14px; border: 1px solid #bbb;
+            border-radius: 4px; background: #f7f7f7;
+            cursor: pointer; font-size: 13px;
+        }
+        .fr-btn:hover { background: #eee; }
+        .fr-btn.primary { background: #4a8; color: #fff; border-color: #3a7; }
+        .fr-btn.primary:hover { background: #3a7; }
+
         .section-container {
             border: 1px solid #ccc;
             border-radius: 5px;
@@ -934,9 +969,9 @@
                 <span class="header-title">シーン</span>
                 <div class="controls">
                     <button id="addSceneBtn">シーン追加</button>
+                    <button id="sceneReplaceBtn" title="置換 (Ctrl+H)">置換</button>
                     <button id="undoBtnScene">↶</button>
                     <button id="redoBtnScene">↷</button>
-
                 </div>
             </div>
             <div class="column-content" id="sceneContent">
@@ -949,6 +984,7 @@
                 <span class="header-title">ページ</span>
                 <span id="pageCountBanner" style="flex:1;text-align:center;font-size:0.82em;color:#cde;"></span>
                 <div class="controls">
+                    <button id="pageReplaceBtn" title="置換 (Ctrl+H)">置換</button>
                     <button id="undoBtnPage">↶</button>
                     <button id="redoBtnPage">↷</button>
                 </div>
@@ -1084,7 +1120,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.03_21.20.57";
+            const BUILD_TIME = "2026.07.04_22.55.31";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3061,8 +3097,136 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 });
             }
             // ★★★★★★★★★★★ ここまで追加 ★★★★★★★★★★★
+
+            // ===== 置換機能 =====
+            let frColumn = null;
+            let frMatches = [];
+            let frIdx = -1;
+
+            function openFindReplace(column) {
+                frColumn = column;
+                document.getElementById('frTitle').textContent = column === 'scene' ? 'シーン列：置換' : 'ページ列：置換';
+                document.getElementById('findReplaceOverlay').style.display = 'block';
+                document.getElementById('frSearchInput').focus();
+                document.getElementById('frSearchInput').select();
+                frSearch();
+            }
+
+            function closeFindReplace() {
+                document.getElementById('findReplaceOverlay').style.display = 'none';
+                frMatches = [];
+                frIdx = -1;
+            }
+
+            function frGetTextareas() {
+                if (frColumn === 'scene') return [...document.querySelectorAll('#sceneContent textarea.scene-text')];
+                return [...document.querySelectorAll('#pageContent textarea.page-text')];
+            }
+
+            function frSearch() {
+                const q = document.getElementById('frSearchInput').value;
+                frMatches = [];
+                frIdx = -1;
+                if (!q) { frUpdateCount(); return; }
+                frGetTextareas().forEach(ta => {
+                    let pos = 0;
+                    while (true) {
+                        const i = ta.value.indexOf(q, pos);
+                        if (i === -1) break;
+                        frMatches.push({ ta, start: i, end: i + q.length });
+                        pos = i + 1;
+                    }
+                });
+                if (frMatches.length > 0) { frIdx = 0; frHighlight(); }
+                frUpdateCount();
+            }
+
+            function frHighlight() {
+                if (frIdx < 0 || frIdx >= frMatches.length) return;
+                const { ta, start, end } = frMatches[frIdx];
+                ta.focus();
+                ta.setSelectionRange(start, end);
+                ta.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                frUpdateCount();
+            }
+
+            function frNext() {
+                if (!frMatches.length) return;
+                frIdx = (frIdx + 1) % frMatches.length;
+                frHighlight();
+            }
+
+            function frReplace() {
+                if (frIdx < 0 || frIdx >= frMatches.length) return;
+                const { ta, start, end } = frMatches[frIdx];
+                const rep = document.getElementById('frReplaceInput').value;
+                ta.value = ta.value.slice(0, start) + rep + ta.value.slice(end);
+                autoResizeTextArea(ta);
+                if (frColumn === 'scene') {
+                    const c = ta.closest('.scene-item-container');
+                    updateSceneContentInXml(c.getAttribute('data-scene-index'), ta.value);
+                } else {
+                    const c = ta.closest('.page-item-container');
+                    updatePageContentInXml(c.getAttribute('data-scene-index'), c.getAttribute('data-page-index-in-scene'), ta.value);
+                }
+                frSearch();
+            }
+
+            function frUpdateCount() {
+                const el = document.getElementById('frCount');
+                if (!document.getElementById('frSearchInput').value) { el.textContent = ''; return; }
+                if (frMatches.length === 0) { el.textContent = '見つかりません'; return; }
+                el.textContent = `${frIdx + 1} / ${frMatches.length}`;
+            }
+
+            document.getElementById('sceneReplaceBtn').addEventListener('click', () => openFindReplace('scene'));
+            document.getElementById('pageReplaceBtn').addEventListener('click', () => openFindReplace('page'));
+            document.getElementById('frCloseBtn').addEventListener('click', closeFindReplace);
+            document.getElementById('findReplaceOverlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeFindReplace(); });
+            document.getElementById('frSearchInput').addEventListener('input', frSearch);
+            document.getElementById('frNextBtn').addEventListener('click', frNext);
+            document.getElementById('frReplaceBtn').addEventListener('click', frReplace);
+            document.getElementById('frSearchInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); frNext(); }
+                if (e.key === 'Escape') closeFindReplace();
+            });
+            document.getElementById('frReplaceInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); frReplace(); }
+                if (e.key === 'Escape') closeFindReplace();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'h') {
+                    e.preventDefault();
+                    const active = document.querySelector('.column.active') || document.querySelector('.column[data-column-id="scene"]');
+                    const id = active ? active.getAttribute('data-column-id') : 'scene';
+                    if (id === 'scene' || id === 'page') openFindReplace(id);
+                }
+            });
+
         });
 
     </script>
+
+<!-- 置換モーダル -->
+<div id="findReplaceOverlay">
+    <div id="findReplaceDialog">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <span id="frTitle" style="font-weight:bold;font-size:14px;"></span>
+            <button id="frCloseBtn" style="background:none;border:none;font-size:20px;cursor:pointer;line-height:1;padding:0 2px;color:#666;">✕</button>
+        </div>
+        <label>検索</label>
+        <input id="frSearchInput" type="text" placeholder="検索するテキスト">
+        <label>置換後</label>
+        <input id="frReplaceInput" type="text" placeholder="置換するテキスト">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
+            <span id="frCount" style="font-size:12px;color:#666;"></span>
+            <div style="display:flex;gap:8px;">
+                <button id="frNextBtn" class="fr-btn">次へ</button>
+                <button id="frReplaceBtn" class="fr-btn primary">置換</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
