@@ -1132,7 +1132,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.04_23.46.39";
+            const BUILD_TIME = "2026.07.04_23.49.33";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3183,26 +3183,34 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 frUpdateCount();
             }
 
+            function frScrollIntoBar() {
+                if (frIdx < 0 || frIdx >= frMatches.length) return;
+                const { ta } = frMatches[frIdx];
+                const colContent = ta.closest('.column-content');
+                if (!colContent) return;
+                const barEl = frBars[frColumn].bar;
+                const barBottom = barEl.getBoundingClientRect().bottom;
+                const colRect = colContent.getBoundingClientRect();
+                const taRect = ta.getBoundingClientRect();
+                if (taRect.top < barBottom + 8) {
+                    colContent.scrollTop -= (barBottom + 8 - taRect.top);
+                } else if (taRect.bottom > colRect.bottom - 8) {
+                    colContent.scrollTop += (taRect.bottom - colRect.bottom + 8);
+                }
+            }
+
             function frHighlight() {
                 if (frIdx < 0 || frIdx >= frMatches.length) return;
                 const { ta, start, end } = frMatches[frIdx];
                 ta.focus();
                 ta.setSelectionRange(start, end);
 
-                // ヘッダ・置換バーを避けて column-content 内でスクロール
-                const colContent = ta.closest('.column-content');
-                if (colContent) {
-                    const barEl = frBars[frColumn].bar;
-                    const barBottom = barEl.getBoundingClientRect().bottom;
-                    const colRect = colContent.getBoundingClientRect();
-                    const taRect = ta.getBoundingClientRect();
-                    if (taRect.top < barBottom + 8) {
-                        colContent.scrollTop -= (barBottom + 8 - taRect.top);
-                    } else if (taRect.bottom > colRect.bottom - 8) {
-                        colContent.scrollTop += (taRect.bottom - colRect.bottom + 8);
-                    }
+                if (navigator.maxTouchPoints > 0) {
+                    // スマホ：キーボード展開後にスクロール調整
+                    setTimeout(frScrollIntoBar, 350);
+                } else {
+                    frScrollIntoBar();
                 }
-
 
                 frUpdateCount();
             }
