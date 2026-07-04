@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mne-cache-v4';
+const CACHE_NAME = 'mne-cache-v5';
 const urlsToCache = [
   '/MNE/',
   '/MNE/index.html',
@@ -27,9 +27,10 @@ self.addEventListener('activate', (event) => {
 });
 
 // フェッチ：ネットワーク優先、失敗時のみキャッシュから返す
+// cache:'no-cache' でブラウザHTTPキャッシュ(max-age=600)を無視してサーバーに再検証させる
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-cache' })
       .then((response) => {
         // 成功したらキャッシュを更新して返す
         const clone = response.clone();
