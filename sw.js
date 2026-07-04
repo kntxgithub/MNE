@@ -1,5 +1,5 @@
 // キャッシュするファイルの名前とバージョン
-const CACHE_NAME = 'mne-cache-v2';
+const CACHE_NAME = 'mne-cache-v3';
 // キャッシュするファイルのリスト
 const urlsToCache = [
   '/MNE/',              // ルート（index.htmlなど）
