@@ -500,6 +500,15 @@
             border-bottom: 1px solid #bbb;
         }
         .replace-bar.open { display: flex; }
+        /* スマホ：transformされたwrapperの外(body直下)に移して画面上部に固定 */
+        .replace-bar.mobile-fixed {
+            position: fixed;
+            left: 0;
+            width: 100vw;
+            box-sizing: border-box;
+            z-index: 1500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
         .replace-bar input[type=text] {
             width: 100%; box-sizing: border-box;
             padding: 5px 8px; border: 1px solid #ccc;
@@ -1139,7 +1148,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.05_00.37.51";
+            const BUILD_TIME = "2026.07.05_00.42.32";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3148,10 +3157,58 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             const isMobile = navigator.maxTouchPoints > 0;
 
+            // スマホ用：バーをbody直下に移して画面上部にfixed固定する
+            // (columns-wrapperのtransformのせいでsticky/fixedが効かないため)
+            let frPlaceholder = null;
+            let frSpacer = null;
+
+            function frUpdateMobileBarTop() {
+                if (!frColumn) return;
+                const bar = frBars[frColumn].bar;
+                const vv = window.visualViewport;
+                bar.style.top = (vv ? vv.offsetTop : 0) + 'px';
+            }
+
+            function frMobileFix(column) {
+                const bar = frBars[column].bar;
+                // 元の位置に戻すためのプレースホルダ
+                frPlaceholder = document.createComment('replace-bar-placeholder');
+                bar.parentNode.insertBefore(frPlaceholder, bar);
+                document.body.appendChild(bar);
+                bar.classList.add('mobile-fixed');
+                frUpdateMobileBarTop();
+                // バーの高さぶんコンテンツが隠れないようスペーサを入れる
+                const colContent = document.getElementById(column === 'scene' ? 'sceneContent' : 'pageContent');
+                frSpacer = document.createElement('div');
+                frSpacer.style.height = bar.getBoundingClientRect().height + 'px';
+                colContent.insertBefore(frSpacer, colContent.firstChild);
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('scroll', frUpdateMobileBarTop);
+                    window.visualViewport.addEventListener('resize', frUpdateMobileBarTop);
+                }
+            }
+
+            function frMobileUnfix(column) {
+                const bar = frBars[column].bar;
+                bar.classList.remove('mobile-fixed');
+                bar.style.top = '';
+                if (frPlaceholder) {
+                    frPlaceholder.parentNode.insertBefore(bar, frPlaceholder);
+                    frPlaceholder.remove();
+                    frPlaceholder = null;
+                }
+                if (frSpacer) { frSpacer.remove(); frSpacer = null; }
+                if (window.visualViewport) {
+                    window.visualViewport.removeEventListener('scroll', frUpdateMobileBarTop);
+                    window.visualViewport.removeEventListener('resize', frUpdateMobileBarTop);
+                }
+            }
+
             function openFindReplace(column) {
                 if (frColumn && frColumn !== column) closeFindReplace();
                 frColumn = column;
                 frBars[column].bar.classList.add('open');
+                if (isMobile) frMobileFix(column);
                 frBars[column].search.focus();
                 frBars[column].search.select();
                 frSearch();
@@ -3159,6 +3216,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             function closeFindReplace() {
                 if (!frColumn) return;
+                if (isMobile) frMobileUnfix(frColumn);
                 frBars[frColumn].bar.classList.remove('open');
                 frBars[frColumn].search.value = '';
                 frBars[frColumn].replace.value = '';
