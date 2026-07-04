@@ -521,8 +521,6 @@
         .fr-btn:hover { background: #eee; }
         .fr-btn.primary { background: #4a8; color: #fff; border-color: #3a7; }
         .fr-btn.primary:hover { background: #3a7; }
-        textarea.fr-match { outline: 2px solid #aed6a0 !important; background: #f4fff0 !important; }
-        textarea.fr-current { outline: 2px solid #f0a030 !important; background: #fff8e0 !important; }
 
         .section-container {
             border: 1px solid #ccc;
@@ -1122,7 +1120,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.04_23.06.35";
+            const BUILD_TIME = "2026.07.04_23.11.45";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3126,27 +3124,10 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 return [...document.querySelectorAll('#pageContent textarea.page-text')];
             }
 
-            function frClearHighlights() {
-                document.querySelectorAll('.fr-match, .fr-current').forEach(el => el.classList.remove('fr-match', 'fr-current'));
-            }
-
-            function frApplyHighlights() {
-                frClearHighlights();
-                const seen = new Set();
-                frMatches.forEach(({ ta }, i) => {
-                    ta.classList.add('fr-match');
-                    seen.add(ta);
-                });
-                if (frIdx >= 0 && frIdx < frMatches.length) {
-                    frMatches[frIdx].ta.classList.add('fr-current');
-                }
-            }
-
             function frSearch() {
                 const q = document.getElementById('frSearchInput').value;
                 frMatches = [];
                 frIdx = -1;
-                frClearHighlights();
                 if (!q) { frUpdateCount(); return; }
                 frGetTextareas().forEach(ta => {
                     let pos = 0;
@@ -3157,22 +3138,16 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         pos = i + 1;
                     }
                 });
-                if (frMatches.length > 0) { frIdx = 0; }
-                frApplyHighlights();
-                if (frMatches.length > 0) {
-                    frMatches[frIdx].ta.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                }
+                if (frMatches.length > 0) frIdx = 0;
                 frUpdateCount();
             }
 
             function frHighlight() {
                 if (frIdx < 0 || frIdx >= frMatches.length) return;
-                frApplyHighlights();
                 const { ta, start, end } = frMatches[frIdx];
                 ta.scrollIntoView({ block: 'center', behavior: 'smooth' });
                 ta.focus();
                 ta.setSelectionRange(start, end);
-                document.getElementById('frSearchInput').focus();
                 frUpdateCount();
             }
 
@@ -3196,6 +3171,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     updatePageContentInXml(c.getAttribute('data-scene-index'), c.getAttribute('data-page-index-in-scene'), ta.value);
                 }
                 frSearch();
+                frHighlight();
             }
 
             function frUpdateCount() {
