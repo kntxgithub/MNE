@@ -1159,7 +1159,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.05_15.05.02";
+            const BUILD_TIME = "2026.07.05_15.18.39";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2793,6 +2793,17 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
             }
 
+            // デフォルト背景: ロゴを右下基準・幅合わせで薄く表示
+            function applyDefaultBg(opacity) {
+                const r = document.documentElement.style;
+                r.setProperty('--bg-image-url', "url('/MNE/icon512.png')");
+                r.setProperty('--bg-opacity',   opacity / 100);
+                r.setProperty('--bg-repeat',    'no-repeat');
+                r.setProperty('--bg-size',      '100% auto');
+                r.setProperty('--bg-position',  'right bottom');
+                bgImageClearBtn.style.display = 'none';
+            }
+
             function loadSavedBgImage() {
                 const saved   = localStorage.getItem('bgImageBase64');
                 const opacity = parseInt(localStorage.getItem('bgOpacity') || '20');
@@ -2800,6 +2811,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 bgOpacitySlider.value = opacity;
                 bgSizeSelect.value    = sizeVal;
                 if (saved) applyBgImage(saved, opacity, sizeVal);
+                else applyDefaultBg(opacity);
             }
 
             bgImageInput.addEventListener('change', (e) => {
@@ -2828,6 +2840,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 const sizeVal = bgSizeSelect.value;
                 localStorage.setItem('bgOpacity', opacity);
                 if (base64) applyBgImage(base64, opacity, sizeVal);
+                else applyDefaultBg(opacity);
             });
 
             bgSizeSelect.addEventListener('change', () => {
@@ -2840,10 +2853,10 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             bgImageClearBtn.addEventListener('click', () => {
                 localStorage.removeItem('bgImageBase64');
-                applyBgImage(null, 20, 'repeat|auto');
                 bgOpacitySlider.value = 20;
                 bgSizeSelect.value    = 'repeat|auto';
                 bgImageInput.value    = '';
+                applyDefaultBg(20);
             });
 
             loadSavedBgImage();
