@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mne-cache-v5';
+const CACHE_NAME = 'mne-cache-v6';
 const urlsToCache = [
   '/MNE/',
   '/MNE/index.html',

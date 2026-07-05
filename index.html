@@ -12,6 +12,17 @@
         <!-- ファビコン --> 
     <link rel="icon" type="image/png" sizes="32x32" href="/MNE/icon32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/MNE/icon16.png">
+    <!-- iOS用スプラッシュ画像 (端末サイズ別) -->
+    <link rel="apple-touch-startup-image" href="/MNE/splash_640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="/MNE/splash_750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="/MNE/splash_828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="/MNE/splash_1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/MNE/splash_1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/MNE/splash_1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/MNE/splash_1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/MNE/splash_1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/MNE/splash_1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/MNE/splash_1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)">
     <meta charset="UTF-8">
     <!--<meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
     
@@ -1148,7 +1159,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.05_11.15.44";
+            const BUILD_TIME = "2026.07.05_11.56.56";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
