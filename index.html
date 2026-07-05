@@ -1148,7 +1148,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.05_09.44.29";
+            const BUILD_TIME = "2026.07.05_10.23.07";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1269,6 +1269,7 @@
                     outlineContent: outlineEditor.value,
                     characterContent: characterEditor.value,
                     keywordContent: keywordEditor.value,
+                    ideaContent: outlineIdeaEditor.value,
                     mainContent: mainEditor.value,
                     fileName: currentFileName,
                     history: history,
@@ -1311,8 +1312,9 @@
                 history = [mainEditor.value];
                 historyIndex = 0;
                 localStorage.removeItem('comicNameEditorState');
-                
+
                 keywordEditor.value = '';
+                outlineIdeaEditor.value = '';
                 setSectionVisibility(outlineContentDiv, false);
                 setSectionVisibility(characterContentDiv, false);
                 keywordContentDiv.style.display = 'none';
@@ -1333,6 +1335,7 @@
                     outlineEditor.value = state.outlineContent || '';
                     characterEditor.value = state.characterContent || '';
                     keywordEditor.value = state.keywordContent || '';
+                    outlineIdeaEditor.value = state.ideaContent || '';
                     mainEditor.value = state.mainContent || '';
                     currentFileName = state.fileName || '新規ネーム.txt';
                     updateFileNameDisplay();
