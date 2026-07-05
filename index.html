@@ -1159,7 +1159,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.05_15.18.39";
+            const BUILD_TIME = "2026.07.05_22.44.33";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1995,6 +1995,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                     e.preventDefault();
                                     const all = [...document.querySelectorAll('#pageContent textarea.page-text')];
                                     const nextIdx = all.indexOf(e.target) + (e.shiftKey ? -1 : 1);
+                                    // 先にblurさせてDOM再構築を済ませてから、新しいDOMで移動先にフォーカスする
+                                    e.target.blur();
                                     setTimeout(() => {
                                         const newAll = [...document.querySelectorAll('#pageContent textarea.page-text')];
                                         if (newAll[nextIdx]) newAll[nextIdx].focus();
