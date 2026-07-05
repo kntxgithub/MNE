@@ -1159,7 +1159,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.05_22.45.50";
+            const BUILD_TIME = "2026.07.05_23.56.05";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2637,10 +2637,13 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                     mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
                     addToHistory(mainEditor.value);
+                    // 追加先シーンのインデックスを特定し、そのシーンの最後のページ(=追加したページ)にフォーカスする
+                    const sceneIdx = [...currentXmlDoc.querySelectorAll('シーン')].indexOf(sceneElement);
                     updateUIImmediate();
                     setTimeout(() => {
-                        const all = [...document.querySelectorAll('#pageContent textarea.page-text')];
-                        if (all.length > 0) { const ta = all[all.length - 1]; ta.focus(); ta.select(); }
+                        const inScene = [...document.querySelectorAll(`#pageContent .page-item-container[data-scene-index="${sceneIdx}"] textarea.page-text`)];
+                        const ta = inScene[inScene.length - 1];
+                        if (ta) { ta.focus(); ta.select(); }
                     }, 50);
                 } else {
                     alert('選択されたシーンがXML内で見つかりません。');
