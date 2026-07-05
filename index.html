@@ -1148,7 +1148,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.05_00.51.07";
+            const BUILD_TIME = "2026.07.05_09.02.26";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1190,6 +1190,7 @@
             const fileNameDisplay = document.getElementById('fileNameDisplay');
             function updateFileNameDisplay() {
                 fileNameDisplay.textContent = currentFileName;
+                document.title = '漫画ネームエディタ：' + currentFileName;
             }
             let history = [''];
             let historyIndex = 0;
