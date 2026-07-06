@@ -1159,7 +1159,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.05_23.56.05";
+            const BUILD_TIME = "2026.07.06_20.30.42";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2557,6 +2557,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             });
 
             outlineEditor.addEventListener('input', () => {
+                autoResizeTextArea(outlineEditor);
                 saveState();
             });
 
@@ -2655,7 +2656,12 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 button.addEventListener('click', (e) => {
                     const targetId = e.target.dataset.target;
                     const targetContent = document.getElementById(targetId);
-                    setSectionVisibility(targetContent, !targetContent.classList.contains('hidden'));
+                    const nowHidden = targetContent.classList.contains('hidden');
+                    setSectionVisibility(targetContent, !nowHidden);
+                    // 開いたときに内容量に合わせて高さを調整
+                    if (nowHidden) setTimeout(() => {
+                        targetContent.querySelectorAll('textarea').forEach(autoResizeTextArea);
+                    }, 50);
                 });
             });
 
