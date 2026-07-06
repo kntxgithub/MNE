@@ -1159,7 +1159,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.06_20.39.01";
+            const BUILD_TIME = "2026.07.06_21.49.26";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2702,7 +2702,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 // ファイル名に日付を含める
                 const date = new Date();
                 const dateString = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}_${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}${date.getSeconds().toString().padStart(2, '0')}`;
-                const suggestedFileName = `セリフ_${dateString}.txt`;
+                const baseName = currentFileName.replace(/\.[^.]+$/, ''); // 拡張子を除く
+                const suggestedFileName = `${baseName}_セリフ_${dateString}.txt`;
 
                 try {
                     const fileHandle = await window.showSaveFilePicker({
