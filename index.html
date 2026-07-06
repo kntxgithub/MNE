@@ -1159,7 +1159,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.06_20.30.42";
+            const BUILD_TIME = "2026.07.06_20.39.01";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1915,6 +1915,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             memoToggleBtn.textContent = 'メモ';
                             memoToggleBtn.title = 'メモを開閉（エクスポートされません）';
                             if (savedMemo) memoToggleBtn.classList.add('has-memo');
+                            memoToggleBtn.addEventListener('mousedown', (e) => e.preventDefault());
                             memoToggleBtn.addEventListener('click', (e) => {
                                 e.stopPropagation();
                                 memoArea.classList.toggle('open');
@@ -1925,9 +1926,12 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             const deleteButton = document.createElement('button');
                             deleteButton.classList.add('delete-page-btn');
                             deleteButton.textContent = '削除';
+                            // フォーカス横取りによるblur→DOM再構築でクリックが不発になるのを防ぐ
+                            deleteButton.addEventListener('mousedown', (e) => e.preventDefault());
+                            const pageNumberAtRender = globalPageIndex;
                             deleteButton.addEventListener('click', (e) => {
                                 e.stopPropagation();
-                                deletePage(pageItemContainer.xmlNode, `ページ${globalPageIndex}`);
+                                deletePage(pageItemContainer.xmlNode, `ページ${pageNumberAtRender}`);
                             });
                             pageHeader.appendChild(deleteButton);
                             pageItemContainer.appendChild(pageHeader);
@@ -2036,10 +2040,12 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         addPageButtonForScene.classList.add('add-page-to-scene-btn');
                         addPageButtonForScene.textContent = `「${sceneTitle}」にページを追加`;
                         addPageButtonForScene.setAttribute('data-scene-node-id', sceneNodeIdForDom); 
-                        addPageButtonForScene.xmlNode = sceneElement; 
+                        addPageButtonForScene.xmlNode = sceneElement;
+                        // フォーカス横取りによるblur→DOM再構築でクリックが不発になるのを防ぐ
+                        addPageButtonForScene.addEventListener('mousedown', (e) => e.preventDefault());
                         addPageButtonForScene.addEventListener('click', (e) => {
-                            e.stopPropagation(); 
-                            addPageToSpecificScene(sceneElement); 
+                            e.stopPropagation();
+                            addPageToSpecificScene(sceneElement);
                         });
                         sceneGroupContent.appendChild(addPageButtonForScene);
                     });
@@ -2434,8 +2440,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
             }
 
-            function deletePage(pageElement, pageTitle) { 
-                if (!confirm(`ページ ${pageTitle} を削除してもよろしいですか？（このページ内のセリフも全て削除されます）`)) {
+            function deletePage(pageElement, pageTitle) {
+                if (!confirm(`${pageTitle} を削除してもよろしいですか？（このページ内のセリフも全て削除されます）`)) {
                     return;
                 }
                 if (pageElement && pageElement.parentNode) {
