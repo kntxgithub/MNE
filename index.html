@@ -1194,7 +1194,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.07_23.08.50";
+            const BUILD_TIME = "2026.07.07_23.15.40";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2930,6 +2930,18 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             });
             document.getElementById('twoColNext').addEventListener('click', () => {
                 columnsWrapper.scrollBy({ left: window.innerWidth / 2, behavior: 'smooth' });
+            });
+            // Ctrl+←/→ でカラム送り (2カラムモード時のみ)
+            document.addEventListener('keydown', (e) => {
+                if (!document.body.classList.contains('two-col') || window.innerWidth <= 768) return;
+                if (!e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    columnsWrapper.scrollBy({ left: -window.innerWidth / 2, behavior: 'smooth' });
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    columnsWrapper.scrollBy({ left: window.innerWidth / 2, behavior: 'smooth' });
+                }
             });
 
             // パネル開閉
