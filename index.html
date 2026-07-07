@@ -938,7 +938,8 @@
                 <div class="controls">
                     <button id="newBtn">新規</button>
                     <button id="openBtn">開く</button>
-                    <input type="file" id="fileInput" accept=".mnd,.txt,text/plain,application/octet-stream" style="display: none;">
+                    <!-- accept指定なし: Android(Google Drive等)はMIME絞り込みで.mndを弾くため全ファイル選択可にする -->
+                    <input type="file" id="fileInput" style="display: none;">
                     <button id="saveBtn">保存</button>
                     <button id="saveAsBtn">別名保存</button>
                     <button id="undoBtn">↶</button>
@@ -1194,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.08_00.20.54";
+            const BUILD_TIME = "2026.07.08_00.25.02";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
