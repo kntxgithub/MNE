@@ -938,7 +938,7 @@
                 <div class="controls">
                     <button id="newBtn">新規</button>
                     <button id="openBtn">開く</button>
-                    <input type="file" id="fileInput" style="display: none;">
+                    <input type="file" id="fileInput" accept=".mnd,.txt" style="display: none;">
                     <button id="saveBtn">保存</button>
                     <button id="saveAsBtn">別名保存</button>
                     <button id="undoBtn">↶</button>
@@ -1194,7 +1194,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.07_23.15.40";
+            const BUILD_TIME = "2026.07.07_23.28.39";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1232,7 +1232,7 @@
 
             const columnsWrapper = document.getElementById('columnsWrapper');
             
-            let currentFileName = '新規ネーム.txt';
+            let currentFileName = '新規ネーム.mnd';
             const fileNameDisplay = document.getElementById('fileNameDisplay');
             function updateFileNameDisplay() {
                 fileNameDisplay.textContent = currentFileName;
@@ -1352,7 +1352,7 @@
 
                 // 新規作成時のXML初期値に、空のセリフ要素も含むように変更
                 mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明></ページ></シーン></root>`; 
-                currentFileName = '新規ネーム.txt';
+                currentFileName = '新規ネーム.mnd';
                 updateFileNameDisplay();
                 currentFileHandle = null;
                 history = [mainEditor.value];
@@ -1383,7 +1383,7 @@
                     keywordEditor.value = state.keywordContent || '';
                     outlineIdeaEditor.value = state.ideaContent || '';
                     mainEditor.value = state.mainContent || '';
-                    currentFileName = state.fileName || '新規ネーム.txt';
+                    currentFileName = state.fileName || '新規ネーム.mnd';
                     updateFileNameDisplay();
                     history = state.history || [''];
                     historyIndex = state.historyIndex || 0;
@@ -1508,9 +1508,9 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     const [fileHandle] = await window.showOpenFilePicker({
                         types: [
                             {
-                                description: 'Text Files',
+                                description: 'ネームファイル',
                                 accept: {
-                                    'text/plain': ['.txt'],
+                                    'text/plain': ['.mnd', '.txt'],
                                 },
                             },
                         ],
@@ -1571,13 +1571,13 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     const newHandle = await window.showSaveFilePicker({
                         types: [
                             {
-                                description: 'Text Files',
+                                description: 'ネームファイル',
                                 accept: {
-                                    'text/plain': ['.txt'],
+                                    'text/plain': ['.mnd'],
                                 },
                             },
                         ],
-                        suggestedName: currentFileName
+                        suggestedName: currentFileName.replace(/\.txt$/i, '.mnd')
                     });
                     const writable = await newHandle.createWritable();
                     await writable.write(fullContentToSave);
@@ -1645,7 +1645,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 document.body.classList.remove('drag-over');
 
                 const file = e.dataTransfer.files[0];
-                if (file && file.type === 'text/plain') {
+                if (file && (file.type === 'text/plain' || /\.(mnd|txt)$/i.test(file.name))) {
                     const reader = new FileReader();
                     reader.onload = (event) => {
                         extractAndSetSeparateContents(event.target.result);
