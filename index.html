@@ -193,6 +193,30 @@
             resize: vertical; /* メインエディタもマニュアルリサイズ可能に */
         }
 
+        /* 2カラム表示モード (PC/タブレットのみ) */
+        .two-col-nav { display: none; }
+        @media (min-width: 769px) {
+            body.two-col .column { width: 50vw; scroll-snap-align: start; }
+            body.two-col .columns-wrapper { scroll-snap-type: x mandatory; }
+            body.two-col .two-col-nav {
+                display: block;
+                position: fixed;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 1200;
+                width: 34px;
+                height: 64px;
+                border: none;
+                border-radius: 8px;
+                background: rgba(52,73,94,0.30);
+                color: #fff;
+                font-size: 24px;
+                line-height: 1;
+                cursor: pointer;
+            }
+            body.two-col .two-col-nav:hover { background: rgba(52,73,94,0.7); }
+        }
+
         .outline-textarea {
             min-height: 120px;
             max-height: none;
@@ -1060,10 +1084,21 @@
         </div>
     </div>
 
+<!-- 2カラムモードの送りボタン (PC/タブレット) -->
+<button id="twoColPrev" class="two-col-nav" style="left:4px;" title="前のカラムへ">‹</button>
+<button id="twoColNext" class="two-col-nav" style="right:4px;" title="次のカラムへ">›</button>
+
 <!-- カラー設定パネル -->
 <div id="colorSettingsPanel" style="display:none;position:fixed;top:60px;right:10px;z-index:2000;background:white;border:1px solid #ccc;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.2);padding:16px;width:260px;max-height:80vh;overflow-y:auto;">
     <div style="font-weight:bold;margin-bottom:12px;font-size:14px;">🎨 カラーテーマ</div>
     <div id="colorPresets" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+    <hr style="margin:14px 0;border:none;border-top:1px solid #eee;">
+    <div style="font-weight:bold;font-size:13px;margin-bottom:6px;">🖥 表示</div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" id="twoColModeChk">
+        2カラム表示（PC/タブレット）
+    </label>
 
     <hr style="margin:14px 0;border:none;border-top:1px solid #eee;">
     <div style="font-weight:bold;font-size:13px;margin-bottom:10px;">🖼 背景テクスチャ</div>
@@ -1159,7 +1194,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.06_21.50.51";
+            const BUILD_TIME = "2026.07.07_23.08.50";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2878,6 +2913,24 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             });
 
             loadSavedBgImage();
+
+            // --- 2カラム表示モード (PC/タブレット) ---
+            const twoColModeChk = document.getElementById('twoColModeChk');
+            function applyTwoColMode(on) {
+                document.body.classList.toggle('two-col', on);
+            }
+            twoColModeChk.checked = localStorage.getItem('twoColMode') === '1';
+            applyTwoColMode(twoColModeChk.checked);
+            twoColModeChk.addEventListener('change', () => {
+                localStorage.setItem('twoColMode', twoColModeChk.checked ? '1' : '0');
+                applyTwoColMode(twoColModeChk.checked);
+            });
+            document.getElementById('twoColPrev').addEventListener('click', () => {
+                columnsWrapper.scrollBy({ left: -window.innerWidth / 2, behavior: 'smooth' });
+            });
+            document.getElementById('twoColNext').addEventListener('click', () => {
+                columnsWrapper.scrollBy({ left: window.innerWidth / 2, behavior: 'smooth' });
+            });
 
             // パネル開閉
             const colorSettingsPanel = document.getElementById('colorSettingsPanel');
