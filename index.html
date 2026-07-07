@@ -938,7 +938,7 @@
                 <div class="controls">
                     <button id="newBtn">新規</button>
                     <button id="openBtn">開く</button>
-                    <input type="file" id="fileInput" accept=".mnd,.txt" style="display: none;">
+                    <input type="file" id="fileInput" accept=".mnd,.txt,text/plain,application/octet-stream" style="display: none;">
                     <button id="saveBtn">保存</button>
                     <button id="saveAsBtn">別名保存</button>
                     <button id="undoBtn">↶</button>
@@ -1194,7 +1194,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.07_23.32.59";
+            const BUILD_TIME = "2026.07.08_00.20.54";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1503,7 +1503,30 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 updateUndoRedoButtons();
             }
 
+            // showOpenFilePicker非対応環境(Androidなど)用のフォールバック
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    extractAndSetSeparateContents(event.target.result);
+                    currentFileName = file.name;
+                    updateFileNameDisplay();
+                    currentFileHandle = null; // ハンドルは取得できないので上書き保存は別名保存扱いになる
+                    history = [mainEditor.value];
+                    historyIndex = 0;
+                    updateUIImmediate();
+                };
+                reader.onerror = () => alert('ファイルの読み込みに失敗しました。');
+                reader.readAsText(file);
+                fileInput.value = ''; // 同じファイルを続けて選んでもchangeが発火するように
+            });
+
             openBtn.addEventListener('click', async () => {
+                if (!window.showOpenFilePicker) {
+                    fileInput.click();
+                    return;
+                }
                 try {
                     const [fileHandle] = await window.showOpenFilePicker({
                         types: [
