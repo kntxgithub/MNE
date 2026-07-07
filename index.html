@@ -1194,7 +1194,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.07_23.28.39";
+            const BUILD_TIME = "2026.07.07_23.32.59";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2610,6 +2610,11 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 const isOpen = outlineIdeaContent.style.display !== 'none';
                 outlineIdeaContent.style.display = isOpen ? 'none' : 'block';
                 outlineIdeaToggle.textContent = isOpen ? '開く' : '閉じる';
+                if (!isOpen) setTimeout(() => autoResizeTextArea(outlineIdeaEditor), 50);
+            });
+            outlineIdeaEditor.addEventListener('input', () => {
+                autoResizeTextArea(outlineIdeaEditor);
+                saveState();
             });
 
             const outlineKeywordToggle = document.getElementById('outlineKeywordToggle');
