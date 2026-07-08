@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.08_00.25.02";
+            const BUILD_TIME = "2026.07.08_23.14.43";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1233,7 +1233,7 @@
 
             const columnsWrapper = document.getElementById('columnsWrapper');
             
-            let currentFileName = '新規ネーム.mnd';
+            let currentFileName = '新規ネーム.txt';
             const fileNameDisplay = document.getElementById('fileNameDisplay');
             function updateFileNameDisplay() {
                 fileNameDisplay.textContent = currentFileName;
@@ -1353,7 +1353,7 @@
 
                 // 新規作成時のXML初期値に、空のセリフ要素も含むように変更
                 mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明></ページ></シーン></root>`; 
-                currentFileName = '新規ネーム.mnd';
+                currentFileName = '新規ネーム.txt';
                 updateFileNameDisplay();
                 currentFileHandle = null;
                 history = [mainEditor.value];
@@ -1384,7 +1384,7 @@
                     keywordEditor.value = state.keywordContent || '';
                     outlineIdeaEditor.value = state.ideaContent || '';
                     mainEditor.value = state.mainContent || '';
-                    currentFileName = state.fileName || '新規ネーム.mnd';
+                    currentFileName = state.fileName || '新規ネーム.txt';
                     updateFileNameDisplay();
                     history = state.history || [''];
                     historyIndex = state.historyIndex || 0;
@@ -1597,11 +1597,11 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             {
                                 description: 'ネームファイル',
                                 accept: {
-                                    'text/plain': ['.mnd'],
+                                    'text/plain': ['.txt'],
                                 },
                             },
                         ],
-                        suggestedName: currentFileName.replace(/\.txt$/i, '.mnd')
+                        suggestedName: currentFileName.replace(/\.mnd$/i, '.txt')
                     });
                     const writable = await newHandle.createWritable();
                     await writable.write(fullContentToSave);
