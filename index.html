@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.08_23.14.43";
+            const BUILD_TIME = "2026.07.09_00.07.36";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2875,13 +2875,16 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
             }
 
-            // デフォルト背景: ロゴを右下基準・幅合わせで薄く表示
+            // デフォルト背景: 同梱イラストからランダムに1枚を高さ合わせ・右下基準で薄く表示
+            // (ユーザーが背景画像を指定している場合はそちらが優先される)
+            const defaultBgImages = ['/MNE/bg01.jpg', '/MNE/bg02.jpg'];
+            let defaultBgPick = defaultBgImages[Math.floor(Math.random() * defaultBgImages.length)];
             function applyDefaultBg(opacity) {
                 const r = document.documentElement.style;
-                r.setProperty('--bg-image-url', "url('/MNE/icon512.png')");
+                r.setProperty('--bg-image-url', `url('${defaultBgPick}')`);
                 r.setProperty('--bg-opacity',   opacity / 100);
                 r.setProperty('--bg-repeat',    'no-repeat');
-                r.setProperty('--bg-size',      '100% auto');
+                r.setProperty('--bg-size',      'auto 100%'); // 縦長画像を高さに合わせる
                 r.setProperty('--bg-position',  'right bottom');
                 bgImageClearBtn.style.display = 'none';
             }
