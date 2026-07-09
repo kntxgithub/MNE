@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.09_22.22.44";
+            const BUILD_TIME = "2026.07.09_22.36.15";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2742,7 +2742,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     newPageDescElement.textContent = '新しいページ';
                     newPageElement.appendChild(newPageDescElement);
 
-                    sceneElement.appendChild(newPageElement); 
+                    // シーンの<メモ>は常に末尾に置くため、その手前に挿入する
+                    sceneElement.insertBefore(newPageElement, sceneElement.querySelector(':scope > メモ'));
 
                     mainEditor.value = serializeXmlToCompactString(currentXmlDoc.documentElement);
                     addToHistory(mainEditor.value);
@@ -3040,9 +3041,9 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 if (text.trim()) {
                     if (!memoEl) {
                         memoEl = currentXmlDoc.createElement('メモ');
-                        pageElement.appendChild(memoEl);
                     }
                     memoEl.textContent = text;
+                    pageElement.appendChild(memoEl); // 既存でも末尾へ移動して常に最後に置く
                 } else {
                     if (memoEl) pageElement.removeChild(memoEl);
                 }
