@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.09_22.36.15";
+            const BUILD_TIME = "2026.07.09_22.46.09";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2097,7 +2097,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         
                         const addPageButtonForScene = document.createElement('button');
                         addPageButtonForScene.classList.add('add-page-to-scene-btn');
-                        addPageButtonForScene.textContent = `「${sceneTitle}」にページを追加`;
+                        addPageButtonForScene.textContent = '＋ ページを追加';
                         addPageButtonForScene.setAttribute('data-scene-node-id', sceneNodeIdForDom); 
                         addPageButtonForScene.xmlNode = sceneElement;
                         // フォーカス横取りによるblur→DOM再構築でクリックが不発になるのを防ぐ
@@ -2332,6 +2332,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     sceneMemoArea.appendChild(sceneMemoTextarea);
                     sceneItemContainer.appendChild(sceneMemoArea);
 
+                    // メモ・削除はページカラムと同じくヘッダ右側に配置して統一
                     const sceneMemoToggleBtn = document.createElement('button');
                     sceneMemoToggleBtn.classList.add('memo-toggle-btn');
                     sceneMemoToggleBtn.textContent = 'メモ';
@@ -2343,13 +2344,11 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         sceneMemoArea.classList.toggle('open');
                         if (sceneMemoArea.classList.contains('open')) sceneMemoTextarea.focus();
                     });
-
-                    const sceneFooter = document.createElement('div');
-                    sceneFooter.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:4px 8px 6px;';
+                    header.appendChild(sceneMemoToggleBtn);
 
                     const insertBelowButton = document.createElement('button');
-                    insertBelowButton.classList.add('insert-scene-btn');
-                    insertBelowButton.textContent = '＋ シーンを下に挿入';
+                    insertBelowButton.classList.add('add-page-to-scene-btn');
+                    insertBelowButton.textContent = '＋ シーンを追加';
                     insertBelowButton.addEventListener('click', (e) => {
                         e.stopPropagation();
                         const newSceneElement = currentXmlDoc.createElement('シーン');
@@ -2378,18 +2377,17 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             }
                         }, 50);
                     });
-                    sceneFooter.appendChild(insertBelowButton);
-                    sceneFooter.appendChild(sceneMemoToggleBtn);
-
                     const deleteButton = document.createElement('button');
                     deleteButton.classList.add('delete-scene-btn');
                     deleteButton.textContent = '削除';
+                    deleteButton.addEventListener('mousedown', (e) => e.preventDefault());
                     deleteButton.addEventListener('click', (e) => {
                         e.stopPropagation();
                         deleteScene(sceneItemContainer.xmlNode);
                     });
-                    sceneFooter.appendChild(deleteButton);
-                    sceneItemContainer.appendChild(sceneFooter);
+                    header.appendChild(deleteButton);
+
+                    sceneItemContainer.appendChild(insertBelowButton);
 
                     // ★★★★★★★★★★★ ここからが変更点 ★★★★★★★★★★★
 
