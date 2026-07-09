@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.09_00.20.15";
+            const BUILD_TIME = "2026.07.09_22.22.44";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2307,6 +2307,43 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     itemTextArea.addEventListener('mousedown', () => sceneItemContainer.setAttribute('draggable', 'false'));
                     itemTextArea.addEventListener('mouseup', () => sceneItemContainer.setAttribute('draggable', 'true'));
 
+                    // メモ欄 (ページカラムと同じ仕組みで、シーン要素の<メモ>に保存)
+                    const savedSceneMemo = sceneItemContainer.xmlNode?.querySelector(':scope > メモ')?.textContent || '';
+
+                    const sceneMemoArea = document.createElement('div');
+                    sceneMemoArea.classList.add('page-memo-area');
+
+                    const sceneMemoLabel = document.createElement('div');
+                    sceneMemoLabel.classList.add('page-memo-label');
+                    sceneMemoLabel.textContent = '📝 メモ（非公開）';
+                    sceneMemoArea.appendChild(sceneMemoLabel);
+
+                    const sceneMemoTextarea = document.createElement('textarea');
+                    sceneMemoTextarea.value = savedSceneMemo;
+                    sceneMemoTextarea.placeholder = 'このシーン用のメモ（保存されますがエクスポートには含まれません）';
+                    sceneMemoTextarea.addEventListener('input', (e) => {
+                        autoResizeTextArea(e.target);
+                        saveMemo(sceneItemContainer.xmlNode, e.target.value);
+                        sceneMemoToggleBtn.classList.toggle('has-memo', !!e.target.value.trim());
+                    });
+                    sceneMemoTextarea.addEventListener('click', (e) => e.stopPropagation());
+                    sceneMemoTextarea.addEventListener('mousedown', () => sceneItemContainer.setAttribute('draggable', 'false'));
+                    sceneMemoTextarea.addEventListener('mouseup', () => sceneItemContainer.setAttribute('draggable', 'true'));
+                    sceneMemoArea.appendChild(sceneMemoTextarea);
+                    sceneItemContainer.appendChild(sceneMemoArea);
+
+                    const sceneMemoToggleBtn = document.createElement('button');
+                    sceneMemoToggleBtn.classList.add('memo-toggle-btn');
+                    sceneMemoToggleBtn.textContent = 'メモ';
+                    sceneMemoToggleBtn.title = 'メモを開閉（エクスポートされません）';
+                    if (savedSceneMemo) sceneMemoToggleBtn.classList.add('has-memo');
+                    sceneMemoToggleBtn.addEventListener('mousedown', (e) => e.preventDefault());
+                    sceneMemoToggleBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        sceneMemoArea.classList.toggle('open');
+                        if (sceneMemoArea.classList.contains('open')) sceneMemoTextarea.focus();
+                    });
+
                     const sceneFooter = document.createElement('div');
                     sceneFooter.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:4px 8px 6px;';
 
@@ -2342,6 +2379,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         }, 50);
                     });
                     sceneFooter.appendChild(insertBelowButton);
+                    sceneFooter.appendChild(sceneMemoToggleBtn);
 
                     const deleteButton = document.createElement('button');
                     deleteButton.classList.add('delete-scene-btn');
@@ -2997,7 +3035,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             // --- ページメモ管理（XMLに埋め込み） ---
             function saveMemo(pageElement, text) {
-                let memoEl = pageElement.querySelector('メモ');
+                // 直下の<メモ>のみ対象 (シーンに使う場合、配下ページの<メモ>を誤って掴まないように)
+                let memoEl = pageElement.querySelector(':scope > メモ');
                 if (text.trim()) {
                     if (!memoEl) {
                         memoEl = currentXmlDoc.createElement('メモ');
