@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.09_22.46.09";
+            const BUILD_TIME = "2026.07.12_22.45.46";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3112,7 +3112,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             function getCharacterNames() {
                 const names = [];
                 // 「名前：」タグの後、「（」「、」「,」「　」「 」改行までを名前として抽出
-                const regex = /名前：([^（、,　 \n]+)/gm;
+                const regex = /名前：([^（）、,　 \n]+)/gm;
                 let match;
                 while ((match = regex.exec(characterEditor.value)) !== null) {
                     const name = match[1].trim();
@@ -3125,9 +3125,21 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             autocompleteDiv.style.cssText = 'position:fixed;background:white;border:1px solid #ccc;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.2);z-index:1000;display:none;max-height:160px;overflow-y:auto;min-width:120px;';
             document.body.appendChild(autocompleteDiv);
 
+            let acIndex = -1; // キーボード選択中の候補インデックス (-1: 未選択)
+
+            function acHighlight() {
+                [...autocompleteDiv.children].forEach((el, i) => {
+                    el.style.backgroundColor = i === acIndex ? '#e8f0fe' : '';
+                });
+                if (acIndex >= 0 && autocompleteDiv.children[acIndex]) {
+                    autocompleteDiv.children[acIndex].scrollIntoView({ block: 'nearest' });
+                }
+            }
+
             function showAutocomplete(textarea) {
                 const names = getCharacterNames();
                 autocompleteDiv.innerHTML = '';
+                acIndex = -1;
                 if (names.length === 0) { hideAutocomplete(); return; }
                 const rect = textarea.getBoundingClientRect();
                 autocompleteDiv.style.left = rect.left + 'px';
@@ -3136,7 +3148,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     const item = document.createElement('div');
                     item.textContent = name;
                     item.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:14px;font-family:Meiryo,sans-serif;';
-                    item.addEventListener('mouseenter', () => item.style.backgroundColor = '#e8f0fe');
+                    item.addEventListener('mouseenter', () => { acIndex = -1; acHighlight(); item.style.backgroundColor = '#e8f0fe'; });
                     item.addEventListener('mouseleave', () => item.style.backgroundColor = '');
                     item.addEventListener('mousedown', (e) => {
                         e.preventDefault();
@@ -3150,6 +3162,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             function hideAutocomplete() {
                 autocompleteDiv.style.display = 'none';
+                acIndex = -1;
             }
 
             function insertCharacterName(textarea, name) {
@@ -3172,6 +3185,28 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     if (before.endsWith('（')) {
                         showAutocomplete(e.target);
                     } else {
+                        hideAutocomplete();
+                    }
+                });
+                // 矢印キーで候補を選択し、Enterで確定できるようにする
+                textarea.addEventListener('keydown', (e) => {
+                    if (autocompleteDiv.style.display === 'none') return;
+                    const count = autocompleteDiv.children.length;
+                    if (count === 0) return;
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        acIndex = (acIndex + 1) % count;
+                        acHighlight();
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        acIndex = (acIndex - 1 + count) % count;
+                        acHighlight();
+                    } else if (e.key === 'Enter' && acIndex >= 0) {
+                        e.preventDefault();
+                        insertCharacterName(textarea, autocompleteDiv.children[acIndex].textContent);
+                        hideAutocomplete();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
                         hideAutocomplete();
                     }
                 });
