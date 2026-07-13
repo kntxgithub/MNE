@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.12_22.45.46";
+            const BUILD_TIME = "2026.07.13_22.39.47";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2606,8 +2606,51 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             function autoResizeTextArea(textarea) {
                 if (!textarea || textarea.offsetParent === null) return;
+                // 一瞬高さ0にするとスクロール位置が飛ぶため、スクロールコンテナの位置を保存して戻す
+                const scroller = textarea.closest('.column-content');
+                const savedScrollTop = scroller ? scroller.scrollTop : 0;
                 textarea.style.height = '0';
                 textarea.style.height = (textarea.scrollHeight + 4) + 'px';
+                if (scroller) scroller.scrollTop = savedScrollTop;
+                // 入力中のテキストエリアならカーソル行が見えるように追従スクロール
+                if (document.activeElement === textarea && scroller) {
+                    scrollCaretIntoView(textarea, scroller);
+                }
+            }
+
+            // textareaのカーソル位置(Y)をミラー要素で測り、スクロールコンテナ内に収める
+            let caretMirror = null;
+            function scrollCaretIntoView(textarea, scroller) {
+                if (!caretMirror) {
+                    caretMirror = document.createElement('div');
+                    caretMirror.style.cssText = 'position:absolute;visibility:hidden;top:0;left:-9999px;';
+                    document.body.appendChild(caretMirror);
+                }
+                const cs = getComputedStyle(textarea);
+                caretMirror.style.width = textarea.clientWidth + 'px';
+                caretMirror.style.font = cs.font;
+                caretMirror.style.lineHeight = cs.lineHeight;
+                caretMirror.style.padding = cs.padding;
+                caretMirror.style.border = cs.border;
+                caretMirror.style.boxSizing = cs.boxSizing;
+                caretMirror.style.whiteSpace = 'pre-wrap';
+                caretMirror.style.wordWrap = 'break-word';
+                caretMirror.textContent = textarea.value.substring(0, textarea.selectionStart);
+                const marker = document.createElement('span');
+                marker.textContent = '​';
+                caretMirror.appendChild(marker);
+                const caretY = marker.offsetTop; // textarea上端からのカーソル行のYオフセット
+                const lineH = parseFloat(cs.lineHeight) || 20;
+
+                const taTop = textarea.getBoundingClientRect().top;
+                const scRect = scroller.getBoundingClientRect();
+                const caretScreenY = taTop + caretY;
+                const margin = 20;
+                if (caretScreenY + lineH > scRect.bottom - margin) {
+                    scroller.scrollTop += (caretScreenY + lineH) - (scRect.bottom - margin);
+                } else if (caretScreenY < scRect.top + margin) {
+                    scroller.scrollTop -= (scRect.top + margin) - caretScreenY;
+                }
             }
 
             function autoResizeAllTextareas() {
