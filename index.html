@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.13_22.39.47";
+            const BUILD_TIME = "2026.07.16_23.26.38";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1364,8 +1364,7 @@
                 outlineIdeaEditor.value = '';
                 setSectionVisibility(outlineContentDiv, false);
                 setSectionVisibility(characterContentDiv, false);
-                keywordContentDiv.style.display = 'none';
-                document.getElementById('outlineKeywordToggle').textContent = '開く';
+                openIdeaAndKeywordSections();
                 setSectionVisibility(mainEditorContentDiv, true);
 
                 currentColumnIndex = 0;
@@ -1374,6 +1373,14 @@
                 alert('新しいネームを開始しました。');
             }
 
+
+            // アイデアメモとキーワードを開いた状態にする (起動時・新規時・ファイルを開いた時の初期状態)
+            function openIdeaAndKeywordSections() {
+                document.getElementById('outlineIdeaContent').style.display = 'block';
+                document.getElementById('outlineIdeaToggle').textContent = '閉じる';
+                keywordContentDiv.style.display = 'block';
+                document.getElementById('outlineKeywordToggle').textContent = '閉じる';
+            }
 
             function loadState() {
                 const savedState = localStorage.getItem('comicNameEditorState');
@@ -1391,9 +1398,7 @@
 
                     setSectionVisibility(outlineContentDiv, state.outlineHidden || false);
                     setSectionVisibility(characterContentDiv, state.characterHidden || false);
-                    const kwHidden = state.keywordHidden !== undefined ? state.keywordHidden : true;
-                    keywordContentDiv.style.display = kwHidden ? 'none' : 'block';
-                    document.getElementById('outlineKeywordToggle').textContent = kwHidden ? '開く' : '閉じる';
+                    openIdeaAndKeywordSections(); // 起動時は常に開いた状態にする
                     setSectionVisibility(mainEditorContentDiv, state.mainEditorHidden || false);
                     
                     currentColumnIndex = state.currentColumnIndex !== undefined ? state.currentColumnIndex : 0; 
@@ -1425,8 +1430,9 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                     setSectionVisibility(outlineContentDiv, false);
                     setSectionVisibility(characterContentDiv, false);
+                    openIdeaAndKeywordSections();
                     setSectionVisibility(mainEditorContentDiv, true);
-                    currentColumnIndex = 0; 
+                    currentColumnIndex = 0;
                 }
                 showColumn(currentColumnIndex); 
                 updateUIImmediate();
@@ -1715,16 +1721,9 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                 outlineEditor.value = extracted.outline;
                 outlineIdeaEditor.value = extracted.idea;
-                if (extracted.idea) {
-                    outlineIdeaContent.style.display = 'block';
-                    outlineIdeaToggle.textContent = '閉じる';
-                }
                 characterEditor.value = extracted.character;
                 keywordEditor.value = extracted.keyword || '';
-                if (extracted.keyword) {
-                    keywordContentDiv.style.display = 'block';
-                    document.getElementById('outlineKeywordToggle').textContent = '閉じる';
-                }
+                openIdeaAndKeywordSections(); // ファイルを開いたときは常に開いた状態にする
                 mainEditor.value = extracted.main;
             }
 
@@ -2006,7 +2005,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                             const memoTextarea = document.createElement('textarea');
                             memoTextarea.value = savedMemo;
-                            memoTextarea.placeholder = 'このページ用のメモ（保存されますがエクスポートには含まれません）';
+                            memoTextarea.placeholder = 'このページ用のメモ';
                             memoTextarea.addEventListener('input', (e) => {
                                 autoResizeTextArea(e.target);
                                 saveMemo(pageElement, e.target.value);
@@ -2290,17 +2289,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     itemTextArea.addEventListener('click', (e) => {
                         e.stopPropagation();
                     });
-                    itemTextArea.addEventListener('keydown', (e) => {
-                        if (e.key === 'Tab') {
-                            e.preventDefault();
-                            const all = [...document.querySelectorAll('#sceneContent textarea')];
-                            const nextIdx = all.indexOf(e.target) + (e.shiftKey ? -1 : 1);
-                            setTimeout(() => {
-                                const newAll = [...document.querySelectorAll('#sceneContent textarea')];
-                                if (newAll[nextIdx]) newAll[nextIdx].focus();
-                            }, 50);
-                        }
-                    });
+                    // Tabはブラウザ標準の順序に任せる
+                    // (シーンを追加 → 次のシーンのメモ → 削除 → テキストボックス の順に移動)
 
                     sceneItemContainer.appendChild(itemTextArea);
                     requestAnimationFrame(() => autoResizeTextArea(itemTextArea));
@@ -2320,7 +2310,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
                     const sceneMemoTextarea = document.createElement('textarea');
                     sceneMemoTextarea.value = savedSceneMemo;
-                    sceneMemoTextarea.placeholder = 'このシーン用のメモ（保存されますがエクスポートには含まれません）';
+                    sceneMemoTextarea.placeholder = 'このシーン用のメモ';
                     sceneMemoTextarea.addEventListener('input', (e) => {
                         autoResizeTextArea(e.target);
                         saveMemo(sceneItemContainer.xmlNode, e.target.value);
