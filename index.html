@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.25_17.44.01";
+            const BUILD_TIME = "2026.07.25_21.50.07";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2184,6 +2184,9 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                         showColumn(3);
                                         if (window.innerWidth > 768) {
                                             dialogueContentDivItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            // 関連するページ・シーンのカードも見える位置までスクロールする
+                                            if (activePageElement) activePageElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+                                            if (activeSceneElement) activeSceneElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
                                         }
                                     });
 
