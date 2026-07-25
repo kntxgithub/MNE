@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.16_23.26.38";
+            const BUILD_TIME = "2026.07.25_17.44.01";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2055,13 +2055,17 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageContentTextArea.addEventListener('keydown', (e) => {
                                 if (e.key === 'Tab') {
                                     e.preventDefault();
-                                    const all = [...document.querySelectorAll('#pageContent textarea.page-text')];
-                                    const nextIdx = all.indexOf(e.target) + (e.shiftKey ? -1 : 1);
+                                    // シーンカラムと同じ自然な順序 (メモ→削除→テキスト→ページ追加…) をDOM順で辿る。
+                                    // blurでDOMが再構築されるため、同じ並びを再取得してインデックスで移動する
+                                    const getFocusables = () => [...document.querySelectorAll(
+                                        '#pageContent .memo-toggle-btn, #pageContent .delete-page-btn, #pageContent textarea.page-text, #pageContent .add-page-to-scene-btn'
+                                    )].filter(el => el.offsetParent !== null);
+                                    const nextIdx = getFocusables().indexOf(e.target) + (e.shiftKey ? -1 : 1);
                                     // 先にblurさせてDOM再構築を済ませてから、新しいDOMで移動先にフォーカスする
                                     e.target.blur();
                                     setTimeout(() => {
-                                        const newAll = [...document.querySelectorAll('#pageContent textarea.page-text')];
-                                        if (newAll[nextIdx]) newAll[nextIdx].focus();
+                                        const newList = getFocusables();
+                                        if (newList[nextIdx]) newList[nextIdx].focus();
                                     }, 50);
                                 }
                             });
