@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.25_21.50.07";
+            const BUILD_TIME = "2026.07.25_22.01.24";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1892,9 +1892,13 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             
                             pageItemContainer.addEventListener('click', (event) => {
                                 setActiveElement(pageItemContainer, 'page');
-                                showColumn(2); 
-                                if (window.innerWidth > 768) { 
+                                showColumn(2);
+                                if (window.innerWidth > 768) {
                                     pageItemContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    // 関連するシーンカード・セリフグループも見える位置までスクロールする
+                                    if (activeSceneElement) activeSceneElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+                                    const relatedDialogue = document.querySelector(`#dialogueContent .dialogue-content[data-parent-page-id="${nodeId}"]`);
+                                    if (relatedDialogue) relatedDialogue.closest('.serif-page-group-container').scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
                                 }
                             });
 
@@ -2397,10 +2401,19 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         // このシーンに紐づく最初のページも内部的にアクティブにしておきます。
                         // これにより、ユーザーが手動でページカラムに移動した際に、
                         // 選択したシーンのページが表示される準備が整います。
-                        const firstPageElement = sceneNodeIdToFirstPageDomElementMap.get(item.nodeId); 
+                        const firstPageElement = sceneNodeIdToFirstPageDomElementMap.get(item.nodeId);
                         if (firstPageElement) {
                             // pageのactive状態も更新しますが、画面遷移はしません。
                             setActiveElement(firstPageElement, 'page');
+                            // シーンをアクティブに戻す (setActiveElement('page')でシーン側も維持されるが明示)
+                            sceneItemContainer.classList.add('active');
+                            // 関連するページカード・セリフグループも見える位置までスクロールする
+                            if (window.innerWidth > 768) {
+                                firstPageElement.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+                                const pageId = firstPageElement.getAttribute('data-node-id');
+                                const relatedDialogue = document.querySelector(`#dialogueContent .dialogue-content[data-parent-page-id="${pageId}"]`);
+                                if (relatedDialogue) relatedDialogue.closest('.serif-page-group-container').scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+                            }
                         }
                         // ここで showColumn() は呼び出しません。
                     });
