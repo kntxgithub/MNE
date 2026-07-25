@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.26_00.03.49";
+            const BUILD_TIME = "2026.07.26_00.21.35";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1762,6 +1762,13 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             function syncColumnsFromMainEditor() {
                 const mainText = mainEditor.value;
 
+                // 再構築でカラムのスクロール位置が先頭に飛ばないよう保存しておく
+                const savedScrolls = {
+                    scene: sceneContentDiv.scrollTop,
+                    page: pageContentDiv.scrollTop,
+                    dialogue: dialogueContentDiv.scrollTop
+                };
+
                 // マップをクリアして再構築
                 sceneNodeIdToDomElementMap.clear();
                 pageNodeIdToDomElementMap.clear();
@@ -1890,16 +1897,29 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageItemContainer.setAttribute('data-page-index-in-scene', pageIndexInScene); // シーン内のページインデックス
                             pageItemContainer.classList.add(sceneColorClass); 
                             
-                            pageItemContainer.addEventListener('click', (event) => {
-                                setActiveElement(pageItemContainer, 'page');
+                            const selectThisPageByNodeId = (nid) => {
+                                // 再構築後でも同じnodeIdで新しい要素を取得して選択する
+                                const page = pageNodeIdToDomElementMap.get(nid);
+                                if (!page) return;
+                                setActiveElement(page, 'page');
                                 showColumn(2);
                                 if (window.innerWidth > 768) {
-                                    pageItemContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    page.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                     // 関連するシーンカード・セリフグループも見える位置までスクロールする
                                     if (activeSceneElement) activeSceneElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-                                    const relatedDialogue = document.querySelector(`#dialogueContent .dialogue-content[data-parent-page-id="${nodeId}"]`);
+                                    const relatedDialogue = document.querySelector(`#dialogueContent .dialogue-content[data-parent-page-id="${nid}"]`);
                                     if (relatedDialogue) relatedDialogue.closest('.serif-page-group-container').scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
                                 }
+                            };
+                            pageItemContainer.addEventListener('click', () => {
+                                selectThisPageByNodeId(nodeId);
+                            });
+                            // 別ページのテキスト入力中にこのカードを押した場合、blur→DOM再構築で
+                            // click が消えてしまうため、mousedown時点で再構築後の選択を予約する
+                            pageItemContainer.addEventListener('mousedown', (event) => {
+                                if (event.target.closest('textarea, button')) return;
+                                const editing = document.activeElement && document.activeElement.tagName === 'TEXTAREA';
+                                if (editing) setTimeout(() => selectThisPageByNodeId(nodeId), 120);
                             });
 
                             // ドラッグ設定
@@ -2217,6 +2237,11 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     });
                 }
                 highlightActiveElements();
+
+                // スクロール位置を復元
+                sceneContentDiv.scrollTop = savedScrolls.scene;
+                pageContentDiv.scrollTop = savedScrolls.page;
+                dialogueContentDiv.scrollTop = savedScrolls.dialogue;
 
                 // 再描画後にフォントサイズを再適用
                 const size = fontSizes[currentFontSizeIndex];
