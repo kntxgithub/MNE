@@ -377,8 +377,8 @@
         /* アクティブな要素の強調表示 */
         .scene-item-container.active,
         .page-item-container.active,
-        .dialogue-content.active,
-        .character-item-container.active { 
+        .serif-page-group-container.active,
+        .character-item-container.active {
             box-shadow: 0 0 8px 3px rgba(0, 123, 255, 0.5);
             border-color: #007bff;
             transform: scale(1.01);
@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.25_22.01.24";
+            const BUILD_TIME = "2026.07.26_00.01.00";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2560,7 +2560,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             function setActiveElement(element, type) {
                 document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
 
-                if (element) {
+                // セリフは個別ではなくページグループ単位で光らせる (最後にまとめて処理)
+                if (element && type !== 'dialogue') {
                     element.classList.add('active');
                 }
 
@@ -2598,6 +2599,16 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         }
                     }
                 }
+                highlightSerifGroupForActivePage();
+            }
+
+            // セリフカラムはアクティブなページのグループ全体を光らせる
+            function highlightSerifGroupForActivePage() {
+                document.querySelectorAll('.serif-page-group-container.active').forEach(el => el.classList.remove('active'));
+                if (!activePageElement) return;
+                const pageId = activePageElement.getAttribute('data-node-id');
+                const dlg = document.querySelector(`#dialogueContent .dialogue-content[data-parent-page-id="${pageId}"]`);
+                if (dlg) dlg.closest('.serif-page-group-container').classList.add('active');
             }
 
             function highlightActiveElements() {
@@ -2609,9 +2620,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 if (activePageElement && pageNodeIdToDomElementMap.has(activePageElement.getAttribute('data-node-id'))) {
                     pageNodeIdToDomElementMap.get(activePageElement.getAttribute('data-node-id')).classList.add('active');
                 }
-                if (activeDialogueElement && dialogueNodeIdToDomElementMap.has(activeDialogueElement.getAttribute('data-node-id'))) {
-                    dialogueNodeIdToDomElementMap.get(activeDialogueElement.getAttribute('data-node-id')).classList.add('active');
-                }
+                highlightSerifGroupForActivePage();
             }
 
             function autoResizeTextArea(textarea) {
