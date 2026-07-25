@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.26_00.01.00";
+            const BUILD_TIME = "2026.07.26_00.03.49";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2055,6 +2055,17 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             // 親要素へのクリックイベント伝播を阻止
                             pageContentTextArea.addEventListener('click', (e) => {
                                 e.stopPropagation();
+                            });
+                            // テキストボックスにフォーカスしたら、そのページを選択扱いにして
+                            // セリフカラムの該当グループとシーンカードを発光・スクロールさせる
+                            // (ページカラム自体はスクロールさせない: 入力の邪魔になるため)
+                            pageContentTextArea.addEventListener('focus', () => {
+                                setActiveElement(pageItemContainer, 'page');
+                                if (window.innerWidth > 768) {
+                                    const relatedDialogue = document.querySelector(`#dialogueContent .dialogue-content[data-parent-page-id="${nodeId}"]`);
+                                    if (relatedDialogue) relatedDialogue.closest('.serif-page-group-container').scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+                                    if (activeSceneElement) activeSceneElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+                                }
                             });
                             pageContentTextArea.addEventListener('keydown', (e) => {
                                 if (e.key === 'Tab') {
