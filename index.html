@@ -1195,7 +1195,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.26_00.36.34";
+            const BUILD_TIME = "2026.07.26_00.41.13";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1466,37 +1466,6 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     saveState();
                     console.log('UI updated and State saved (debounced).');
                 }, DEBOUNCE_DELAY);
-            }
-
-            // ページカラムのblur起因の再構築: クリック/フォーカス移動が完了するまで遅らせ、
-            // 再構築後にフォーカス位置(ボタン/テキストボックス)とカーソルを復元する
-            let pageRebuildTimer = null;
-            function schedulePageRebuild() {
-                clearTimeout(pageRebuildTimer);
-                pageRebuildTimer = setTimeout(() => {
-                    const focusableSelector = '#pageContent .memo-toggle-btn, #pageContent .delete-page-btn, #pageContent textarea.page-text, #pageContent .add-page-to-scene-btn, #pageContent .page-memo-area textarea';
-                    const act = document.activeElement;
-                    let restoreIdx = -1, restoreSel = null;
-                    if (act && act.closest && act.closest('#pageContent')) {
-                        const list = [...document.querySelectorAll(focusableSelector)];
-                        restoreIdx = list.indexOf(act);
-                        if (act.tagName === 'TEXTAREA') restoreSel = { start: act.selectionStart, end: act.selectionEnd };
-                    }
-                    updateUIImmediate();
-                    if (restoreIdx >= 0) {
-                        const newList = [...document.querySelectorAll(focusableSelector)];
-                        const el = newList[restoreIdx];
-                        if (el) {
-                            el.focus();
-                            if (restoreSel && el.tagName === 'TEXTAREA') el.setSelectionRange(restoreSel.start, restoreSel.end);
-                            // focusイベントに依存せず、選択状態(発光)も明示的に復元する
-                            if (el.classList.contains('page-text')) {
-                                const cont = el.closest('.page-item-container');
-                                if (cont) setActiveElement(cont, 'page');
-                            }
-                        }
-                    }
-                }, 200);
             }
 
             function updateUIImmediate() {
@@ -2143,11 +2112,14 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                             pageContentTextArea.addEventListener('mouseup', () => {
                                 pageItemContainer.setAttribute('draggable', 'true');
                             });
-                            pageContentTextArea.addEventListener('blur', () => {
+                            pageContentTextArea.addEventListener('blur', (e) => {
                                 pageItemContainer.setAttribute('draggable', 'true');
-                                // 再構築を少し遅らせてクリック先への focus/click を先に成立させ、
-                                // 再構築後にフォーカスとカーソル位置を復元する
-                                if (!frColumn) schedulePageRebuild();
+                                if (frColumn) return;
+                                // フォーカスの移動先が同じページカラム内なら再構築しない
+                                // (クリック先が破棄されて1回目が無効になるのを防ぐ。反映はカラムを離れた時)
+                                const next = e.relatedTarget;
+                                if (next && next.closest && next.closest('#pageContent')) return;
+                                updateUIImmediate();
                             });
                             
                             // pageItemContainerにテキストエリアを追加する
