@@ -1207,7 +1207,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.26_23.36.56";
+            const BUILD_TIME = "2026.07.26_23.53.19";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2709,7 +2709,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             // textareaのカーソル位置(Y)をミラー要素で測り、スクロールコンテナ内に収める
             let caretMirror = null;
-            function scrollCaretIntoView(textarea, scroller) {
+            // textarea内のカーソル位置(textarea上端からのオフセット)と行の高さを測る
+            function measureCaret(textarea) {
                 if (!caretMirror) {
                     caretMirror = document.createElement('div');
                     caretMirror.style.cssText = 'position:absolute;visibility:hidden;top:0;left:-9999px;';
@@ -2728,8 +2729,15 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 const marker = document.createElement('span');
                 marker.textContent = '​';
                 caretMirror.appendChild(marker);
-                const caretY = marker.offsetTop; // textarea上端からのカーソル行のYオフセット
-                const lineH = parseFloat(cs.lineHeight) || 20;
+                return {
+                    caretY: marker.offsetTop,
+                    caretX: marker.offsetLeft,
+                    lineH: parseFloat(cs.lineHeight) || 20
+                };
+            }
+
+            function scrollCaretIntoView(textarea, scroller) {
+                const { caretY, lineH } = measureCaret(textarea);
 
                 const taTop = textarea.getBoundingClientRect().top;
                 const scRect = scroller.getBoundingClientRect();
@@ -3304,7 +3312,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             }
 
             const autocompleteDiv = document.createElement('div');
-            autocompleteDiv.style.cssText = 'position:fixed;background:white;border:1px solid #ccc;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.2);z-index:1000;display:none;max-height:160px;overflow-y:auto;min-width:120px;';
+            autocompleteDiv.style.cssText = 'position:fixed;background:white;border:1px solid #ccc;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.2);z-index:1000;display:none;overflow-y:auto;min-width:120px;';
             document.body.appendChild(autocompleteDiv);
 
             let acIndex = -1; // キーボード選択中の候補インデックス (-1: 未選択)
@@ -3318,14 +3326,48 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 }
             }
 
+            // 候補リストの位置と高さを決める。
+            // ・カーソル行を基準に置く (長いテキストボックスでも近くに出る)
+            // ・visualViewportを使い、スマホのキーボードで隠れる領域を除いて判定する
+            // ・下に入りきらない場合は上側に表示する
+            let acAnchorTextarea = null;
+            function positionAutocomplete(textarea) {
+                if (!textarea) return;
+                const vv = window.visualViewport;
+                const viewTop = vv ? vv.offsetTop : 0;
+                const viewLeft = vv ? vv.offsetLeft : 0;
+                const viewH = vv ? vv.height : window.innerHeight;
+                const viewW = vv ? vv.width : window.innerWidth;
+                const viewBottom = viewTop + viewH;
+
+                const rect = textarea.getBoundingClientRect();
+                const { caretY, lineH } = measureCaret(textarea);
+                const anchorTop = rect.top + caretY - textarea.scrollTop;
+                const anchorBottom = anchorTop + lineH;
+
+                const GAP = 4, MARGIN = 8, MAX_H = 300, MIN_H = 90;
+                autocompleteDiv.style.maxHeight = MAX_H + 'px';
+                const natural = Math.min(autocompleteDiv.scrollHeight, MAX_H);
+                const spaceBelow = viewBottom - anchorBottom - GAP - MARGIN;
+                const spaceAbove = anchorTop - viewTop - GAP - MARGIN;
+
+                let showAbove = false;
+                if (spaceBelow < natural && spaceAbove > spaceBelow) showAbove = true;
+                const avail = Math.max(MIN_H, showAbove ? spaceAbove : spaceBelow);
+                const h = Math.min(natural, avail);
+                autocompleteDiv.style.maxHeight = h + 'px';
+                autocompleteDiv.style.top = (showAbove ? anchorTop - GAP - h : anchorBottom + GAP) + 'px';
+
+                const w = autocompleteDiv.offsetWidth;
+                const left = Math.max(viewLeft + MARGIN, Math.min(rect.left, viewLeft + viewW - w - MARGIN));
+                autocompleteDiv.style.left = left + 'px';
+            }
+
             function showAutocomplete(textarea) {
                 const names = getCharacterNames();
                 autocompleteDiv.innerHTML = '';
                 acIndex = -1;
                 if (names.length === 0) { hideAutocomplete(); return; }
-                const rect = textarea.getBoundingClientRect();
-                autocompleteDiv.style.left = rect.left + 'px';
-                autocompleteDiv.style.top = (rect.bottom + 2) + 'px';
                 names.forEach(name => {
                     const item = document.createElement('div');
                     item.textContent = name;
@@ -3340,11 +3382,28 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     autocompleteDiv.appendChild(item);
                 });
                 autocompleteDiv.style.display = 'block';
+                acAnchorTextarea = textarea;
+                positionAutocomplete(textarea);
+                // スマホはフォーカス後にキーボードが出て表示領域が変わるので追従させる
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', repositionAutocomplete);
+                    window.visualViewport.addEventListener('scroll', repositionAutocomplete);
+                }
+            }
+
+            function repositionAutocomplete() {
+                if (autocompleteDiv.style.display === 'none') return;
+                positionAutocomplete(acAnchorTextarea);
             }
 
             function hideAutocomplete() {
                 autocompleteDiv.style.display = 'none';
                 acIndex = -1;
+                acAnchorTextarea = null;
+                if (window.visualViewport) {
+                    window.visualViewport.removeEventListener('resize', repositionAutocomplete);
+                    window.visualViewport.removeEventListener('scroll', repositionAutocomplete);
+                }
             }
 
             function insertCharacterName(textarea, name) {
