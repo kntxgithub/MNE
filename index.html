@@ -1207,7 +1207,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.26_16.47.51";
+            const BUILD_TIME = "2026.07.26_23.29.32";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1482,8 +1482,20 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
 
             function updateUIImmediate() {
                 updateUndoRedoButtons();
+                // 再構築直後はテキストエリアの高さが未確定で内容が短く、
+                // スクロール位置がクランプされてずれる。高さ確定後に再適用する
+                const savedScrolls = {
+                    scene: sceneContentDiv.scrollTop,
+                    page: pageContentDiv.scrollTop,
+                    dialogue: dialogueContentDiv.scrollTop
+                };
                 syncColumnsFromMainEditor();
-                setTimeout(autoResizeAllTextareas, 50); // Small delay to ensure DOM is rendered before resizing
+                setTimeout(() => { // Small delay to ensure DOM is rendered before resizing
+                    autoResizeAllTextareas();
+                    sceneContentDiv.scrollTop = savedScrolls.scene;
+                    pageContentDiv.scrollTop = savedScrolls.page;
+                    dialogueContentDiv.scrollTop = savedScrolls.dialogue;
+                }, 50);
                 saveState();
                 console.log('UI updated and State saved (immediate).');
             }
