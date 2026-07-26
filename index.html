@@ -1207,7 +1207,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.26_12.06.33";
+            const BUILD_TIME = "2026.07.26_16.47.51";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3281,6 +3281,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     const name = match[1].trim();
                     if (name) names.push(name);
                 }
+                // 「ナレーション」は常に最後の選択肢として用意する
+                if (!names.includes('ナレーション')) names.push('ナレーション');
                 return names;
             }
 
@@ -3362,7 +3364,8 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         acHighlight();
                     } else if (e.key === 'ArrowUp') {
                         e.preventDefault();
-                        acIndex = (acIndex - 1 + count) % count;
+                        // 未選択(-1)から↑を押したら末尾(ナレーション)を選ぶ
+                        acIndex = acIndex < 0 ? count - 1 : (acIndex - 1 + count) % count;
                         acHighlight();
                     } else if (e.key === 'Enter' && acIndex >= 0) {
                         e.preventDefault();
