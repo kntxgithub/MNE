@@ -1207,7 +1207,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.26_23.29.32";
+            const BUILD_TIME = "2026.07.26_23.36.56";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1490,12 +1490,17 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     dialogue: dialogueContentDiv.scrollTop
                 };
                 syncColumnsFromMainEditor();
-                setTimeout(() => { // Small delay to ensure DOM is rendered before resizing
-                    autoResizeAllTextareas();
+                // 描画される前に同期でリサイズ＋スクロール復元を済ませる
+                // (遅延させると一瞬ずれた位置が描画されてしまうため)
+                const restoreScrolls = () => {
                     sceneContentDiv.scrollTop = savedScrolls.scene;
                     pageContentDiv.scrollTop = savedScrolls.page;
                     dialogueContentDiv.scrollTop = savedScrolls.dialogue;
-                }, 50);
+                };
+                autoResizeAllTextareas();
+                restoreScrolls();
+                // 保険: レイアウトが遅れて確定した場合にもう一度だけ揃える
+                setTimeout(() => { autoResizeAllTextareas(); restoreScrolls(); }, 50);
                 saveState();
                 console.log('UI updated and State saved (immediate).');
             }
