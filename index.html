@@ -1207,7 +1207,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.26_23.53.19";
+            const BUILD_TIME = "2026.07.27_11.03.16";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2362,6 +2362,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     itemTextArea.value = item.text;
                     itemTextArea.classList.add('scene-text');
                     itemTextArea.placeholder = 'シーンの説明';
+                    addAutocompleteToTextarea(itemTextArea, { serif: false }); // 「（（」で名前だけ挿入
                     itemTextArea.addEventListener('input', (e) => {
                         autoResizeTextArea(e.target);
                         updateSceneContentInXml(sceneItemContainer.getAttribute('data-scene-index'), e.target.value);
@@ -2801,6 +2802,10 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 autoResizeTextArea(outlineEditor);
                 saveState();
             });
+            // アウトライン系のテキストボックスでも「（（」で名前を呼び出せるようにする
+            addAutocompleteToTextarea(outlineEditor, { serif: false });
+            addAutocompleteToTextarea(document.getElementById('outlineIdeaEditor'), { serif: false });
+            addAutocompleteToTextarea(keywordEditor, { serif: false });
 
             // アウトライン アイデアメモ
             const outlineIdeaToggle = document.getElementById('outlineIdeaToggle');
@@ -3316,6 +3321,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
             document.body.appendChild(autocompleteDiv);
 
             let acIndex = -1; // キーボード選択中の候補インデックス (-1: 未選択)
+            let acMode = 'serif'; // 'serif': （名前）「」を挿入 / 'name': 名前だけを挿入
 
             function acHighlight() {
                 [...autocompleteDiv.children].forEach((el, i) => {
@@ -3363,8 +3369,12 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 autocompleteDiv.style.left = left + 'px';
             }
 
-            function showAutocomplete(textarea) {
-                const names = getCharacterNames();
+            function showAutocomplete(textarea, mode) {
+                acMode = mode || 'serif';
+                // 名前だけを挿入するモードでは「ナレーション」は出さない
+                const names = acMode === 'name'
+                    ? getCharacterNames().filter(n => n !== 'ナレーション')
+                    : getCharacterNames();
                 autocompleteDiv.innerHTML = '';
                 acIndex = -1;
                 if (names.length === 0) { hideAutocomplete(); return; }
@@ -3410,21 +3420,36 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 const pos = textarea.selectionStart;
                 const val = textarea.value;
                 const before = val.substring(0, pos);
-                const lastParen = before.lastIndexOf('（');
-                if (lastParen === -1) return;
-                const newVal = val.substring(0, lastParen) + `（${name}）「」` + val.substring(pos);
-                textarea.value = newVal;
-                const newPos = lastParen + `（${name}）「`.length;
-                textarea.setSelectionRange(newPos, newPos);
+
+                if (acMode === 'name') {
+                    // 「（（」を名前そのものに置き換える
+                    const start = before.lastIndexOf('（（');
+                    if (start === -1) return;
+                    textarea.value = val.substring(0, start) + name + val.substring(pos);
+                    const newPos = start + name.length;
+                    textarea.setSelectionRange(newPos, newPos);
+                } else {
+                    // 「（」をセリフの雛形に置き換え、カーソルを「」の中に置く
+                    const lastParen = before.lastIndexOf('（');
+                    if (lastParen === -1) return;
+                    textarea.value = val.substring(0, lastParen) + `（${name}）「」` + val.substring(pos);
+                    const newPos = lastParen + `（${name}）「`.length;
+                    textarea.setSelectionRange(newPos, newPos);
+                }
                 textarea.dispatchEvent(new Event('input'));
             }
 
-            function addAutocompleteToTextarea(textarea) {
+            // options.serif: 「（」でセリフ雛形の候補を出すか (ページ用)
+            // 「（（」は共通で「名前だけを挿入」の候補を出す
+            function addAutocompleteToTextarea(textarea, options) {
+                const allowSerif = !options || options.serif !== false;
                 textarea.addEventListener('input', (e) => {
                     const pos = e.target.selectionStart;
                     const before = e.target.value.substring(0, pos);
-                    if (before.endsWith('（')) {
-                        showAutocomplete(e.target);
+                    if (before.endsWith('（（')) {
+                        showAutocomplete(e.target, 'name');
+                    } else if (allowSerif && before.endsWith('（')) {
+                        showAutocomplete(e.target, 'serif');
                     } else {
                         hideAutocomplete();
                     }
