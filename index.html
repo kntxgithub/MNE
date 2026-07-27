@@ -1207,7 +1207,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.27_11.03.16";
+            const BUILD_TIME = "2026.07.28_05.50.04";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2065,6 +2065,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                                 memoToggleBtn.classList.toggle('has-memo', !!e.target.value.trim());
                             });
                             memoTextarea.addEventListener('click', (e) => e.stopPropagation());
+                            addAutocompleteToTextarea(memoTextarea, { serif: false });
                             memoArea.appendChild(memoTextarea);
 
                             const pageContentTextArea = document.createElement('textarea');
@@ -2401,6 +2402,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                     sceneMemoTextarea.addEventListener('click', (e) => e.stopPropagation());
                     sceneMemoTextarea.addEventListener('mousedown', () => sceneItemContainer.setAttribute('draggable', 'false'));
                     sceneMemoTextarea.addEventListener('mouseup', () => sceneItemContainer.setAttribute('draggable', 'true'));
+                    addAutocompleteToTextarea(sceneMemoTextarea, { serif: false });
                     sceneMemoArea.appendChild(sceneMemoTextarea);
                     sceneItemContainer.appendChild(sceneMemoArea);
 
