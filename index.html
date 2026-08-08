@@ -1207,7 +1207,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.07.28_05.50.04";
+            const BUILD_TIME = "2026.08.09_01.09.25";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -1364,7 +1364,7 @@
 *環境・生い立ち`;
 
                 // 新規作成時のXML初期値に、空のセリフ要素も含むように変更
-                mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明></ページ></シーン></root>`; 
+                mainEditor.value = `<root><シーン><シーン説明></シーン説明><ページ><ページ説明></ページ説明></ページ></シーン></root>`; 
                 currentFileName = '新規ネーム.txt';
                 updateFileNameDisplay();
                 currentFileHandle = null;
@@ -1436,7 +1436,7 @@
 *環境・生い立ち`;
 
                     // 初期XML値もセリフが空でもタグがあるように変更
-mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シーン説明><ページ><ページ説明>新しいページ</ページ説明></ページ></シーン></root>`; 
+mainEditor.value = `<root><シーン><シーン説明></シーン説明><ページ><ページ説明></ページ説明></ページ></シーン></root>`; 
                     history = [mainEditor.value];
                     historyIndex = 0;
 
@@ -2427,11 +2427,11 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                         e.stopPropagation();
                         const newSceneElement = currentXmlDoc.createElement('シーン');
                         const newSceneDescElement = currentXmlDoc.createElement('シーン説明');
-                        newSceneDescElement.textContent = '新しいシーン';
+                        newSceneDescElement.textContent = '';
                         newSceneElement.appendChild(newSceneDescElement);
                         const newPageElement = currentXmlDoc.createElement('ページ');
                         const newPageDescElement = currentXmlDoc.createElement('ページ説明');
-                        newPageDescElement.textContent = '新しいページ';
+                        newPageDescElement.textContent = '';
                         newPageElement.appendChild(newPageDescElement);
                         newSceneElement.appendChild(newPageElement);
                         const insertRef = sceneItemContainer.xmlNode.nextSibling;
@@ -2860,12 +2860,12 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 if (rootElement) {
                     const newSceneElement = currentXmlDoc.createElement('シーン');
                     const newSceneDescElement = currentXmlDoc.createElement('シーン説明');
-                    newSceneDescElement.textContent = '新しいシーン';
+                    newSceneDescElement.textContent = '';
                     newSceneElement.appendChild(newSceneDescElement);
                     
                     const newPageElement = currentXmlDoc.createElement('ページ');
                     const newPageDescElement = currentXmlDoc.createElement('ページ説明');
-                    newPageDescElement.textContent = '新しいページ';
+                    newPageDescElement.textContent = '';
                     newPageElement.appendChild(newPageDescElement);
                     newSceneElement.appendChild(newPageElement);
 
@@ -2884,7 +2884,7 @@ mainEditor.value = `<root><シーン><シーン説明>新しいシーン</シー
                 if (sceneElement) {
                     const newPageElement = currentXmlDoc.createElement('ページ');
                     const newPageDescElement = currentXmlDoc.createElement('ページ説明');
-                    newPageDescElement.textContent = '新しいページ';
+                    newPageDescElement.textContent = '';
                     newPageElement.appendChild(newPageDescElement);
 
                     // シーンの<メモ>は常に末尾に置くため、その手前に挿入する
