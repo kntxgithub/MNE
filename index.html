@@ -193,13 +193,16 @@
             resize: vertical; /* メインエディタもマニュアルリサイズ可能に */
         }
 
-        /* 2カラム / 3カラム表示モード (PC/タブレットのみ) */
+        /* 1カラム / 2カラム / 3カラム表示モード (PC/タブレットのみ) */
         .two-col-nav { display: none; }
         @media (min-width: 769px) {
+            body.cols-1 .column { width: 100vw; scroll-snap-align: start; }
             body.cols-2 .column { width: 50vw; scroll-snap-align: start; }
             body.cols-3 .column { width: 33.3333vw; scroll-snap-align: start; }
+            body.cols-1 .columns-wrapper,
             body.cols-2 .columns-wrapper,
             body.cols-3 .columns-wrapper { scroll-snap-type: x mandatory; }
+            body.cols-1 .two-col-nav,
             body.cols-2 .two-col-nav,
             body.cols-3 .two-col-nav {
                 display: block;
@@ -217,6 +220,7 @@
                 line-height: 1;
                 cursor: pointer;
             }
+            body.cols-1 .two-col-nav:hover,
             body.cols-2 .two-col-nav:hover,
             body.cols-3 .two-col-nav:hover { background: rgba(52,73,94,0.7); }
         }
@@ -1108,9 +1112,13 @@
         <input type="radio" name="colMode" value="3" id="colMode3">
         3カラム表示
     </label>
-    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:4px;">
         <input type="radio" name="colMode" value="2" id="colMode2">
         2カラム表示
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="radio" name="colMode" value="1" id="colMode1">
+        1カラム表示
     </label>
 
     <hr style="margin:14px 0;border:none;border-top:1px solid #eee;">
@@ -1207,7 +1215,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.08.09_01.09.25";
+            const BUILD_TIME = "2026.08.11_23.45.58";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3130,19 +3138,20 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
 
             loadSavedBgImage();
 
-            // --- カラム表示モード (PC/タブレット): 4=標準, 3, 2 ---
+            // --- カラム表示モード (PC/タブレット): 4=標準, 3, 2, 1 ---
             function applyColMode(mode) {
-                document.body.classList.remove('cols-2', 'cols-3');
-                if (mode === 2 || mode === 3) document.body.classList.add('cols-' + mode);
+                document.body.classList.remove('cols-1', 'cols-2', 'cols-3');
+                if (mode === 1 || mode === 2 || mode === 3) document.body.classList.add('cols-' + mode);
             }
             function getColMode() {
+                if (document.body.classList.contains('cols-1')) return 1;
                 if (document.body.classList.contains('cols-2')) return 2;
                 if (document.body.classList.contains('cols-3')) return 3;
                 return 4;
             }
             // 旧設定(twoColMode)からの移行も行う
             let savedColMode = parseInt(localStorage.getItem('colMode') || '', 10);
-            if (![2, 3, 4].includes(savedColMode)) {
+            if (![1, 2, 3, 4].includes(savedColMode)) {
                 savedColMode = localStorage.getItem('twoColMode') === '1' ? 2 : 4;
             }
             applyColMode(savedColMode);
