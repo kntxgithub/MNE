@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- ポモドーロタイマー等から MNE.exe として捕捉できるようにする -->
+    <AssemblyName>MNE</AssemblyName>
+    <RootNamespace>MneApp</RootNamespace>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <AssemblyTitle>漫画ネームエディタ</AssemblyTitle>
+    <Product>漫画ネームエディタ</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3485.44" />
+  </ItemGroup>
+
+  <!--
+    Web版と同一ソースを exe に埋め込む (単一ファイルで配布するため)。
+    LogicalName は Web版が使う /MNE/... の絶対パスに合わせる。
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\index.html" LogicalName="web/MNE/index.html" />
+    <EmbeddedResource Include="..\..\manifest.json" LogicalName="web/MNE/manifest.json" />
+    <EmbeddedResource Include="..\..\bg*.jpg" LogicalName="web/MNE/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\icon*.png" LogicalName="web/MNE/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

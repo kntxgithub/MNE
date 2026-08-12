@@ -1,0 +1,9 @@
+# ローカル専用の設定・スクリプト。
+# GitHub Pages はリポジトリ直下をそのまま配信するため、
+# ここを追跡すると /MNE/.claude/ として公開されてしまう。
+.claude/
+
+# デスクトップ版のビルド成果物
+desktop/**/bin/
+desktop/**/obj/
+desktop/dist/
