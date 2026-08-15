@@ -1215,7 +1215,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.08.11_23.45.58";
+            const BUILD_TIME = "2026.08.15_23.17.06";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3433,9 +3433,9 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                 const before = val.substring(0, pos);
 
                 if (acMode === 'name') {
-                    // 「（（」を名前そのものに置き換える
-                    const start = before.lastIndexOf('（（');
-                    if (start === -1) return;
+                    // 「（（」で呼び出した場合はそれを名前に置き換え、
+                    // F1で呼び出した場合はカーソル位置にそのまま挿入する
+                    const start = before.endsWith('（（') ? before.length - 2 : pos;
                     textarea.value = val.substring(0, start) + name + val.substring(pos);
                     const newPos = start + name.length;
                     textarea.setSelectionRange(newPos, newPos);
@@ -3467,6 +3467,16 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                 });
                 // 矢印キーで候補を選択し、Enterで確定できるようにする
                 textarea.addEventListener('keydown', (e) => {
+                    // F1でも「（（」と同じ名前候補を出す (このアプリではF1を他に使わない)
+                    if (e.key === 'F1') {
+                        e.preventDefault();
+                        if (autocompleteDiv.style.display === 'block' && acMode === 'name') {
+                            hideAutocomplete();
+                        } else {
+                            showAutocomplete(e.target, 'name');
+                        }
+                        return;
+                    }
                     if (autocompleteDiv.style.display === 'none') return;
                     const count = autocompleteDiv.children.length;
                     if (count === 0) return;
