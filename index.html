@@ -1215,7 +1215,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.08.16_22.27.50";
+            const BUILD_TIME = "2026.08.16_22.35.26";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2239,7 +2239,7 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                                 copyPageSerifBtn.addEventListener('click', async (e) => {
                                     e.stopPropagation();
                                     const text = [...serifPageGroupContainer.querySelectorAll('.dialogue-content')]
-                                        .map(el => el.textContent).join('\n\n');
+                                        .map(el => el.dataset.serifBody ?? el.textContent).join('\n\n');
                                     const ok = await copyTextToClipboard(text);
                                     copyPageSerifBtn.textContent = ok ? 'コピーしました' : 'コピー失敗';
                                     setTimeout(() => { copyPageSerifBtn.textContent = 'コピー'; }, 1200);
@@ -2272,8 +2272,11 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                                         charLabel.style.cssText = 'font-weight:bold;color:#1a73e8;font-style:normal;font-size:0.85em;display:block;margin-bottom:2px;';
                                         dialogueContentDivItem.appendChild(charLabel);
                                         dialogueContentDivItem.appendChild(document.createTextNode(serifBody));
+                                        // 書き出し用。キャラクター名は含めずセリフ本体だけを持たせる
+                                        dialogueContentDivItem.dataset.serifBody = serifBody;
                                     } else {
                                         dialogueContentDivItem.textContent = serifRaw;
+                                        dialogueContentDivItem.dataset.serifBody = serifRaw;
                                     }
                                     dialogueContentDivItem.style.minHeight = '1.6em';
                                     dialogueContentDivItem.style.whiteSpace = 'pre-wrap';
@@ -2991,7 +2994,8 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                     const dialoguesInPage = [];
                     const dialogueElements = group.querySelectorAll('.dialogue-content');
                     dialogueElements.forEach(dialogueEl => {
-                        dialoguesInPage.push(dialogueEl.textContent);
+                        // キャラクター名は書き出さず、セリフ本体だけをエクスポートする
+                        dialoguesInPage.push(dialogueEl.dataset.serifBody ?? dialogueEl.textContent);
                     });
                     // ページ内のセリフを「空白行1つ」で結合して配列に追加
                     pageDialogues.push(dialoguesInPage.join('\n\n'));
