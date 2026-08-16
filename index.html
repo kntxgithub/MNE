@@ -1215,7 +1215,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.08.15_23.17.06";
+            const BUILD_TIME = "2026.08.16_22.27.50";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2221,8 +2221,30 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                                 pageHeader.style.marginBottom = '5px';
                                 pageHeader.style.paddingBottom = '5px';
                                 pageHeader.style.borderBottom = '1px dashed #ccc';
+                                pageHeader.style.display = 'flex';
+                                pageHeader.style.alignItems = 'center';
+                                pageHeader.style.justifyContent = 'space-between';
+                                pageHeader.style.gap = '8px';
                                 // ページカラムと一貫性を持たせるために、通し番号を使用
-                                pageHeader.textContent = `ページ ${globalPageIndexForDialogue}`;
+                                const pageHeaderLabel = document.createElement('span');
+                                pageHeaderLabel.textContent = `ページ ${globalPageIndexForDialogue}`;
+                                pageHeader.appendChild(pageHeaderLabel);
+
+                                // このページ分だけをエクスポートと同じ書式でクリップボードへ
+                                const copyPageSerifBtn = document.createElement('button');
+                                copyPageSerifBtn.textContent = 'コピー';
+                                copyPageSerifBtn.title = 'このページのセリフをコピー';
+                                copyPageSerifBtn.style.cssText = 'flex:none;padding:2px 8px;font-size:0.85em;font-family:inherit;cursor:pointer;border:1px solid #ccc;border-radius:4px;background:#f5f5f5;color:#333;';
+                                copyPageSerifBtn.addEventListener('mousedown', (e) => e.preventDefault());
+                                copyPageSerifBtn.addEventListener('click', async (e) => {
+                                    e.stopPropagation();
+                                    const text = [...serifPageGroupContainer.querySelectorAll('.dialogue-content')]
+                                        .map(el => el.textContent).join('\n\n');
+                                    const ok = await copyTextToClipboard(text);
+                                    copyPageSerifBtn.textContent = ok ? 'コピーしました' : 'コピー失敗';
+                                    setTimeout(() => { copyPageSerifBtn.textContent = 'コピー'; }, 1200);
+                                });
+                                pageHeader.appendChild(copyPageSerifBtn);
                                 serifPageGroupContainer.appendChild(pageHeader);
 
                                 dialoguesInPage.forEach((dialogueElement, dialogueIndexInPage) => {
@@ -2926,6 +2948,31 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                     }, 50);
                 });
             });
+
+            // クリップボードへコピー。navigator.clipboardが使えない環境では旧APIにフォールバックする
+            async function copyTextToClipboard(text) {
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(text);
+                        return true;
+                    }
+                } catch (err) {
+                    console.warn('clipboard.writeText failed, falling back:', err);
+                }
+                try {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    const ok = document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    return ok;
+                } catch (err) {
+                    console.error('copy failed:', err);
+                    return false;
+                }
+            }
 
             // セリフのエクスポート機能
             exportDialogueBtn.addEventListener('click', async () => {
