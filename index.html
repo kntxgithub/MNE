@@ -1215,7 +1215,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.08.16_22.35.26";
+            const BUILD_TIME = "2026.08.17_10.29.59";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2114,6 +2114,12 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                             pageContentTextArea.addEventListener('click', (e) => {
                                 e.stopPropagation();
                             });
+                            // 右クリックで「ここでページを分割する」メニューを出す
+                            pageContentTextArea.addEventListener('contextmenu', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                showPageSplitMenu(e, pageContentTextArea, pageItemContainer);
+                            });
                             // テキストボックスにフォーカスしたら、そのページを選択扱いにして
                             // セリフカラムの該当グループとシーンカードを発光・スクロールさせる
                             // (ページカラム自体はスクロールさせない: 入力の邪魔になるため)
@@ -2574,7 +2580,84 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
             }
 
             // ページの更新関数を修正
-            function updatePageContentInXml(sceneIndex, pageIndexInScene, fullPageText) { 
+            // --- ページ分割用の右クリックメニュー ---
+            const pageSplitMenu = document.createElement('div');
+            pageSplitMenu.style.cssText = 'position:fixed;display:none;z-index:1300;background:#fff;border:1px solid #ccc;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.2);font-size:14px;font-family:Meiryo,sans-serif;padding:4px 0;min-width:190px;';
+            document.body.appendChild(pageSplitMenu);
+
+            function hidePageSplitMenu() {
+                pageSplitMenu.style.display = 'none';
+                pageSplitMenu.innerHTML = '';
+            }
+
+            function showPageSplitMenu(event, textarea, pageItemContainer) {
+                // メニューを開いた時点のカーソル位置で分割する
+                const caret = textarea.selectionStart;
+                const sceneIndex = parseInt(pageItemContainer.getAttribute('data-scene-index'), 10);
+                const pageIndexInScene = parseInt(pageItemContainer.getAttribute('data-page-index-in-scene'), 10);
+                const canSplit = caret < textarea.value.length;
+
+                pageSplitMenu.innerHTML = '';
+                const item = document.createElement('div');
+                item.textContent = 'ここでページを分割する';
+                item.style.cssText = 'padding:8px 14px;' + (canSplit
+                    ? 'cursor:pointer;color:#333;'
+                    : 'color:#aaa;cursor:default;');
+                if (canSplit) {
+                    item.addEventListener('mouseenter', () => item.style.backgroundColor = '#e8f0fe');
+                    item.addEventListener('mouseleave', () => item.style.backgroundColor = '');
+                    // フォーカスを保ったままにする (blurでDOMが再構築されるのを避ける)
+                    item.addEventListener('mousedown', (e) => e.preventDefault());
+                    item.addEventListener('click', () => {
+                        hidePageSplitMenu();
+                        splitPageAtCaret(sceneIndex, pageIndexInScene, textarea.value, caret);
+                    });
+                }
+                pageSplitMenu.appendChild(item);
+
+                pageSplitMenu.style.display = 'block';
+                const w = pageSplitMenu.offsetWidth;
+                const h = pageSplitMenu.offsetHeight;
+                pageSplitMenu.style.left = Math.min(event.clientX, window.innerWidth - w - 8) + 'px';
+                pageSplitMenu.style.top = Math.min(event.clientY, window.innerHeight - h - 8) + 'px';
+            }
+
+            document.addEventListener('mousedown', (e) => {
+                if (!pageSplitMenu.contains(e.target)) hidePageSplitMenu();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') hidePageSplitMenu();
+            });
+
+            // カーソル以降の文字を、直後に挿入した新しいページへ移動する
+            function splitPageAtCaret(sceneIndex, pageIndexInScene, fullText, caret) {
+                const pageElement = getPageElementByIndex(sceneIndex, pageIndexInScene);
+                if (!pageElement) return;
+                const before = fullText.substring(0, caret).replace(/\s+$/, '');
+                const after = fullText.substring(caret).replace(/^\s+/, '');
+
+                // 現在のページの直後に空のページを挿入する
+                const newPageElement = currentXmlDoc.createElement('ページ');
+                newPageElement.appendChild(currentXmlDoc.createElement('ページ説明'));
+                pageElement.parentNode.insertBefore(newPageElement, pageElement.nextSibling);
+
+                updatePageContentInXml(sceneIndex, pageIndexInScene, before);
+                updatePageContentInXml(sceneIndex, pageIndexInScene + 1, after);
+
+                updateUIImmediate();
+
+                // 分割してできたページのテキストボックスにフォーカスする
+                setTimeout(() => {
+                    const next = document.querySelector(
+                        `#pageContent [data-scene-index="${sceneIndex}"][data-page-index-in-scene="${pageIndexInScene + 1}"] textarea.page-text`);
+                    if (next) {
+                        next.focus();
+                        next.setSelectionRange(0, 0);
+                    }
+                }, 60);
+            }
+
+            function updatePageContentInXml(sceneIndex, pageIndexInScene, fullPageText) {
                 const pageElement = getPageElementByIndex(sceneIndex, pageIndexInScene);
                 if (pageElement) {
                     // 既存の<ページ説明>と<セリフ>要素をすべて削除
