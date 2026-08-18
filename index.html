@@ -1215,7 +1215,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.08.17_10.29.59";
+            const BUILD_TIME = "2026.08.18_12.58.49";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2591,11 +2591,13 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
             }
 
             function showPageSplitMenu(event, textarea, pageItemContainer) {
-                // メニューを開いた時点のカーソル位置で分割する
+                // メニューを開いた時点のカーソル位置を基準に、その行の先頭で分割する
                 const caret = textarea.selectionStart;
+                const splitPos = textarea.value.lastIndexOf('\n', caret - 1) + 1;
                 const sceneIndex = parseInt(pageItemContainer.getAttribute('data-scene-index'), 10);
                 const pageIndexInScene = parseInt(pageItemContainer.getAttribute('data-page-index-in-scene'), 10);
-                const canSplit = caret < textarea.value.length;
+                // 先頭行では分割しても元のページが空になるだけなので無効にする
+                const canSplit = splitPos > 0 && splitPos < textarea.value.length;
 
                 pageSplitMenu.innerHTML = '';
                 const item = document.createElement('div');
@@ -2610,7 +2612,7 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                     item.addEventListener('mousedown', (e) => e.preventDefault());
                     item.addEventListener('click', () => {
                         hidePageSplitMenu();
-                        splitPageAtCaret(sceneIndex, pageIndexInScene, textarea.value, caret);
+                        splitPageAtCaret(sceneIndex, pageIndexInScene, textarea.value, splitPos);
                     });
                 }
                 pageSplitMenu.appendChild(item);
@@ -2629,12 +2631,12 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                 if (e.key === 'Escape') hidePageSplitMenu();
             });
 
-            // カーソル以降の文字を、直後に挿入した新しいページへ移動する
-            function splitPageAtCaret(sceneIndex, pageIndexInScene, fullText, caret) {
+            // 指定位置(カーソル行の行頭)以降の文字を、直後に挿入した新しいページへ移動する
+            function splitPageAtCaret(sceneIndex, pageIndexInScene, fullText, splitPos) {
                 const pageElement = getPageElementByIndex(sceneIndex, pageIndexInScene);
                 if (!pageElement) return;
-                const before = fullText.substring(0, caret).replace(/\s+$/, '');
-                const after = fullText.substring(caret).replace(/^\s+/, '');
+                const before = fullText.substring(0, splitPos).replace(/\s+$/, '');
+                const after = fullText.substring(splitPos).replace(/^\s+/, '');
 
                 // 現在のページの直後に空のページを挿入する
                 const newPageElement = currentXmlDoc.createElement('ページ');
