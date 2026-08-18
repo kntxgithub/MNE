@@ -1215,7 +1215,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.08.18_12.58.49";
+            const BUILD_TIME = "2026.08.18_21.21.57";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -2042,6 +2042,20 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                             });
                             pageHeader.appendChild(memoToggleBtn);
 
+                            // スマホでは長押しメニューを潰さないため、分割はボタンで行えるようにする
+                            const splitButton = document.createElement('button');
+                            splitButton.classList.add('memo-toggle-btn', 'split-page-btn');
+                            splitButton.textContent = '✂ 分割';
+                            splitButton.title = 'カーソルのある行の先頭でページを分割';
+                            // フォーカスとカーソル位置を保つ (押した時点の選択位置で分割するため)
+                            splitButton.addEventListener('mousedown', (e) => e.preventDefault());
+                            splitButton.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+                            splitButton.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                splitPageAtSelection(pageContentTextArea, pageItemContainer, true);
+                            });
+                            pageHeader.appendChild(splitButton);
+
                             const deleteButton = document.createElement('button');
                             deleteButton.classList.add('delete-page-btn');
                             deleteButton.textContent = '削除';
@@ -2114,12 +2128,16 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                             pageContentTextArea.addEventListener('click', (e) => {
                                 e.stopPropagation();
                             });
-                            // 右クリックで「ここでページを分割する」メニューを出す
-                            pageContentTextArea.addEventListener('contextmenu', (e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                showPageSplitMenu(e, pageContentTextArea, pageItemContainer);
-                            });
+                            // 右クリックで「ここでページを分割する」メニューを出す。
+                            // タッチ端末では長押しの標準メニュー(コピー/貼り付け等)を潰さないよう、
+                            // マウス操作の環境でのみ独自メニューにする (スマホはヘッダーの分割ボタンを使う)
+                            if (window.matchMedia('(hover: hover)').matches) {
+                                pageContentTextArea.addEventListener('contextmenu', (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    showPageSplitMenu(e, pageContentTextArea, pageItemContainer);
+                                });
+                            }
                             // テキストボックスにフォーカスしたら、そのページを選択扱いにして
                             // セリフカラムの該当グループとシーンカードを発光・スクロールさせる
                             // (ページカラム自体はスクロールさせない: 入力の邪魔になるため)
@@ -2590,14 +2608,33 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                 pageSplitMenu.innerHTML = '';
             }
 
-            function showPageSplitMenu(event, textarea, pageItemContainer) {
-                // メニューを開いた時点のカーソル位置を基準に、その行の先頭で分割する
+            // カーソル行の行頭を分割位置として返す。分割できない場合は -1
+            function getSplitPos(textarea) {
                 const caret = textarea.selectionStart;
                 const splitPos = textarea.value.lastIndexOf('\n', caret - 1) + 1;
-                const sceneIndex = parseInt(pageItemContainer.getAttribute('data-scene-index'), 10);
-                const pageIndexInScene = parseInt(pageItemContainer.getAttribute('data-page-index-in-scene'), 10);
                 // 先頭行では分割しても元のページが空になるだけなので無効にする
-                const canSplit = splitPos > 0 && splitPos < textarea.value.length;
+                return (splitPos > 0 && splitPos < textarea.value.length) ? splitPos : -1;
+            }
+
+            // 右クリックメニュー/分割ボタンの共通処理
+            function splitPageAtSelection(textarea, pageItemContainer, notifyIfUnavailable) {
+                const splitPos = getSplitPos(textarea);
+                if (splitPos < 0) {
+                    if (notifyIfUnavailable) alert('分割したい行にカーソルを置いてください。\n（カーソル行の先頭で分割します。1行目では分割できません）');
+                    return;
+                }
+                splitPageAtCaret(
+                    parseInt(pageItemContainer.getAttribute('data-scene-index'), 10),
+                    parseInt(pageItemContainer.getAttribute('data-page-index-in-scene'), 10),
+                    textarea.value,
+                    splitPos
+                );
+            }
+
+            function showPageSplitMenu(event, textarea, pageItemContainer) {
+                // メニューを開いた時点のカーソル位置を基準に、その行の先頭で分割する
+                const splitPos = getSplitPos(textarea);
+                const canSplit = splitPos >= 0;
 
                 pageSplitMenu.innerHTML = '';
                 const item = document.createElement('div');
@@ -2612,7 +2649,7 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                     item.addEventListener('mousedown', (e) => e.preventDefault());
                     item.addEventListener('click', () => {
                         hidePageSplitMenu();
-                        splitPageAtCaret(sceneIndex, pageIndexInScene, textarea.value, splitPos);
+                        splitPageAtSelection(textarea, pageItemContainer, false);
                     });
                 }
                 pageSplitMenu.appendChild(item);
