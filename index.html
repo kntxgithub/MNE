@@ -1215,7 +1215,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.08.18_21.21.57";
+            const BUILD_TIME = "2026.08.22_12.35.36";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3486,6 +3486,9 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
             });
 
             // --- キャラクター名オートコンプリート ---
+            // 登場人物ではないが、セリフの話者として常に選べるようにする定型項目
+            const DEFAULT_SPEAKERS = ['モノローグ', '擬音', '書き文字'];
+
             function getCharacterNames() {
                 const names = [];
                 // 「名前：」タグの後、「（」「、」「,」「　」「 」改行までを名前として抽出
@@ -3495,8 +3498,8 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                     const name = match[1].trim();
                     if (name) names.push(name);
                 }
-                // 「ナレーション」は常に最後の選択肢として用意する
-                if (!names.includes('ナレーション')) names.push('ナレーション');
+                // 定型の話者は常に最後の選択肢として用意する
+                DEFAULT_SPEAKERS.forEach(n => { if (!names.includes(n)) names.push(n); });
                 return names;
             }
 
@@ -3555,9 +3558,9 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
 
             function showAutocomplete(textarea, mode) {
                 acMode = mode || 'serif';
-                // 名前だけを挿入するモードでは「ナレーション」は出さない
+                // 名前だけを挿入するモードでは定型の話者(モノローグ等)は出さない
                 const names = acMode === 'name'
-                    ? getCharacterNames().filter(n => n !== 'ナレーション')
+                    ? getCharacterNames().filter(n => !DEFAULT_SPEAKERS.includes(n))
                     : getCharacterNames();
                 autocompleteDiv.innerHTML = '';
                 acIndex = -1;
@@ -3659,7 +3662,7 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                         acHighlight();
                     } else if (e.key === 'ArrowUp') {
                         e.preventDefault();
-                        // 未選択(-1)から↑を押したら末尾(ナレーション)を選ぶ
+                        // 未選択(-1)から↑を押したら末尾の候補を選ぶ
                         acIndex = acIndex < 0 ? count - 1 : (acIndex - 1 + count) % count;
                         acHighlight();
                     } else if (e.key === 'Enter' && acIndex >= 0) {
