@@ -1215,7 +1215,7 @@
             // 初回実行
             adjustHeight();
 
-            const BUILD_TIME = "2026.08.22_12.35.36";
+            const BUILD_TIME = "2026.08.22_15.22.01";
             const buildVersionEl = document.getElementById('buildVersion');
             if (buildVersionEl) buildVersionEl.textContent = BUILD_TIME;
 
@@ -3503,6 +3503,16 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                 return names;
             }
 
+            // キーワード欄の内容を「,」「、」「，」改行で区切って候補にする (このファイル専用のユーザー辞書)
+            function getKeywordList() {
+                return [...new Set(
+                    keywordEditor.value
+                        .split(/[,、，\n]+/)
+                        .map(w => w.trim())
+                        .filter(w => w.length > 0)
+                )];
+            }
+
             const autocompleteDiv = document.createElement('div');
             autocompleteDiv.style.cssText = 'position:fixed;background:white;border:1px solid #ccc;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.2);z-index:1000;display:none;overflow-y:auto;min-width:120px;';
             document.body.appendChild(autocompleteDiv);
@@ -3558,10 +3568,12 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
 
             function showAutocomplete(textarea, mode) {
                 acMode = mode || 'serif';
-                // 名前だけを挿入するモードでは定型の話者(モノローグ等)は出さない
-                const names = acMode === 'name'
-                    ? getCharacterNames().filter(n => !DEFAULT_SPEAKERS.includes(n))
-                    : getCharacterNames();
+                // keyword: キーワード欄の語 / name: 登場人物のみ (定型の話者は出さない) / serif: 話者すべて
+                const names = acMode === 'keyword'
+                    ? getKeywordList()
+                    : acMode === 'name'
+                        ? getCharacterNames().filter(n => !DEFAULT_SPEAKERS.includes(n))
+                        : getCharacterNames();
                 autocompleteDiv.innerHTML = '';
                 acIndex = -1;
                 if (names.length === 0) { hideAutocomplete(); return; }
@@ -3608,10 +3620,11 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                 const val = textarea.value;
                 const before = val.substring(0, pos);
 
-                if (acMode === 'name') {
-                    // 「（（」で呼び出した場合はそれを名前に置き換え、
-                    // F1で呼び出した場合はカーソル位置にそのまま挿入する
-                    const start = before.endsWith('（（') ? before.length - 2 : pos;
+                if (acMode === 'name' || acMode === 'keyword') {
+                    // 「（（」「））」で呼び出した場合はそれを置き換え、
+                    // F1/F2で呼び出した場合はカーソル位置にそのまま挿入する
+                    const trigger = acMode === 'keyword' ? '））' : '（（';
+                    const start = before.endsWith(trigger) ? before.length - 2 : pos;
                     textarea.value = val.substring(0, start) + name + val.substring(pos);
                     const newPos = start + name.length;
                     textarea.setSelectionRange(newPos, newPos);
@@ -3627,13 +3640,15 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
             }
 
             // options.serif: 「（」でセリフ雛形の候補を出すか (ページ用)
-            // 「（（」は共通で「名前だけを挿入」の候補を出す
+            // 「（（」は共通で「名前だけを挿入」、「））」はキーワードの候補を出す
             function addAutocompleteToTextarea(textarea, options) {
                 const allowSerif = !options || options.serif !== false;
                 textarea.addEventListener('input', (e) => {
                     const pos = e.target.selectionStart;
                     const before = e.target.value.substring(0, pos);
-                    if (before.endsWith('（（')) {
+                    if (before.endsWith('））')) {
+                        showAutocomplete(e.target, 'keyword');
+                    } else if (before.endsWith('（（')) {
                         showAutocomplete(e.target, 'name');
                     } else if (allowSerif && before.endsWith('（')) {
                         showAutocomplete(e.target, 'serif');
@@ -3643,13 +3658,14 @@ mainEditor.value = `<root><シーン><シーン説明></シーン説明><ペー�
                 });
                 // 矢印キーで候補を選択し、Enterで確定できるようにする
                 textarea.addEventListener('keydown', (e) => {
-                    // F1でも「（（」と同じ名前候補を出す (このアプリではF1を他に使わない)
-                    if (e.key === 'F1') {
+                    // F1で「（（」と同じ名前候補、F2で「））」と同じキーワード候補を出す
+                    if (e.key === 'F1' || e.key === 'F2') {
                         e.preventDefault();
-                        if (autocompleteDiv.style.display === 'block' && acMode === 'name') {
+                        const mode = e.key === 'F1' ? 'name' : 'keyword';
+                        if (autocompleteDiv.style.display === 'block' && acMode === mode) {
                             hideAutocomplete();
                         } else {
-                            showAutocomplete(e.target, 'name');
+                            showAutocomplete(e.target, mode);
                         }
                         return;
                     }
